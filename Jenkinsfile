@@ -23,7 +23,7 @@ pipeline {
                     echo 'Building Docker image...'
                     sh """
                         docker build \
-                            --build-arg VITE_API_BASE_URL=https://${DOMAIN}/api \
+                            --build-arg VITE_API_BASE_URL=/api \
                             --build-arg VITE_ENV=production \
                             -t ${IMAGE_NAME}:latest .
                     """
