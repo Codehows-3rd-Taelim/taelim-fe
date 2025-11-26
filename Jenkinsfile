@@ -5,7 +5,8 @@ pipeline {
         IMAGE_NAME = 'react-frontend'
         CONTAINER_NAME = 'react-app'
         DOCKER_NETWORK = 'app-network'
-        PORT = '80'
+        HTTP_PORT = '80'
+        HTTPS_PORT = '443'
     }
     
     stages {
@@ -21,7 +22,10 @@ pipeline {
                 script {
                     echo 'Building Docker image...'
                     sh """
-                        docker build -t ${IMAGE_NAME}:latest .
+                        docker build \
+                            --build-arg VITE_API_BASE_URL=https://${DOMAIN}/api \
+                            --build-arg VITE_ENV=production \
+                            -t ${IMAGE_NAME}:latest .
                     """
                 }
             }
@@ -58,7 +62,10 @@ pipeline {
                         docker run -d \
                             --name ${CONTAINER_NAME} \
                             --network ${DOCKER_NETWORK} \
-                            -p ${PORT}:80 \
+                            -p ${HTTP_PORT}:80 \
+                            -p ${HTTPS_PORT}:443 \
+                            -v /opt/ssl/inufleet.com/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro \
+                            -v /opt/ssl/inufleet.com/privkey.pem:/etc/nginx/ssl/privkey.pem:ro \
                             --restart unless-stopped \
                             ${IMAGE_NAME}:latest
                     """
