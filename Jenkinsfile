@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = 'react-frontend'
         CONTAINER_NAME = 'react-app'
         DOCKER_NETWORK = 'app-network'
-        PORT = '3000'
+        PORT = '80'
     }
     
     stages {
