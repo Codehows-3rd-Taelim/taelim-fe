@@ -21,6 +21,9 @@ export type User = {
     storeId: number;
 }
 
+// ApiFormUser는 User 타입에서 userId만 제외한 형태
+export type ApiFormUser= Omit<User, "userId">;
+
 export type LoginRequest = {
     id: string;
     pw: string;
@@ -29,6 +32,7 @@ export type LoginRequest = {
 export type LoginResponse = {
     jwtToken: string;
     roleLevel: number;
+    storeId: number;
 };
 
 export type Robot = {

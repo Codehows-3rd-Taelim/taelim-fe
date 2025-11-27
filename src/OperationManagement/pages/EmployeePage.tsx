@@ -17,7 +17,7 @@ export default function EmployeePage({ list, setList, allStores, roleLevel }: Em
   const [currentPage, setCurrentPage] = useState(1);
 
   const handleDelete = (index: number) => {
-    if (roleLevel === 2) return; // 조회만 가능
+    if (roleLevel === 1) return; // 조회만 가능
     
     const isConfirmed = window.confirm(`${list[index].name} 직원을 정말로 삭제하시겠습니까?`);
     
@@ -67,14 +67,14 @@ export default function EmployeePage({ list, setList, allStores, roleLevel }: Em
                 <td style={{ textAlign: "center" }}>
                   <button
                     onClick={() => handleDelete(startIdx + index)}
-                    disabled={roleLevel === 2}
+                    disabled={roleLevel === 1}
                     style={{
-                      backgroundColor: roleLevel === 2 ? "#ccc" : "#FF5B5B",
+                      backgroundColor: roleLevel === 1 ? "#ccc" : "#FF5B5B",
                       color: "#fff",
                       border: "none",
                       padding: "6px 14px",
                       borderRadius: "5px",
-                      cursor: roleLevel === 2 ? "not-allowed" : "pointer",
+                      cursor: roleLevel === 1 ? "not-allowed" : "pointer",
                     }}
                   >
                     삭제

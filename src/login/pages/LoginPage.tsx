@@ -41,6 +41,7 @@ export default function LoginPage() {
             // JWT 저장
             localStorage.setItem("jwtToken", data.jwtToken);
             localStorage.setItem("roleLevel", data.roleLevel.toString());
+            localStorage.setItem("storeId", data.storeId.toString());
 
             // 로그인 후 페이지 이동
             navigate("/", { replace: true });
