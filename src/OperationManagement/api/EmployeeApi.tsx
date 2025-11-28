@@ -34,7 +34,7 @@ export const checkDuplicateId = async (id: string): Promise<{ exists: boolean }>
 
   try {
     // DTO 필드가 'id'이지만, 엔드포인트 URL이 'check_loginid'이므로 params 키를 'id'로 설정합니다.
-    const response = await axios.get(`${BASE_URL}/signup/check_loginid`, {
+    const response = await axios.get(`${BASE_URL}/user/check_loginid`, {
       params: { id: id.trim() },
     });
     return response.data;
