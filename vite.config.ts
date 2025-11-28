@@ -6,11 +6,11 @@ export default defineConfig({
   server: {
     host: "localhost",
     proxy: {
-      "/api": {
-        target: "http://localhost:8080",
-        rewrite: (path) => path.replace(/^\/api/, ""),
-        changeOrigin: true,
-      },
-    },
-  },
-});
+      '/api': {
+        target: 'http://localhost:8080',
+        rewrite: (path) => path.replace(/^\/api/, ""), //ex) :8080/api/carlist로 시작하는 주소의 /api를 빈문자로 변경
+        changeOrigin: true
+      }
+    }
+  }
+})
