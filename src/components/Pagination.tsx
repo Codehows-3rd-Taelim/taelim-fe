@@ -1,56 +1,63 @@
 import { Box, Button } from "@mui/material";
 
+// Pagination 컴포넌트에 전달될 props 타입 정의
 interface PaginationProps {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수
+  page: number; // 현재 페이지 번호
+  totalPages: number; // 전체 페이지 수
+  onPageChange: (page: number) => void; // 페이지 변경 시 호출되는 함수
+  maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수 (기본값 5)
 }
 
+// Pagination 컴포넌트 정의
 export default function Pagination({
   page,
   totalPages,
   onPageChange,
-  maxButtons = 5,
+  maxButtons = 5, // 기본값 설정
 }: PaginationProps) {
-  const pageButtons = [];
+  const pageButtons = []; // 페이지 버튼들을 담을 배열
 
+  // 시작 페이지 번호 계산 (현재 페이지 기준으로 버튼 중앙 배치)
   let start = Math.max(1, page - Math.floor(maxButtons / 2));
+  // 끝 페이지 번호 계산
   let end = start + maxButtons - 1;
 
+  // 끝 페이지가 전체 페이지 수를 넘어가면 조정
   if (end > totalPages) {
     end = totalPages;
     start = Math.max(1, end - maxButtons + 1);
   }
 
+  // start ~ end 범위의 페이지 버튼 생성
   for (let i = start; i <= end; i++) {
     pageButtons.push(
       <Button
+        // 현재 페이지는 "contained"(채워진 버튼), 나머지는 "outlined"(테두리 버튼)
         variant={page === i ? "contained" : "outlined"}
-        onClick={() => onPageChange(i)}
+        onClick={() => onPageChange(i)} // 클릭 시 해당 페이지로 이동
         sx={{
-          minWidth: 36,
-          color: page === i ? "white" : "black",
-          borderColor: "black",
-          bgcolor: page === i ? "black" : "transparent",
+          minWidth: 36, // 버튼 최소 너비
+          color: page === i ? "white" : "black", // 현재 페이지는 흰 글씨
+          borderColor: "black", // 테두리 색상
+          bgcolor: page === i ? "black" : "transparent", // 현재 페이지는 검은 배경
           "&:hover": {
-            bgcolor: page === i ? "black" : "#f0f0f0",
-            borderColor: "black", // hover 시 검은색 유지
+            bgcolor: page === i ? "black" : "#f0f0f0", // hover 시 색상 변경
+            borderColor: "black", // hover 시 테두리 유지
           },
         }}
       >
-        {i}
+        {i} {/* 버튼 안에 페이지 번호 표시 */}
       </Button>
     );
   }
 
   return (
     <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 1 }}>
-      {/* Prev */}
+      {/* Prev 버튼 (첫 페이지에서는 비활성화) */}
       <Button
         variant="outlined"
-        disabled={page === 1}
-        onClick={() => onPageChange(page - 1)}
+        disabled={page === 1} // 첫 페이지일 때 비활성화
+        onClick={() => onPageChange(page - 1)} // 이전 페이지로 이동
         sx={{
           minWidth: 36,
           color: "black",
@@ -61,16 +68,17 @@ export default function Pagination({
           },
         }}
       >
-        &lt;
+        &lt; {/* "<" 기호 */}
       </Button>
 
+      {/* 페이지 번호 버튼들 */}
       {pageButtons}
 
-      {/* Next */}
+      {/* Next 버튼 (마지막 페이지에서는 비활성화) */}
       <Button
         variant="outlined"
-        disabled={page === totalPages}
-        onClick={() => onPageChange(page + 1)}
+        disabled={page === totalPages} // 마지막 페이지일 때 비활성화
+        onClick={() => onPageChange(page + 1)} // 다음 페이지로 이동
         sx={{
           minWidth: 36,
           color: "black",
@@ -81,7 +89,7 @@ export default function Pagination({
           },
         }}
       >
-        &gt;
+        &gt; {/* ">" 기호 */}
       </Button>
     </Box>
   );
