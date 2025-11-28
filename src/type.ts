@@ -84,3 +84,22 @@ export type AiReport = {
     rawReport: string;
     userId: number;
 }
+
+import { Dayjs } from "dayjs";
+
+// 컴포넌트에 전달될 props 타입 정의
+export interface DateRangePickerProps {
+  value: [Dayjs | null, Dayjs | null]; // 선택된 시작일과 종료일
+  onChange: (range: [Dayjs | null, Dayjs | null]) => void; // 날짜 범위 변경 시 호출되는 함수
+  label?: string; // 기본 표시 라벨 (날짜 선택 전 표시)
+  fullWidth?: boolean; // 추가 옵션: 전체 너비 사용 여부
+  size?: "small" | "medium"; // 추가 옵션: 크기 설정
+};
+
+export interface PaginationProps {
+ page: number; // 현재 페이지 번호
+  totalPages: number; // 전체 페이지 수
+  onPageChange: (page: number) => void; // 페이지 변경 시 호출되는 함수
+  maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수 (기본값 5)
+};
+

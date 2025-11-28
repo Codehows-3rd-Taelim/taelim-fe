@@ -6,15 +6,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import Popover from "@mui/material/Popover";
-
-// 컴포넌트에 전달될 props 타입 정의
-interface DateRangePickerProps {
-  value: [Dayjs | null, Dayjs | null]; // 선택된 시작일과 종료일
-  onChange: (range: [Dayjs | null, Dayjs | null]) => void; // 날짜 범위 변경 시 호출되는 함수
-  label?: string; // 기본 표시 라벨 (날짜 선택 전 표시)
-  fullWidth?: boolean; // 추가 옵션: 전체 너비 사용 여부
-  size?: "small" | "medium"; // 추가 옵션: 크기 설정
-}
+import type { DateRangePickerProps } from "../type";
 
 // 날짜 범위 선택 컴포넌트
 export default function DateRangePicker({
