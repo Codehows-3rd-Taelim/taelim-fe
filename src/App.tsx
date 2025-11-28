@@ -1,13 +1,23 @@
+
 import './App.css'
 import LoginPage from './login/pages/LoginPage'
 import { Route, Routes } from "react-router-dom"
 import { PrivateRoute } from './PrivateRoute'
 import OperationManagement from './OperationManagement/pages/OperationManagement'
+import ReportPage from "./aiReport/pages/AiReportPage";
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route 
+        path="/report" 
+        element={
+          <PrivateRoute>
+            <ReportPage />
+          </PrivateRoute>
+        } 
+      />
       <Route 
         path="/" 
         element={
@@ -22,4 +32,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
