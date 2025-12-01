@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ko"; // 한국어 로케일 적용
 import isBetween from "dayjs/plugin/isBetween"; // 날짜 범위 비교 플러그인
@@ -27,210 +27,14 @@ import type { DateRange } from "@mui/x-date-pickers-pro/models";
 
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
+import { getAiReport } from "../api/AiReportApi";
+import type { AiReport } from "../../type";
 
 // AI 보고서 페이지 컴포넌트
 export default function AiReportPage() {
   // 보고서 데이터 (예시용)
-  const [reports] = useState([
-    {
-      id: 22,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 21,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 20,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 19,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 18,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 17,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 16,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 15,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 14,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 13,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 12,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 11,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 10,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 9,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 8,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 7,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 6,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 5,
-      title: "오늘 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-16",
-      periodEnd: "2025-11-16",
-      createdAt: "2025-11-16",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 4,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 3,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 2,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-    {
-      id: 1,
-      title: "이번 주 청소 성과 분석 보고서 만들어줘.",
-      periodStart: "2025-11-17",
-      periodEnd: "2025-11-21",
-      createdAt: "2025-11-21",
-      writer: "홍길동",
-      details: "보고서 상세 내용 예시입니다...",
-    },
-  ]);
+  // const [AiReportData, setAiReportData] = useState<AiReportData[]>([]);
+  // type은 만들었는데 api 만들고 DB연결하고 해야해
 
   /** 🔍 검색 입력용 State (검색 버튼 누르기 전까지 반영 안 됨) */
   const [searchTextInput, setSearchTextInput] = useState("");
@@ -238,10 +42,11 @@ export default function AiReportPage() {
     null,
     null,
   ]);
-
   /** 🔍 실제 검색에 사용되는 State */
   const [searchText, setSearchText] = useState("");
   const [dateRange, setDateRange] = useState<DateRange<Dayjs>>([null, null]);
+
+  const [AiReportData, setAiReportData] = useState<AiReport[]>([]);
 
   // 테이블 행 확장 상태 (열린 행 ID 저장)
   const [openRow, setOpenRow] = useState<number | null>(null);
@@ -251,10 +56,22 @@ export default function AiReportPage() {
   // 날짜 범위 구조 분해
   const [startDate, endDate] = dateRange;
 
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await getAiReport();
+        setAiReportData(data);
+      } catch (err) {
+        console.error("AI리포트 데이터 불러오기 실패", err);
+      }
+    };
+    loadData();
+  }, []);
+
   /** 필터링 로직 */
-  const filteredReports = reports.filter((r) => {
+  const filteredReports = AiReportData.filter((r) => {
     // 제목에 검색어 포함 여부
-    const matchText = r.title.includes(searchText);
+    const matchText = searchText === "" || r.rawMessage.includes(searchText);
     // 생성일자가 선택한 기간 내에 있는지 확인
     const matchPeriod =
       startDate && endDate
@@ -373,22 +190,26 @@ export default function AiReportPage() {
 
           <TableBody>
             {paginatedReports.map((r) => (
-              <React.Fragment key={r.id}>
+              <React.Fragment key={r.aiReportId}>
                 {/* 보고서 기본 정보 행 */}
                 <TableRow>
-                  <TableCell align="center">{r.id}</TableCell>
-                  <TableCell align="left">{r.title}</TableCell>
+                  <TableCell align="center">{r.aiReportId}</TableCell>
+                  <TableCell align="left">{r.rawMessage}</TableCell>
                   <TableCell align="center">
-                    {r.periodStart} ~ {r.periodEnd}
+                    {r.startTime} ~ {r.endTime}
                   </TableCell>
                   <TableCell align="center">{r.createdAt}</TableCell>
-                  <TableCell align="center">{r.writer}</TableCell>
+                  <TableCell align="center">{r.userId}</TableCell>
                   <TableCell align="center">
                     {/* 상세 내용 토글 버튼 */}
                     <IconButton
-                      onClick={() => setOpenRow(openRow === r.id ? null : r.id)}
+                      onClick={() =>
+                        setOpenRow(
+                          openRow === r.aiReportId ? null : r.aiReportId
+                        )
+                      }
                     >
-                      {openRow === r.id ? (
+                      {openRow === r.aiReportId ? (
                         <KeyboardArrowUpIcon />
                       ) : (
                         <KeyboardArrowDownIcon />
@@ -400,10 +221,10 @@ export default function AiReportPage() {
                 {/* 상세 내용 (Collapse로 토글) */}
                 <TableRow>
                   <TableCell colSpan={6} sx={{ p: 0 }}>
-                    <Collapse in={openRow === r.id} timeout="auto">
+                    <Collapse in={openRow === r.aiReportId} timeout="auto">
                       <Box sx={{ p: 3, bgcolor: "#fafafa" }}>
                         <Typography variant="body2" color="text.secondary">
-                          {r.details}
+                          {r.rawReport}
                         </Typography>
                       </Box>
                     </Collapse>
