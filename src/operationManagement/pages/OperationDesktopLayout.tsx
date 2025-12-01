@@ -1,10 +1,6 @@
-// OperationMobileLayout.tsx
-
 import React from "react";
-// EmployeePage와 PasswordToggle은 여기에 임포트
 import EmployeePage from "./EmployeePage";
-import PasswordToggle from "../../Components/PasswordToggle";
-// 💡 type.ts에서 필요한 타입 임포트
+import PasswordToggle from "../../components/PasswordToggle";
 import type { User, Store } from "../../type"; 
 
 // 임시 StorePage 컴포넌트
@@ -12,6 +8,7 @@ const StorePage = () => <div style={{ padding: '20px', border: '1px solid #ddd' 
 
 // 변수 정의
 const INPUT_HEIGHT = "50px";
+const ITEM_WIDTH = 'calc(20% - 8px)';
 
 // 💡 Prop 타입 정의 (isPasswordValid 제거)
 type OperationLayoutProps = {
@@ -49,7 +46,7 @@ type OperationLayoutProps = {
 };
 
 
-export default function OperationMobileLayout({
+export default function OperationDesktopLayout({
     form,
     isIdChecked,
     isPasswordMismatched,
@@ -71,7 +68,7 @@ export default function OperationMobileLayout({
     setShowPasswordCheck,
     setList
 }: OperationLayoutProps) {
-
+    
     // CSS 스타일
     const activeTabStyle: React.CSSProperties = {
         backgroundColor: "#FF8A00",
@@ -86,16 +83,16 @@ export default function OperationMobileLayout({
 
     // 등록 버튼 JSX
     const RegisterButton = (
-        <div style={{ width: '100%', flexShrink: 0, marginTop: "10px" }}>
+        <div style={{ width: ITEM_WIDTH, flexShrink: 0, marginTop: "0px" }}>
             <button
                 onClick={handleRegister}
                 disabled={!isRegisterButtonEnabled}
                 style={{
-                    width: '100%',
+                    width: '100px',
                     backgroundColor: isRegisterButtonEnabled ? "#FF8A00" : "#ccc",
                     color: "#fff",
                     borderRadius: "6px",
-                    border: "#d1d5db",
+                    border: "none",
                     cursor: isRegisterButtonEnabled ? "pointer" : "not-allowed",
                     height: INPUT_HEIGHT,
                     boxSizing: "border-box",
@@ -108,20 +105,23 @@ export default function OperationMobileLayout({
             </button>
         </div>
     );
-
-    // 모바일 전용 등록 폼 JSX (세로 스택 레이아웃)
+    
+    // 데스크탑 전용 등록 폼 JSX (5칸 2줄 레이아웃)
     const employeeRegistrationForm = (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {/* 1. ID + 중복확인 */}
-            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", width: '100%' }}>
-                <input
-                    name="id"
-                    value={form.id}
-                    onChange={(e) => setFormValue('id', e.target.value)}
-                    placeholder="ID (필수)"
-                    className="input"
-                    style={{ flexGrow: 1, boxSizing: "border-box", height: INPUT_HEIGHT }}
-                />
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            {/* 1행: ID, PW, PW확인, 중복확인, 등록 버튼 순서 */}
+            {/* 1. ID */}
+            <input
+                name="id"
+                value={form.id}
+                onChange={(e) => setFormValue('id', e.target.value)}
+                placeholder="ID (필수)"
+                className="input"
+                style={{ width: ITEM_WIDTH, boxSizing: "border-box", height: INPUT_HEIGHT }}
+            />
+            
+            {/* 2. 중복확인 버튼 */}
+            <div style={{ display: "flex", alignItems: "flex-start", width: ITEM_WIDTH }}>
                 <button
                     onClick={handleIdCheck}
                     style={{
@@ -141,20 +141,21 @@ export default function OperationMobileLayout({
                     {isIdChecked ? "✓ 사용 가능" : "중복확인"}
                 </button>
             </div>
-
-            {/* 2. PW */}
-            <div style={{ width: '100%', boxSizing: "border-box", height: INPUT_HEIGHT }}>
+            
+            {/* 3. PW */}
+            <div style={{ width: ITEM_WIDTH, boxSizing: "border-box", height: INPUT_HEIGHT }}>
                 <PasswordToggle
                     password={form.pw}
+                    // setPassword 핸들러: name과 value를 setFormValue에 전달하도록 수정
                     setPassword={(value) => setFormValue('pw', value)}
                     handleKeyPress={handlePasswordKeyPress}
                     showPassword={showPassword}
                     setShowPassword={setShowPassword}
                 />
             </div>
-
-            {/* 3. PW 확인 필드 */}
-            <div style={{ width: '100%', flexShrink: 0 }}>
+            
+            {/* 4. PW 확인 필드 */}
+            <div style={{ width: ITEM_WIDTH, flexShrink: 0 }}>
                 <PasswordToggle
                     password={form.pwCheck}
                     setPassword={(value) => setFormValue('pwCheck', value)}
@@ -167,38 +168,42 @@ export default function OperationMobileLayout({
                 )}
             </div>
 
-            {/* 4. 이름 */}
+            {/* 5. 등록 버튼 */}
+            {RegisterButton}
+
+            {/* 2행: 이름, 연락처, 이메일, 매장명, 권한 순서 */}
+            {/* 6. 이름 */}
             <input
                 name="name"
                 value={form.name}
                 onChange={(e) => setFormValue('name', e.target.value)}
                 placeholder="이름 (필수)"
                 className="input"
-                style={{ width: '100%', boxSizing: "border-box", height: INPUT_HEIGHT }}
+                style={{ width: ITEM_WIDTH, boxSizing: "border-box", height: INPUT_HEIGHT }}
             />
-
-            {/* 5. 연락처 (phone) */}
+            
+            {/* 7. 연락처 (phone) */}
             <input
                 name="phone"
                 value={form.phone}
                 onChange={(e) => setFormValue('phone', e.target.value)}
                 placeholder="연락처"
                 className="input"
-                style={{ width: '100%', boxSizing: "border-box", height: INPUT_HEIGHT }}
+                style={{ width: ITEM_WIDTH, boxSizing: "border-box", height: INPUT_HEIGHT }}
             />
-
-            {/* 6. 이메일 */}
+            
+            {/* 8. 이메일 */}
             <input
                 name="email"
                 value={form.email}
                 onChange={(e) => setFormValue('email', e.target.value)}
                 placeholder="email@gmail.com (필수)"
                 className="input"
-                style={{ width: '100%', boxSizing: "border-box", height: INPUT_HEIGHT }}
+                style={{ width: ITEM_WIDTH, boxSizing: "border-box", height: INPUT_HEIGHT }}
             />
 
-            {/* 7. 매장명 */}
-            <div style={{ width: '100%' }}>
+            {/* 9. 매장명 (select/readonly input) */}
+            <div style={{ width: ITEM_WIDTH }}>
                 {roleLevel === 3 ? (
                     <select
                         name="storeId"
@@ -225,16 +230,22 @@ export default function OperationMobileLayout({
                     />
                 )}
             </div>
-
-            {/* 8. 권한 */}
-            <div style={{ width: '100%' }}>
+            
+            {/* 10. 권한 (select/readonly input) */}
+            <div style={{ width: ITEM_WIDTH }}>
                 {roleLevel === 3 ? (
                     <select
                         name="role"
                         value={form.role}
                         onChange={(e) => setFormValue('role', e.target.value)}
                         className="input"
-                        style={{ width: "100%", height: INPUT_HEIGHT, boxSizing: "border-box" }}
+                        style={{
+                            width: "100%",
+                            height: INPUT_HEIGHT,
+                            border: "1px solid #ddd",
+                            borderRadius: "4px",
+                            padding: "10px",
+                        }}
                     >
                         <option value="MANAGER">매장 담당자</option>
                         <option value="USER">직원</option>
@@ -250,11 +261,9 @@ export default function OperationMobileLayout({
                     />
                 )}
             </div>
-
-            {/* 9. 등록 버튼 (맨 아래) */}
-            {RegisterButton}
         </div>
     );
+
 
     return (
         <>
@@ -280,13 +289,13 @@ export default function OperationMobileLayout({
                 <div
                     style={{
                         backgroundColor: "#fff",
-                        padding: "20px",
+                        padding: "30px",
                         borderRadius: "10px",
-                        marginBottom: "20px",
+                        marginBottom: "40px",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                     }}
                 >
-                    <h3 style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "15px" }}>
+                    <h3 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "20px" }}>
                         직원 등록
                     </h3>
                     {employeeRegistrationForm}
@@ -295,18 +304,18 @@ export default function OperationMobileLayout({
                 <div
                     style={{
                         backgroundColor: "#fff",
-                        padding: "20px",
+                        padding: "30px",
                         borderRadius: "10px",
-                        marginBottom: "20px",
+                        marginBottom: "40px",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                         textAlign: "center",
-                        minHeight: "100px", 
+                        minHeight: "150px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                     }}
                 >
-                    <h3 style={{ fontSize: "18px", fontWeight: "bold", color: "#FF8A00" }}>
+                    <h3 style={{ fontSize: "20px", fontWeight: "bold", color: "#FF8A00" }}>
                         직원 등록 권한이 없습니다.
                     </h3>
                 </div>
@@ -319,7 +328,7 @@ export default function OperationMobileLayout({
                         <button
                             onClick={() => setActiveTab('employee')}
                             style={{
-                                padding: "10px 15px",
+                                padding: "10px 20px",
                                 border: "1px solid #ddd",
                                 borderBottom: activeTab === 'employee' ? 'none' : '1px solid #ddd',
                                 borderRadius: "5px 5px 0 0",
@@ -336,7 +345,7 @@ export default function OperationMobileLayout({
                         <button
                             onClick={() => setActiveTab('store')}
                             style={{
-                                padding: "10px 15px",
+                                padding: "10px 20px",
                                 border: "1px solid #ddd",
                                 borderLeft: "none",
                                 borderBottom: activeTab === 'store' ? 'none' : '1px solid #ddd',
@@ -356,7 +365,7 @@ export default function OperationMobileLayout({
                     <div
                         style={{
                             backgroundColor: "#fff",
-                            padding: "20px",
+                            padding: "30px",
                             borderRadius: "0 10px 10px 10px",
                             boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                             borderTop: "none",
@@ -380,7 +389,7 @@ export default function OperationMobileLayout({
                 <div
                     style={{
                         backgroundColor: "#fff",
-                        padding: "20px",
+                        padding: "30px",
                         borderRadius: "10px",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                         borderTop: "1px solid #ddd",
