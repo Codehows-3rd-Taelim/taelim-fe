@@ -11,7 +11,7 @@ export type Industry = {
 }
 
 export type User = {
-    userId?: number;
+    userId: number;
     id: string;
     pw: string;
     name: string;

@@ -3,7 +3,7 @@ import './App.css'
 import LoginPage from './login/pages/LoginPage'
 import { Route, Routes } from "react-router-dom"
 import { PrivateRoute } from './PrivateRoute'
-import OperationManagement from './OperationManagement/pages/OperationManagement'
+import OperationManagement from './operationManagement/pages/OperationManagement'
 import ReportPage from "./aiReport/pages/AiReportPage";
 
 function App() {
