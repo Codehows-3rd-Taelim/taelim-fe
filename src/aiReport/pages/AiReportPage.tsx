@@ -196,10 +196,13 @@ export default function AiReportPage() {
                   <TableCell align="center">{r.aiReportId}</TableCell>
                   <TableCell align="left">{r.rawMessage}</TableCell>
                   <TableCell align="center">
-                    {r.startTime} ~ {r.endTime}
+                    {dayjs(r.startTime).format("YYYY-MM-DD")} ~{" "}
+                    {dayjs(r.endTime).format("YYYY-MM-DD")}
                   </TableCell>
-                  <TableCell align="center">{r.createdAt}</TableCell>
-                  <TableCell align="center">{r.userId}</TableCell>
+                  <TableCell align="center">
+                    {dayjs(r.createdAt).format("YYYY-MM-DD")}
+                  </TableCell>
+                  <TableCell align="center">{r.name}</TableCell>
                   <TableCell align="center">
                     {/* 상세 내용 토글 버튼 */}
                     <IconButton

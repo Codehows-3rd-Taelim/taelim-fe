@@ -27,7 +27,7 @@ function App() {
         }
       />
       <Route
-        path="/AiReport"
+        path="/aiReport"
         element={
           <PrivateRoute>
             <AiReportPage />

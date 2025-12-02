@@ -83,6 +83,7 @@ export type AiReport = {
     rawMessage: string;
     rawReport: string;
     userId: number;
+    name: string;
 }
 
 import { Dayjs } from "dayjs";
