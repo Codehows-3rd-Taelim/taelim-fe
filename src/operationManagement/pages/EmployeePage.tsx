@@ -147,7 +147,7 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
       alert("직원 정보가 성공적으로 수정되었습니다.");
       // 변경된 목록에서 비밀번호 필드는 제거하고 setList에 적용 (보안상)
       const updatedList = editableList.map(user => {
-        const { pw, ...rest } = user;
+        const { _pw, ...rest } = user;
         return rest as User;
       });
       setList(updatedList); // 변경사항 적용

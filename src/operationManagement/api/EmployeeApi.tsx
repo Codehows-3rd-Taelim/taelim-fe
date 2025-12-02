@@ -3,24 +3,6 @@ import type { ApiFormUser, User } from "../../type";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-// 1. Axios 인스턴스 생성 또는 기본 설정 수정
-// 토큰을 localStorage에서 가져와 모든 요청 헤더에 추가하는 인터셉터 설정
-axios.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem("jwtToken"); // 💡 로컬 스토리지에서 토큰을 가져옵니다.
-
-        if (token) {
-            // 모든 요청 헤더에 Authorization 필드를 추가합니다.
-            // 서버 설정에 따라 'Bearer ' 접두사를 사용하거나 생략할 수 있습니다.
-            config.headers.Authorization = `Bearer ${token}`; 
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
 /**
  * ID 중복 확인 API 호출
  * @param id 확인할 로그인 ID (DTO 필드명은 'id'이지만, API 경로상 loginId로 받는다고 가정하고 전달)

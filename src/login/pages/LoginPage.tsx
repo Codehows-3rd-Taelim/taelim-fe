@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import robotImage from "../../assets/robot.png";
 import type { LoginRequest, LoginResponse } from "../../type";
 import { getAuthToken } from "../api/LoginApi";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { XCircle, Eye, EyeOff } from "lucide-react";
+import { useAuthStore } from "../../store";
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -21,7 +21,13 @@ export default function LoginPage() {
         }
     }, [navigate]);
 
+    // 로그인 처리
     const handleSubmit = async () => {
+        if (!userId.trim() || !password.trim()) {
+            setLoginError("아이디와 비밀번호를 모두 입력해주세요.");
+            return;
+        }
+
         setLoginError(null);
 
         const loginUser: LoginRequest = {
@@ -31,24 +37,20 @@ export default function LoginPage() {
 
         try {
             const data: LoginResponse = await getAuthToken(loginUser);
-            console.log("로그인 성공:", data);
 
-            // JWT 저장
-            localStorage.setItem("jwtToken", data.jwtToken);
-            localStorage.setItem("roleLevel", data.roleLevel.toString());
-            localStorage.setItem("storeId", data.storeId.toString());
+            useAuthStore.getState().login({
+                jwtToken: data.jwtToken,
+                roleLevel: data.roleLevel,
+                storeId: data.storeId,
+            });
 
             navigate("/", { replace: true });
         } catch (error) {
-            const errorMessage = "로그인 실패: 아이디 또는 비밀번호를 확인하세요.";
-
-            if (axios.isAxiosError(error)) {
-                console.error("로그인 실패:", error.response?.data || error.message);
+            if (error instanceof Error) {
+                setLoginError(error.message);
             } else {
-                console.error("알 수 없는 오류:", error);
+                setLoginError("로그인 중 알 수 없는 오류가 발생했습니다.");
             }
-
-            setLoginError(errorMessage);
         }
     };
 
@@ -60,56 +62,52 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-white font-inter">
-            {/* 왼쪽 로봇 이미지 (데스크탑 전용) */}
-            <div className="hidden md:flex md:w-[60%] flex-col justify-center items-center p-4">
+            
+            {/* 왼쪽 이미지 */}
+            <div className="hidden md:flex md:w-[55%] justify-center items-center p-4">
                 <img
                     src={robotImage}
                     alt="robots"
-                    className="w-full h-auto object-contain max-h-[90vh]"
+                    className="w-[85%] h-auto object-contain max-h-[85vh]"
                 />
             </div>
 
-            {/* 오른쪽 로그인 폼 */}
-            <div className="w-full md:w-[40%] flex items-center justify-center p-8 min-h-screen box-border">
-                <div className="w-full max-w-sm">
-                    {/* 제목 */}
-                    <div className="mb-8 text-center">
-                        <h1 className="text-4xl font-extrabold mb-1 text-gray-800">
-                            로그인
-                        </h1>
+            {/* 오른쪽 로그인 */}
+            <div className="w-full md:w-[45%] flex items-center justify-center p-4 min-h-screen md:min-h-0">
+                <div className="w-full max-w-md">
 
-                        <div className="mb-4 text-center">
-                            <div className="text-4xl font-bold">
-                                <span className="text-gray-900">Inus</span>
-                                <span className="text-red-600">tree</span>&nbsp;
-                                <span className="text-gray-500 text-xl font-normal">
-                                    로봇관리 플랫폼
-                                </span>
-                            </div>
+                    {/* 제목 */}
+                    <div className="mb-6 text-center">
+                        <h1 className="text-4xl font-extrabold text-gray-800 mb-2">로그인</h1>
+
+                        <div className="text-4xl font-bold">
+                            <span className="text-gray-900">Inus</span>
+                            <span className="text-red-600">tree</span>
+                            <span className="text-gray-500 text-xl font-normal ml-2">
+                                로봇관리 플랫폼
+                            </span>
                         </div>
                     </div>
 
-                    {/* 카드 */}
-                    <div className="border-2 border-amber-300 rounded-xl shadow-2xl p-8 bg-white transition-all duration-300 hover:shadow-2xl">
+                    <div className="border-2 border-amber-300 rounded-xl shadow-2xl p-8 bg-white">
 
                         {/* 오류 메시지 */}
                         {loginError && (
                             <div className="flex items-center p-3 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50">
                                 <XCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                                <div>
-                                    <span className="font-medium">오류:</span> {loginError}
-                                </div>
+                                <span>{loginError}</span>
                             </div>
                         )}
 
                         <div className="flex flex-col gap-4">
+                            
                             {/* 아이디 */}
                             <input
                                 type="text"
                                 placeholder="아이디를 입력하세요"
                                 value={userId}
                                 onChange={(e) => setUserId(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-base text-gray-700 font-sans transition-all duration-150 focus:border-amber-400 focus:shadow-md focus:shadow-amber-100"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-base text-gray-700 focus:border-amber-400 focus:shadow-md"
                             />
 
                             {/* 비밀번호 */}
@@ -120,38 +118,31 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     onKeyPress={handlePasswordKeyPress}
-                                    className="w-full pr-12 px-4 py-3 border border-gray-300 rounded-md text-gray-700 outline-none 
-                                            focus:border-amber-400 focus:ring-2 focus:ring-amber-200 focus:ring-opacity-50 transition"
+                                    className="w-full pr-12 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
                                 />
 
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-gray-500 hover:text-gray-700 bg-transparent"
+                                    className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
                                 >
-                                    {showPassword ? (
-                                        <EyeOff className="w-5 h-5" />
-                                    ) : (
-                                        <Eye className="w-5 h-5" />
-                                    )}
+                                    {showPassword ? <EyeOff /> : <Eye />}
                                 </button>
                             </div>
 
                             {/* 버튼 */}
                             <button
                                 onClick={handleSubmit}
-                                className="w-full py-3 px-4 bg-orange-600 text-black font-semibold rounded-lg cursor-pointer text-lg mt-4 shadow-md 
-                                           hover:bg-orange-700 transition-colors duration-200 active:bg-orange-800 
-                                           focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50"
+                                className="w-full py-3 bg-orange-600 text-black font-semibold rounded-lg text-lg mt-4 shadow-md hover:bg-orange-700"
                             >
                                 로그인
                             </button>
                         </div>
 
-                        <p className="text-xs text-gray-400 mt-6 text-center leading-relaxed">
+                        <p className="text-xs text-gray-400 mt-6 text-center">
                             비밀번호를 잊어버렸다면<br />
                             <span className="text-orange-600 font-semibold">관리자에게 문의</span>하여
-                            비밀번호를 재설정할 수 있습니다.
+                            재설정할 수 있습니다.
                         </p>
                     </div>
                 </div>
