@@ -32,10 +32,6 @@ import type { AiReport } from "../../type";
 
 // AI 보고서 페이지 컴포넌트
 export default function AiReportPage() {
-  // 보고서 데이터 (예시용)
-  // const [AiReportData, setAiReportData] = useState<AiReportData[]>([]);
-  // type은 만들었는데 api 만들고 DB연결하고 해야해
-
   /** 🔍 검색 입력용 State (검색 버튼 누르기 전까지 반영 안 됨) */
   const [searchTextInput, setSearchTextInput] = useState("");
   const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([

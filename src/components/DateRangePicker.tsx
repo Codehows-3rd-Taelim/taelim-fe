@@ -49,7 +49,7 @@ export default function DateRangePicker({
   const open = Boolean(anchorEl); // Popover 열림 여부
 
   return (
-    // 📌 MUI Date Pickers에서 Dayjs를 한국어(locale=ko)로 사용하도록 설정
+    //  MUI Date Pickers에서 Dayjs를 한국어(locale=ko)로 사용하도록 설정
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ko">
       {/* ---------------------- 선택 박스 영역 ---------------------- */}
       <Box

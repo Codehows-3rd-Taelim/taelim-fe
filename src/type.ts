@@ -104,3 +104,55 @@ export interface PaginationProps {
   maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수 (기본값 5)
 };
 
+
+//---------------------------------------------------------
+//---------------------------------------------------------
+
+
+// src/type/DashboardType.ts (또는 src/type.ts)
+
+/**
+ * 로봇 상태 데이터 타입
+ */
+export interface RobotStatus {
+    working: number;
+    standby: number;
+    charging: number;
+    offline: number;
+}
+
+/**
+ * 작업 성과 KPI 데이터 타입
+ */
+export interface Performance {
+    costSaving: number;
+    laborTimeSaving: number;
+    co2Reduction: number;
+    waterSaving: number;
+}
+
+/**
+ * 일별 차트 데이터 기본 구조
+ */
+export interface DailyChartData {
+    labels: string[];
+    myRobots: number[];
+    avgTime: number[];
+}
+
+/**
+ * 전체 대시보드 데이터 타입
+ * (areaCleanCount, dailyTaskTime 등 나머지 차트 데이터는 임시로 any 처리)
+ */
+export interface DashboardData {
+    robotStatus: RobotStatus;
+    performance: Performance;
+    dailyOperationTime: DailyChartData;
+    areaCleanCount: any; 
+    dailyTaskTime: any;
+    dailyTaskStatus: any;
+    dailyCompletionRate: any;
+}
+
+//---------------------------------------------------------
+//---------------------------------------------------------

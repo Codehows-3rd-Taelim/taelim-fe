@@ -5,6 +5,7 @@ import { PrivateRoute } from "./PrivateRoute";
 import OperationManagement from "./OperationManagement/pages/OperationManagement";
 import ReportPage from "./aiReport/pages/AiReportPage";
 import AiReportPage from "./aiReport/pages/AiReportPage";
+import UserDashboardPage from "./Dashboard/pages/UserDashboardPage";
 
 function App() {
   return (
@@ -27,10 +28,19 @@ function App() {
         }
       />
       <Route
-        path="/aiReport"
+        path="/ai/Report"
         element={
           <PrivateRoute>
             <AiReportPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/user"
+        element={
+          <PrivateRoute>
+            <UserDashboardPage />
           </PrivateRoute>
         }
       />
