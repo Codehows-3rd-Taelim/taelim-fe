@@ -1,12 +1,5 @@
 import { Box, Button } from "@mui/material";
-
-// Pagination 컴포넌트에 전달될 props 타입 정의
-interface PaginationProps {
-  page: number; // 현재 페이지 번호
-  totalPages: number; // 전체 페이지 수
-  onPageChange: (page: number) => void; // 페이지 변경 시 호출되는 함수
-  maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수 (기본값 5)
-}
+import type { PaginationProps } from "../type";
 
 // Pagination 컴포넌트 정의
 export default function Pagination({
@@ -32,6 +25,7 @@ export default function Pagination({
   for (let i = start; i <= end; i++) {
     pageButtons.push(
       <Button
+        key={i}
         // 현재 페이지는 "contained"(채워진 버튼), 나머지는 "outlined"(테두리 버튼)
         variant={page === i ? "contained" : "outlined"}
         onClick={() => onPageChange(i)} // 클릭 시 해당 페이지로 이동
