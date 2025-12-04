@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import type { User, Store } from "../../type";
 import { deleteEmployee, updateEmployee } from "../api/EmployeeApi";
 
@@ -12,23 +12,67 @@ interface EmployeePageProps {
 
 const itemsPerPage = 20;
 
+// role 문자열을 숫자 레벨로 변환하는 헬퍼 함수 (정렬에 사용)
+const getRoleLevel = (role: string): number => {
+  switch (role) {
+    case "ADMIN":
+      return 3;
+    case "MANAGER":
+    case "manager": // 혹시 모를 소문자 처리
+      return 2;
+    case "USER":
+    case "user": // 혹시 모를 소문자 처리
+      return 1;
+    default:
+      return 0;
+  }
+};
+
 export default function EmployeePage({ list, setList, allStores, roleLevel, getStoreName }: EmployeePageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editableList, setEditableList] = useState<User[]>([]);
 
-  // list가 변경될 때 editableList도 업데이트 (불필요한 경우 제거 가능, 현재 로직에서는 불필요함)
-  // useEffect(() => {
-  //   if (!isEditMode) {
-  //     setEditableList([...list]);
-  //   }
-  // }, [list, isEditMode]);
+  // 💡 정렬 로직 적용
+  const sortedList = useMemo(() => {
+    // 원본 리스트를 복사하여 정렬
+    const listCopy = [...list];
+
+    listCopy.sort((a, b) => {
+      // 1. 매장별 그룹핑 (storeId 오름차순)
+      if (a.storeId !== b.storeId) {
+        return a.storeId - b.storeId; // storeId 오름차순
+      }
+
+      // 2. 같은 매장에서는 권한별 내림차순 (ADMIN > MANAGER > USER)
+      const aRoleLevel = getRoleLevel(a.role);
+      const bRoleLevel = getRoleLevel(b.role);
+      if (aRoleLevel !== bRoleLevel) {
+        return bRoleLevel - aRoleLevel; // 권한 레벨 내림차순
+      }
+
+      // 3. 같은 권한끼리는 userId 오름차순
+      return a.userId - b.userId; // userId 오름차순
+    });
+
+    return listCopy;
+  }, [list]); // list가 변경될 때만 다시 계산
+
+  // list 대신 sortedList를 사용하도록 업데이트
+  useEffect(() => {
+    if (!isEditMode) {
+      // 편집 모드가 아닐 때만 sortedList를 기반으로 editableList 초기화
+      // 이 로직은 `handleEditMode`에서만 처리하므로 주석 처리하거나 제거하는 것이 좋습니다.
+      // 현재 로직을 유지하고 싶다면: setEditableList([...sortedList]);
+    }
+  }, [isEditMode, sortedList]); // list 의존성 제거
 
   const handleDelete = async (index: number) => {
+    // list 대신 sortedList에서 항목을 찾습니다.
     if (roleLevel === 1 || deletingUserId !== null) return;
 
-    const userToDelete = list[index];
+    const userToDelete = sortedList[index]; // 💡 정렬된 리스트에서 인덱스 사용
     if (!userToDelete || !userToDelete.userId) return;
 
     const isConfirmed = window.confirm(`[${userToDelete.name}] 직원을 정말로 삭제하시겠습니까?`);
@@ -38,7 +82,8 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
       try {
         await deleteEmployee(userToDelete.userId);
         alert(`직원 [${userToDelete.name}]이(가) 성공적으로 삭제되었습니다.`);
-        setList(list.filter((item) => item.userId !== userToDelete.userId));
+        // 삭제 후에는 원본 list를 필터링하여 setList를 업데이트
+        setList(prevList => prevList.filter((item) => item.userId !== userToDelete.userId));
       } catch (error) {
         console.error("직원 삭제 실패:", error);
         alert(error instanceof Error ? error.message : "직원 삭제 중 오류가 발생했습니다.");
@@ -50,7 +95,8 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
 
   const handleEditMode = () => {
     setIsEditMode(true);
-    setEditableList([...list]); // 원본 복사
+    // 💡 수정 모드 진입 시, 정렬된 목록을 기반으로 editableList 초기화
+    setEditableList([...sortedList]); 
   };
 
   /**
@@ -59,6 +105,7 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
    * @param editedList 수정 중인 직원 목록
    * @returns 변경된 항목의 배열
    */
+  // 이 함수는 원본 list(정렬되지 않은)와 editableList(정렬된 list의 복사본, 수정 중인 상태)를 비교해야 합니다.
   const getChangedUsers = (originalList: User[], editedList: User[]) => {
     return editedList.filter((editUser) => {
       const original = originalList.find((u) => u.userId === editUser.userId);
@@ -69,53 +116,45 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
         original.email !== editUser.email ||
         original.storeId !== editUser.storeId ||
         original.role !== editUser.role ||
-        // ID 변경 감지 (수정 모드에서 id가 편집 가능하도록 추가되었기 때문에 확인)
-        original.id !== editUser.id || 
-        // 비밀번호는 변경 시에만 전송되므로 비교에서 제외하거나, 
-        // 실제 변경이 이루어졌는지 여부를 판단하는 데 사용하지 않는 것이 좋습니다.
-        // 여기서는 명시적으로 변경된 필드만 확인합니다.
-        // original.pw !== editUser.pw // 비밀번호는 보통 변경 시에만 입력하므로 목록 비교에서는 제외
-        false
+        original.id !== editUser.id
       );
     });
   };
 
   const handleCancel = () => {
     if (isEditMode) {
-      const changedUsers = getChangedUsers(list, editableList);
+      // 변경 여부는 원본 props list와 editableList를 비교하여 확인
+      const changedUsers = getChangedUsers(list, editableList); // 💡 props list 사용
 
       if (changedUsers.length > 0) {
-        // 변경사항이 있을 경우 사용자에게 확인 요청
         const isConfirmed = window.confirm(
           "저장하지 않은 변경 사항이 있습니다. 정말로 취소하시겠습니까? 변경 사항은 모두 사라집니다."
         );
         if (!isConfirmed) {
-          return; // 사용자가 취소를 원하지 않음
+          return;
         }
       }
     }
 
-    // 변경사항이 없거나, 사용자가 취소를 확인한 경우
     setIsEditMode(false);
     setEditableList([]);
   };
 
   const handleConfirm = async () => {
     try {
-      const changedUsers = getChangedUsers(list, editableList);
+      // 변경된 항목을 list (props, 원본 데이터)와 editableList를 비교하여 확인
+      const changedUsers = getChangedUsers(list, editableList); // 💡 props list 사용
 
-      if (changedUsers.length === 0) {
+      if (changedUsers.length === 0 && !editableList.some(user => user.pw && user.pw.length > 0)) {
         alert("변경된 내용이 없습니다.");
         setIsEditMode(false);
         return;
       }
 
-      // 변경된 항목 중 비밀번호가 변경된 경우도 포함하여 전송합니다.
       const usersToUpdate = editableList.filter(editUser => {
-        const original = list.find(u => u.userId === editUser.userId);
+        const original = list.find(u => u.userId === editUser.userId); // 💡 props list 사용
         if (!original) return false;
         
-        // 필드 변경 확인
         const isFieldChanged = original.name !== editUser.name ||
           original.phone !== editUser.phone ||
           original.email !== editUser.email ||
@@ -123,34 +162,34 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
           original.role !== editUser.role ||
           original.id !== editUser.id;
 
-        // 비밀번호가 입력되었는지 확인 (새 비밀번호로 간주)
         const isPwChanged = editUser.pw !== undefined && editUser.pw !== null && editUser.pw.length > 0;
         
         return isFieldChanged || isPwChanged;
       });
 
-      // 모든 변경사항 저장
       await Promise.all(
         usersToUpdate.map((user) =>
           updateEmployee(user.userId, {
-            id: user.id, // 아이디 추가
+            id: user.id,
             name: user.name,
             phone: user.phone,
             email: user.email,
             storeId: user.storeId,
             role: user.role,
-            ...(user.pw && user.pw.length > 0 && { pw: user.pw }), // 비밀번호 입력된 경우만 전송
+            ...(user.pw && user.pw.length > 0 && { pw: user.pw }),
           })
         )
       );
 
       alert("직원 정보가 성공적으로 수정되었습니다.");
-      // 변경된 목록에서 비밀번호 필드는 제거하고 setList에 적용 (보안상)
+      
       const updatedList = editableList.map(user => {
-        const { _pw, ...rest } = user;
+        // 수정 완료 후 비밀번호 필드 제거 및 User 타입으로 캐스팅
+        const { _pw, ...rest } = user as User & { pw?: string }; 
         return rest as User;
       });
-      setList(updatedList); // 변경사항 적용
+
+      setList(updatedList); // 변경사항 적용 (정렬된 상태로 setList 업데이트)
       setIsEditMode(false);
     } catch (error) {
       console.error("직원 수정 실패:", error);
@@ -165,14 +204,13 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
   };
 
   const startIdx = (currentPage - 1) * itemsPerPage;
-  const displayList = isEditMode ? editableList : list;
+  // 💡 정렬된 리스트를 기본값으로 사용
+  const displayList = isEditMode ? editableList : sortedList; 
   const displayedList = displayList.slice(startIdx, startIdx + itemsPerPage);
-  const totalPages = Math.ceil(list.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedList.length / itemsPerPage); // 💡 정렬된 리스트의 길이로 페이징 계산
 
   // 수정 권한: 매장담당자(2) 또는 관리자(3)
   const canEdit = roleLevel >= 2;
-
-  // 비밀번호 필드가 `<input type="password">`에 바인딩되기 위해 `User` 타입에 `pw`를 추가했다고 가정하고 진행합니다.
 
   return (
     <div>
@@ -206,7 +244,7 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
         )}
       </div>
 
-      {list.length === 0 ? (
+      {sortedList.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           조회된 직원 목록이 없습니다.
         </div>
@@ -229,6 +267,12 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
 
             <tbody>
               {displayedList.map((item, index) => (
+                // handleDelete에 전달하는 index는 현재 displayedList에서의 index이므로,
+                // 실제 전체 리스트에서의 index를 계산하여 전달해야 합니다.
+                // 그러나 삭제 시 userId를 사용하므로, index 대신 userId를 기반으로 처리하는 것이 더 안전합니다.
+                // 기존 handleDelete 로직은 index를 사용하고 있었으므로, 정렬된 리스트의 인덱스를 기반으로
+                // 원본 리스트의 인덱스를 찾는 복잡성 대신, `displayedList`의 인덱스를 사용하고 
+                // `userToDelete`를 `sortedList[index]`로 가져와서 처리합니다.
                 <tr key={item.userId} className="border-b border-gray-200 h-11">
                   {/* 아이디 (수정 모드일 때 맨 앞) */}
                   {isEditMode && (
@@ -266,7 +310,7 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
                     <td className="text-center px-2">
                       <input
                         type="password"
-                        // `pw` 필드가 `User` 타입에 없지만 편집 상태를 위해 추가되었다고 가정하고 string으로 처리합니다.
+                        // `pw` 필드는 타입스크립트 타입에 없지만 편집 상태를 위해 추가되었다고 가정하고 string으로 처리합니다.
                         value={(item as User & { pw?: string }).pw || ""} 
                         onChange={(e) => handleFieldChange(item.userId, "pw" as keyof User, e.target.value)}
                         placeholder="변경 시 입력"
@@ -344,7 +388,8 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
                   {!isEditMode && (
                     <td className="text-center px-2">
                       <button
-                        onClick={() => handleDelete(startIdx + index)}
+                        // handleDelete에 전달하는 인덱스는 displayedList에서 항목을 찾는 데 사용됩니다.
+                        onClick={() => handleDelete(startIdx + index)} 
                         disabled={roleLevel === 1 || deletingUserId === item.userId}
                         className={`
                           ${roleLevel === 1 ? 'bg-gray-400' : 'bg-red-500'} 
