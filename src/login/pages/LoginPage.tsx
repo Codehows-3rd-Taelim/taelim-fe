@@ -42,6 +42,7 @@ export default function LoginPage() {
                 jwtToken: data.jwtToken,
                 roleLevel: data.roleLevel,
                 storeId: data.storeId,
+                userId: data.userId,
             });
 
             navigate("/", { replace: true });

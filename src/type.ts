@@ -33,6 +33,7 @@ export type LoginResponse = {
     jwtToken: string;
     roleLevel: number;
     storeId: number;
+    userId: number;
 };
 
 export type Robot = {

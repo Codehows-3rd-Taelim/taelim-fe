@@ -7,6 +7,7 @@ type AuthStore = {
   jwtToken: string | null;
   roleLevel: LoginResponse["roleLevel"] | null;
   storeId: LoginResponse["storeId"] | null;
+  userId: LoginResponse["userId"] | null;
 
   isAuthenticated: boolean;
 
@@ -17,16 +18,18 @@ type AuthStore = {
 // LocalStorage 초기값 로드
 const initialState = (): Pick<
   AuthStore,
-  "jwtToken" | "roleLevel" | "storeId" | "isAuthenticated"
+  "jwtToken" | "roleLevel" | "storeId" | "userId" | "isAuthenticated"
 > => {
   const jwtToken = localStorage.getItem("jwtToken");
   const roleLevel = localStorage.getItem("roleLevel");
   const storeId = localStorage.getItem("storeId");
+  const userId = localStorage.getItem("userId");
 
   return {
     jwtToken,
     roleLevel: roleLevel ? Number(roleLevel) : null,
     storeId: storeId ? Number(storeId) : null,
+    userId: userId ? Number(userId) : null,
     isAuthenticated: !!jwtToken,
   };
 };
@@ -35,15 +38,17 @@ const initialState = (): Pick<
 export const useAuthStore = create<AuthStore>((set) => ({
   ...initialState(),
 
-  login: ({ jwtToken, roleLevel, storeId }) => {
+  login: ({ jwtToken, roleLevel, storeId, userId }) => {
     localStorage.setItem("jwtToken", jwtToken);
     localStorage.setItem("roleLevel", String(roleLevel));
     localStorage.setItem("storeId", String(storeId));
+    localStorage.setItem("userId", String(userId));
 
     set({
       jwtToken,
       roleLevel,
       storeId,
+      userId,
       isAuthenticated: true,
     });
   },
@@ -52,11 +57,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("roleLevel");
     localStorage.removeItem("storeId");
+    localStorage.removeItem("userId");
 
     set({
       jwtToken: null,
       roleLevel: null,
       storeId: null,
+      userId: null,
       isAuthenticated: false,
     });
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User, Store, ApiFormUser } from "../../type";
-import { checkDuplicateId, registerEmployee, getUsers } from "../api/EmployeeApi";
 import { getStores } from "../api/StoreApi";
+import { checkDuplicateId, getUsers, registerEmployee } from "../api/EmployeeApi";
 
 type LocalUserForm = ApiFormUser & { pwCheck: string };
 

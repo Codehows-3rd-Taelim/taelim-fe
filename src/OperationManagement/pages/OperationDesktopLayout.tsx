@@ -12,38 +12,28 @@ export default function OperationDesktopLayout(props: ReturnType<typeof useOpera
         showPasswordCheck, setShowPasswordCheck,
         isRegisterButtonEnabled, handleRegister,
         allStores, roleLevel, activeTab, setActiveTab,
-        list, setList, getStoreName,
-        handlePasswordKeyPress, handleLogout
+        list, setList, getStoreName, handlePasswordKeyPress
     } = props;
 
-    // 현재 로그인된 사용자의 매장 ID (매장 담당자일 경우 사용)
-    // 이 값은 useOperationManagement 훅이나 props에서 제공되어야 하지만, 
-    // 현재 props에 없으므로 임의로 첫 번째 매장을 사용하거나, 
-    // 실제 hook에서 가져온다고 가정하고, 일단 form.storeId를 사용합니다.
-    const loggedInStoreId = form.storeId; // 실제로는 로그인 정보를 통해 가져와야 함
+    const loggedInStoreId = form.storeId;
 
-    // roleLevel이 2(매장 담당자)일 때, 매장 선택 필드에 표시/고정될 매장 목록
     const filteredStores = roleLevel === 3 
         ? allStores 
         : allStores.filter(s => s.storeId === loggedInStoreId);
 
-    // roleLevel이 2(매장 담당자)일 때, 권한 필드에 표시될 옵션 (USER로 고정)
     const roleOptions = roleLevel === 3 
         ? [
             { value: "MANAGER", label: "매장 담당자" },
             { value: "USER", label: "직원" }
           ] 
         : [
-            { value: "USER", label: "직원" } // 매장 담당자는 직원만 등록 가능
+            { value: "USER", label: "직원" }
           ];
     
-    // 매장 담당자(2)의 경우, 매장과 권한을 고정합니다.
     if (roleLevel === 2) {
-        // 본인 매장으로 고정 (allStores에서 첫 번째 매장을 찾거나, form.storeId를 사용)
         if (allStores.length > 0 && form.storeId !== allStores.find(s => s.storeId === loggedInStoreId)?.storeId) {
             setFormValue("storeId", allStores.find(s => s.storeId === loggedInStoreId)?.storeId || 0);
         }
-        // 권한을 USER로 고정
         if (form.role !== 'USER') {
              setFormValue("role", "USER");
         }
@@ -51,136 +41,117 @@ export default function OperationDesktopLayout(props: ReturnType<typeof useOpera
 
     return (
         <div className="p-6">
-            {/* 로그아웃 버튼 */}
-            <div className="flex justify-end mb-6">
-                <button
-                    onClick={handleLogout}
-                    className="bg-orange-500 text-black px-4 py-2 rounded-md hover:bg-orange-600"
-                >
-                    로그아웃
-                </button>
-            </div>
-
             {/* 직원 등록 폼 */}
-            {roleLevel !== 1 ? (
-                <div className="bg-white p-6 rounded-xl shadow-md mb-10">
-                    <h3 className="text-lg font-bold mb-5">직원 등록</h3>
-
-                    {/* 첫 번째 행: ID + 중복확인 + PW + PW 확인 + 등록 버튼 */}
-                    <div className="flex gap-2 mb-4">
+            <div className="bg-white p-6 rounded-xl shadow-md mb-10">
+                <h3 className="text-lg font-bold mb-5">직원 등록</h3>
+                <div className="relative">
+                    {/* 입력 칸들 (너비 유지용) */}
+                    <div className={`flex flex-wrap gap-2 mb-4 items-start ${roleLevel === 1 ? 'invisible' : ''}`}>
                         <input
                             name="id"
                             value={form.id}
                             onChange={(e) => setFormValue("id", e.target.value)}
-                            placeholder="ID (필수)"
-                            className="border h-12 rounded-md p-2 w-50" // 너비 조정
-                            tabIndex={1}
+                            placeholder="ID"
+                            className="border h-12 rounded-md p-2 flex-1 min-w-[80px]"
+                            tabIndex={roleLevel === 1 ? -1 : 1}
+                            disabled={roleLevel === 1}
                         />
                         <button
                             onClick={handleIdCheck}
-                            className={`h-12 px-4 rounded-md text-black w-30 ${isIdChecked ? "bg-green-600" : "bg-orange-500"}`}
-                            tabIndex={2}
+                            className={`h-12 px-3 rounded-md text-black whitespace-nowrap flex-shrink-0 ${isIdChecked ? "bg-green-600" : "bg-orange-500"}`}
+                            tabIndex={roleLevel === 1 ? -1 : 2}
+                            disabled={roleLevel === 1}
                         >
-                            {isIdChecked ? "사용가능" : "중복확인"}
+                            {isIdChecked ? "확인" : "중복"}
                         </button>
                         
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-[120px]">
                             <PasswordToggle
                                 password={form.pw}
                                 setPassword={(v) => setFormValue("pw", v)}
                                 showPassword={showPassword}
                                 setShowPassword={setShowPassword}
                                 handleKeyPress={handlePasswordKeyPress}
-                                tabIndex={3}
-                                placeholder="비밀번호 (8자 이상)"
+                                tabIndex={roleLevel === 1 ? -1 : 3}
+                                placeholder="비밀번호"
                             />
                         </div>
                         
-                        <div className="flex flex-col flex-1">
+                        <div className="flex flex-col flex-1 min-w-[120px]">
                             <PasswordToggle
                                 password={form.pwCheck}
                                 setPassword={(v) => setFormValue("pwCheck", v)}
                                 showPassword={showPasswordCheck}
                                 setShowPassword={setShowPasswordCheck}
                                 handleKeyPress={handlePasswordKeyPress}
-                                tabIndex={4}
-                                placeholder="비밀번호 재확인"
+                                tabIndex={roleLevel === 1 ? -1 : 4}
+                                placeholder="비번확인"
                             />
-                            {isPasswordMismatched && (
-                                <span className="text-red-500 text-xs mt-1">비밀번호가 다릅니다</span>
+                            {isPasswordMismatched && roleLevel !== 1 && (
+                                <span className="text-red-500 text-xs mt-1 absolute">비밀번호 불일치</span>
                             )}
                         </div>
-
-                        {/* 등록 버튼을 첫 번째 행 끝에 배치 */}
-                        <button
-                            onClick={handleRegister}
-                            disabled={!isRegisterButtonEnabled}
-                            className={`h-12 w-20 rounded-md text-black ${isRegisterButtonEnabled ? "bg-orange-500 hover:bg-orange-600" : "bg-gray-300 cursor-not-allowed"}`}
-                            tabIndex={10}
-                        >
-                            등록
-                        </button>
-                    </div>
-
-                    {/* 두 번째 행: 이름 + 연락처 + 이메일 */}
-                    <div className="flex gap-2 mb-4">
+                        
                         <input
                             name="name"
                             value={form.name}
                             onChange={(e) => setFormValue("name", e.target.value)}
-                            placeholder="이름 (필수)"
-                            className="border h-12 rounded-md p-2 w-35"
-                            tabIndex={5}
+                            placeholder="이름"
+                            className="border h-12 rounded-md p-2 flex-1 min-w-[70px]"
+                            tabIndex={roleLevel === 1 ? -1 : 5}
+                            disabled={roleLevel === 1}
                         />
+                        
                         <input
                             name="phone"
                             value={form.phone}
                             onChange={(e) => setFormValue("phone", e.target.value)}
-                            placeholder="연락처 ( '-' 포함 13자리)"
-                            className="border h-12 rounded-md p-2 flex-1"
-                            tabIndex={6}
+                            placeholder="연락처"
+                            className="border h-12 rounded-md p-2 flex-1 min-w-[110px]"
+                            tabIndex={roleLevel === 1 ? -1 : 6}
+                            disabled={roleLevel === 1}
                         />
+                        
                         <input
                             name="email"
                             value={form.email}
                             onChange={(e) => setFormValue("email", e.target.value)}
-                            placeholder="email@gmail.com (필수)"
-                            className="border h-12 rounded-md p-2 w-55"
-                            tabIndex={7}
+                            placeholder="이메일"
+                            className="border h-12 rounded-md p-2 flex-[1.5] min-w-[150px]"
+                            tabIndex={roleLevel === 1 ? -1 : 7}
+                            disabled={roleLevel === 1}
                         />
-                        {/* 매장 선택 (roleLevel에 따라 disabled/option 변경) */}
+                        
                         <select
                             name="storeId"
                             value={form.storeId}
                             onChange={(e) => setFormValue("storeId", Number(e.target.value))}
-                            className="border h-12 rounded-md p-2 w-45"
-                            tabIndex={8}
-                            disabled={roleLevel === 2} // 매장 담당자(2)일 경우 선택 불가
+                            className="border h-12 rounded-md p-2 flex-1 min-w-[100px]"
+                            tabIndex={roleLevel === 1 ? -1 : 8}
+                            disabled={roleLevel === 1 || roleLevel === 2}
                         >
                             <option value={0} disabled={roleLevel === 2}>
-                                {roleLevel === 2 ? getStoreName(loggedInStoreId) : "매장 선택 (필수)"}
+                                {roleLevel === 2 ? getStoreName(loggedInStoreId) : "매장선택"}
                             </option>
                             
-                            {roleLevel === 3 && allStores.map((s) => ( // 관리자(3)만 모든 매장 표시
+                            {roleLevel === 3 && allStores.map((s) => (
                                 <option key={s.storeId} value={s.storeId}>{s.shopName}</option>
                             ))}
-                            {roleLevel === 2 && filteredStores.map((s) => ( // 매장 담당자(2)는 본인 매장만 고정 표시
+                            {roleLevel === 2 && filteredStores.map((s) => (
                                 <option key={s.storeId} value={s.storeId}>{s.shopName}</option>
                             ))}
                         </select>
                         
-                        {/* 권한 선택 (roleLevel에 따라 disabled/option 변경) */}
                         <select
                             name="role"
                             value={form.role}
                             onChange={(e) => setFormValue("role", e.target.value)}
-                            className="border h-12 rounded-md p-2 w-35"
-                            tabIndex={9}
-                            disabled={roleLevel === 2} // 매장 담당자(2)일 경우 선택 불가
+                            className="border h-12 rounded-md p-2 flex-1 min-w-[90px]"
+                            tabIndex={roleLevel === 1 ? -1 : 9}
+                            disabled={roleLevel === 1 || roleLevel === 2}
                         >
                             {roleLevel === 3 ? (
                                 <>
-                                    {/* 관리자는 두 옵션 모두 선택 가능하며, MANAGER가 디폴트*/}
                                     {roleOptions.map((opt) => (
                                         <option key={opt.value} value={opt.value}>
                                             {opt.label}
@@ -188,23 +159,36 @@ export default function OperationDesktopLayout(props: ReturnType<typeof useOpera
                                     ))}
                                 </>
                             ) : (
-                                // 매장 담당자(2)는 직원만 표시 (USER로 고정)
                                 <option value="USER">직원</option>
                             )}
                         </select>
+
+                        <button
+                            onClick={handleRegister}
+                            disabled={roleLevel === 1 || !isRegisterButtonEnabled}
+                            className={`h-12 px-4 rounded-md text-black whitespace-nowrap flex-shrink-0 ${isRegisterButtonEnabled && roleLevel !== 1 ? "bg-orange-500 hover:bg-orange-600" : "bg-gray-300 cursor-not-allowed"}`}
+                            tabIndex={roleLevel === 1 ? -1 : 10}
+                        >
+                            등록
+                        </button>
                     </div>
+
+                    {/* 권한 없음 메시지 (roleLevel 1일 때만 표시) */}
+                    {roleLevel === 1 && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-white px-8 py-4 text-center text-orange-500 font-bold text-lg">
+                                직원 등록 권한이 없습니다.
+                            </div>
+                        </div>
+                    )}
                 </div>
-            ) : (
-                <div className="bg-white p-6 rounded-xl shadow-md mb-10 text-center text-orange-500 font-bold">
-                    직원 등록 권한이 없습니다.
-                </div>
-            )}
+            </div>
             
             <hr className="my-6" />
 
             {/* 탭 영역 (직원/매장 관리) */}
             <div className="mb-4">
-                {roleLevel === 3 && ( // 관리자만 탭 표시
+                {roleLevel === 3 && (
                     <>
                         <div className="flex border-b-2 border-gray-200">
                             <button
@@ -230,7 +214,7 @@ export default function OperationDesktopLayout(props: ReturnType<typeof useOpera
                     </>
                 )}
 
-                {roleLevel !== 3 && ( // 관리자가 아닌 경우 (매장 담당자/일반 직원)
+                {roleLevel !== 3 && (
                     <div className="bg-white p-6 rounded-xl shadow-md">
                         <EmployeePage list={list} setList={setList} allStores={allStores} roleLevel={roleLevel} getStoreName={getStoreName} />
                     </div>

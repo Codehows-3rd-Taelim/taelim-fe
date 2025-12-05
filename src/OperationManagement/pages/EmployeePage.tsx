@@ -95,7 +95,7 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
 
   const handleEditMode = () => {
     setIsEditMode(true);
-    // 💡 수정 모드 진입 시, 정렬된 목록을 기반으로 editableList 초기화
+    // 수정 모드 진입 시, 정렬된 목록을 기반으로 editableList 초기화
     setEditableList([...sortedList]); 
   };
 
@@ -204,7 +204,7 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
   };
 
   const startIdx = (currentPage - 1) * itemsPerPage;
-  // 💡 정렬된 리스트를 기본값으로 사용
+  // 정렬된 리스트를 기본값으로 사용
   const displayList = isEditMode ? editableList : sortedList; 
   const displayedList = displayList.slice(startIdx, startIdx + itemsPerPage);
   const totalPages = Math.ceil(sortedList.length / itemsPerPage); // 💡 정렬된 리스트의 길이로 페이징 계산
