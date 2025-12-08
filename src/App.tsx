@@ -7,6 +7,11 @@ import AiReportPage from "./aiReport/pages/AiReportPage";
 import { Container, Box } from '@mui/material'
 import Header from './components/Header'
 import ReportPage from './report/pages/ReportPage'
+import AIChat from './aichat/AIChat'
+
+
+
+
 
 function App() {
   const location = useLocation();
@@ -23,6 +28,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             {/* <Route path="/ai/chat" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
+            <Route path="/ai/chat" element={<PrivateRoute><AIChat /></PrivateRoute>} />
             <Route path="/ai/report" element={<PrivateRoute><AiReportPage /></PrivateRoute>} />
             {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
             <Route path="/report" element={<PrivateRoute><ReportPage /></PrivateRoute>} />
