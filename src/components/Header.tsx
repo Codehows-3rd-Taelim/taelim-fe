@@ -91,7 +91,7 @@ export default function Header() {
               className="text-white font-bold text-xl tracking-wide cursor-pointer"
               onClick={() => navigate("/")}
             >
-              Inustree
+              Inufleet
             </div>
 
             {/* 데스크탑 메뉴 */}

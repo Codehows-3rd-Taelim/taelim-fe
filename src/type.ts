@@ -52,17 +52,19 @@ export type Robot = {
 export type Report = {
     reportId: number;
     status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-    start_time: string;
-    end_time: string;
-    clean_time: number;
-    task_area: number;
-    clean_area: number;
+    startTime: string;
+    endTime: string;
+    cleanTime: number;
+    taskArea: number;
+    cleanArea: number;
     mode: 1 | 2;
     costBattery: number;
     costWater: number;
     mapName: string;
     mapUrl: string;
+    storeId: number;
     robotId: number;
+    sn:number;
 }
 
 export type AiChat = {

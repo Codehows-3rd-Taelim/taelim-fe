@@ -3,10 +3,10 @@ import LoginPage from './login/pages/LoginPage'
 import { Route, Routes, useLocation } from "react-router-dom"
 import { PrivateRoute } from './PrivateRoute'
 import OperationManagement from './operationManagement/pages/OperationManagement'
-import ReportPage from "./aiReport/pages/AiReportPage";
 import AiReportPage from "./aiReport/pages/AiReportPage";
 import { Container, Box } from '@mui/material'
 import Header from './components/Header'
+import ReportPage from './report/pages/ReportPage'
 
 function App() {
   const location = useLocation();
