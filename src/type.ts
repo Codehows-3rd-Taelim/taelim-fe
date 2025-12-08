@@ -120,17 +120,17 @@ export interface AiChatDTO {
   userName: string;
 }
 
-// export interface ChatPromptRequest {
-//   message: string;
-//   conversationId: string | null; // 새 대화 시작 시 null
-// }
+export interface ChatPromptRequest {
+  message: string;
+  conversationId: string | null; // 새 대화 시작 시 null
+}
 
-// export interface ChatMessage {
-//     id: string; // 프론트엔드에서 사용할 고유 ID (aiChatId 또는 임시 ID)
-//     conversationId: string;
-//     senderType: SenderType;
-//     content: string;
-//     timestamp: string;
-//     isPending: boolean; // SSE 스트리밍 중인지 여부  
-// }
+export interface ChatMessage {
+    id: string; // 프론트엔드에서 사용할 고유 ID (aiChatId 또는 임시 ID)
+    conversationId: string;
+    senderType: SenderType;
+    content: string;
+    timestamp: string;
+    isPending: boolean; // SSE 스트리밍 중인지 여부  
+}
 
