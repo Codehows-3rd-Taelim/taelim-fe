@@ -73,9 +73,9 @@ export default function CleanReport({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <span style={{ fontSize: "24px", fontWeight: "bold" }}>
+          {/* <span style={{ fontSize: "24px", fontWeight: "bold" }}>
             청소 보고서
-          </span>
+          </span> */}
           <Button
             variant="contained"
             startIcon={<PrintIcon />}
@@ -99,6 +99,13 @@ export default function CleanReport({
       {/* 컨텐츠 */}
       <DialogContent sx={{ p: 3 }}>
         <Box ref={printRef}>
+          {/* 프린트용 제목 */}
+          <Box sx={{ mb: 2, textAlign: "center" }}>
+            <span style={{ fontSize: "24px", fontWeight: "bold" }}>
+              청소 보고서
+            </span>
+          </Box>
+          
           {/* 맵 이미지 */}
           <Box
             sx={{
