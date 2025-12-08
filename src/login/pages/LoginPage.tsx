@@ -8,10 +8,18 @@ import { useAuthStore } from "../../store";
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const [imageLoaded, setImageLoaded] = useState(false);
     const [userId, setUserId] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
+
+    // 이미지 preload
+    useEffect(() => {
+        const img = new Image();
+        img.src = robotImage;
+        img.onload = () => setImageLoaded(true);
+    }, []);
 
     // 이미 로그인되어 있으면 메인 페이지로 이동
     useEffect(() => {
@@ -62,20 +70,21 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-white font-inter">
+        <div className="min-h-screen min-w-full flex flex-col md:flex-row bg-white font-inter">
             
-            {/* 왼쪽 이미지 */}
-            <div className="hidden md:flex md:w-[55%] justify-center items-center p-4">
+            {/* 왼쪽 이미지 - 패딩 줄임 */}
+            <div className="hidden md:flex md:w-[55%] md:min-w-[55%] justify-center items-center pr-2">
                 <img
                     src={robotImage}
                     alt="robots"
-                    className="w-[85%] h-auto object-contain max-h-[85vh]"
+                    className="w-[85%] h-auto object-contain max-h-[85vh] transition-opacity duration-300"
+                    style={{ opacity: imageLoaded ? 1 : 0 }}
                 />
             </div>
 
-            {/* 오른쪽 로그인 */}
-            <div className="w-full md:w-[45%] flex items-center justify-center p-4 min-h-screen md:min-h-0">
-                <div className="w-full max-w-md">
+            {/* 오른쪽 로그인 - 패딩 줄임 */}
+            <div className="w-full md:w-[45%] md:min-w-[45%] flex items-center justify-center pl-2 py-4 min-h-screen md:min-h-0">
+                <div className="w-full max-w-md min-w-[450px]">
 
                     {/* 제목 */}
                     <div className="mb-6 text-center">
@@ -84,13 +93,13 @@ export default function LoginPage() {
                         <div className="text-4xl font-bold">
                             <span className="text-gray-900">Inus</span>
                             <span className="text-red-600">tree</span>
-                            <span className="text-gray-500 text-xl font-normal ml-2">
+                            <span className="text-gray-500 text-xl font-normal ml-2 whitespace-nowrap">
                                 로봇관리 플랫폼
                             </span>
                         </div>
                     </div>
 
-                    <div className="border-2 border-amber-300 rounded-xl shadow-2xl p-8 bg-white">
+                    <div className="border-2 border-amber-300 rounded-xl shadow-2xl p-8 bg-white min-w-[400px]">
 
                         {/* 오류 메시지 */}
                         {loginError && (

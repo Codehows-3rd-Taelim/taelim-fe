@@ -64,18 +64,18 @@ export default function DateRangePicker({
           fontSize: value[0] && value[1] ? 16 : 14,
           px: 1.5,
           py: 1.2,
-          width: 220,
+          width: 250,
           cursor: "pointer",
         }}
       >
         {/* 선택된 날짜 범위 표시 */}
-        <span>
+        <Box sx={{ flex: 1, whiteSpace: "nowrap" }}>
           {value[0] && value[1]
             ? `${value[0].format("YYYY-MM-DD")} ~ ${value[1].format(
                 "YYYY-MM-DD"
               )}`
             : label}
-        </span>
+        </Box>
 
         {/* 달력 아이콘 */}
         <CalendarTodayIcon fontSize="small" />

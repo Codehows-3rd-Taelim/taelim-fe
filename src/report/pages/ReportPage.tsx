@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ko";
 import isBetween from "dayjs/plugin/isBetween";
@@ -26,6 +26,7 @@ import {
 import type { DateRange } from "@mui/x-date-pickers-pro/models";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
+import CleanReport from "./CleanReport";
 import { getReport } from "../api/ReportApi";
 import type { Report, Robot } from "../../type";
 import { useAuthStore } from "../../store";
@@ -38,6 +39,10 @@ type SortOrder = "asc" | "desc";
 export default function ReportPage() {
   const { roleLevel, storeId } = useAuthStore();
   const { getStoreName, allStores } = useOperationManagement();
+
+  // 모달 관련 State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
   // 검색 입력용 State
   const [selectedSnInput, setSelectedSnInput] = useState("");
@@ -81,7 +86,7 @@ export default function ReportPage() {
         
         const data = await getReport(targetStoreId, startDate, endDate);
         setAiReportData(data);
-        setPage(1); // 날짜 변경 시 첫 페이지로 이동
+        setPage(1);
       } catch (err) {
         console.error("보고서 데이터 불러오기 실패", err);
       }
@@ -89,7 +94,7 @@ export default function ReportPage() {
     loadData();
   }, [dateRangeInput, roleLevel, storeId]);
 
-  // Robot 목록 로드 (storeId 기반)
+  // Robot 목록 로드
   useEffect(() => {
     const loadRobots = async () => {
       try {
@@ -119,14 +124,10 @@ export default function ReportPage() {
     }
   };
 
-  // 필터링 로직 (날짜는 API에서 처리되므로 SN과 매장만 필터링)
+  // 필터링 로직
   const filteredReports = AiReportData.filter((r) => {
-    // SN 필터
     const matchSn = selectedSn ? String(r.sn) === selectedSn : true;
-
-    // 매장 필터
     const matchStore = selectedStoreId !== 0 ? r.storeId === selectedStoreId : true;
-
     return matchSn && matchStore;
   });
 
@@ -141,11 +142,9 @@ export default function ReportPage() {
       const compare = nameA.localeCompare(nameB);
       return sortOrder === "asc" ? compare : -compare;
     } else if (sortKey === "mapName") {
-      // 한글 정렬 지원
       const compare = a.mapName.localeCompare(b.mapName, "ko");
       return sortOrder === "asc" ? compare : -compare;
     } else {
-      // 기본 정렬: startTime 내림차순
       return dayjs(b.startTime).unix() - dayjs(a.startTime).unix();
     }
   });
@@ -196,6 +195,18 @@ export default function ReportPage() {
     setPage(1);
   };
 
+  // 로우 클릭 핸들러
+  const handleRowClick = (report: Report) => {
+    setSelectedReport(report);
+    setModalOpen(true);
+  };
+
+  // 모달 닫기 핸들러
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedReport(null);
+  };
+
   return (
     <Box
       sx={{
@@ -221,7 +232,7 @@ export default function ReportPage() {
 
         <Box display="flex" alignItems="center" gap={2}>
           {/* SN 필터 */}
-          <span>SN</span>
+          <span>SN (별명)</span>
           <Select
             value={selectedSnInput}
             onChange={(e) => setSelectedSnInput(e.target.value)}
@@ -232,7 +243,7 @@ export default function ReportPage() {
             <MenuItem value="">전체</MenuItem>
             {robots.map((robot) => (
               <MenuItem key={robot.robotId} value={String(robot.sn)}>
-                {robot.sn}
+                {robot.sn}{robot.nickname && ` (${robot.nickname})`}
               </MenuItem>
             ))}
           </Select>
@@ -324,7 +335,16 @@ export default function ReportPage() {
 
           <TableBody>
             {paginatedReports.map((r) => (
-              <TableRow key={r.reportId}>
+              <TableRow
+                key={r.reportId}
+                onClick={() => handleRowClick(r)}
+                sx={{
+                  cursor: "pointer",
+                  "&:hover": {
+                    bgcolor: "#f5f5f5",
+                  },
+                }}
+              >
                 <TableCell align="center">{r.sn}</TableCell>
                 <TableCell align="center">{getStoreName(r.storeId)}</TableCell>
                 <TableCell align="center">{r.mapName}</TableCell>
@@ -349,6 +369,13 @@ export default function ReportPage() {
         page={page}
         totalPages={totalPages}
         onPageChange={(newPage) => setPage(newPage)}
+      />
+
+      {/* 청소 보고서 모달 */}
+      <CleanReport
+        open={modalOpen}
+        onClose={handleModalClose}
+        report={selectedReport}
       />
     </Box>
   );
