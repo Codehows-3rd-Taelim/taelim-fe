@@ -134,3 +134,5 @@ export interface ChatMessage {
     isPending: boolean; // SSE 스트리밍 중인지 여부  
 }
 
+
+

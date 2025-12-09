@@ -1,84 +1,127 @@
+// src/aichat/AIChat.tsx
 import { useEffect, useRef, useState } from "react";
+import { loadChatHistory, loadConversation } from "./api/aiChatApi";
 import ChatSidebar from "./ChatSidebar";
-import ChatWindow from "./ChatWindow";
 import EmptyState from "./EmptyState";
+import ChatWindow from "./ChatWindow";
+import { useAuthStore } from "../store";
+
+
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function AIChat() {
-
   const [chatList, setChatList] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [input, setInput] = useState("");
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
-  /** 채팅 목록 */
-  const loadChatHistory = async () => {
-    const token = localStorage.getItem("jwtToken");
-    if (!token) return;
-    const res = await fetch("/api/chat-history", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setChatList(await res.json());
+  const token = useAuthStore.getState().jwtToken;
+
+  /** SSE 연결 */
+  const connectSSE = (conversationId: string) => {
+    if (!conversationId) return;
+
+    // 기존 SSE 닫기
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    const es = new EventSource(
+      `${BASE_URL}/api/agent/stream/${conversationId}?token=${token}`
+    );
+    eventSourceRef.current = es;
+
+    es.onmessage = (e) => {
+      setMessages(prev => [
+        ...prev,
+        { rawMessage: e.data, senderType: "AI" }
+      ]);
+      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    es.onerror = () => {
+      es.close();
+      eventSourceRef.current = null;
+    };
   };
 
-  /** 대화 불러오기 */
-  const loadConversation = async (id: string) => {
-    setCurrentId(id);
-    const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`/api/conversation/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setMessages(await res.json());
-    setTimeout(()=>scrollRef.current?.scrollIntoView({behavior:"smooth"}),80)
-  };
+  useEffect(() => {
+    loadChatHistory().then(setChatList).catch(console.error);
+  }, []);
+
+  // 언마운트 시 SSE 정리
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) eventSourceRef.current.close();
+    };
+  }, []);
 
   /** 메시지 전송 */
-  const send = async (text?:string) => {
-    const message = text ?? input;
-    if(!message.trim()) return;
+  const send = async (overrideText?: string) => {
+    const message = overrideText ?? input;
+    if (!message.trim()) return;
 
-    const token = localStorage.getItem("jwtToken");
-    const response = await fetch("/api/agent/chat",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json",Authorization:`Bearer ${token}`},
-      body:JSON.stringify({ message,conversationId:currentId })
-    });
-
-    const reader=response.body?.getReader(); if(!reader) return;
-    const decoder=new TextDecoder(); let conv=currentId;
-
-    setMessages(p=>[...p,{rawMessage:message,senderType:"USER"}]);
+    setMessages(prev => [
+      ...prev,
+      { rawMessage: message, senderType: "USER" }
+    ]);
     setInput("");
 
-    while(true){
-      const {value,done}=await reader.read();
-      if(done) break;
-      const textChunk=decoder.decode(value);
+    const res = await fetch(`${BASE_URL}/api/agent/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        message,
+        conversationId: currentId,
+      }),
+    });
 
-      if(textChunk.includes("conversationId")&&!currentId){
-        conv=textChunk.replace("event: conversationId\ndata:","").trim();
-        setCurrentId(conv);
-      }
+    const newId = (await res.text()).trim();
 
-      setMessages(p=>[...p,{rawMessage:textChunk,senderType:"AI"}]);
-      scrollRef.current?.scrollIntoView({behavior:"smooth"});
+    if (!currentId) {
+      setCurrentId(newId);
+      connectSSE(newId);
+    } else {
+      connectSSE(currentId);
     }
-    loadChatHistory();
+
+    loadChatHistory().then(setChatList);
   };
 
-  useEffect(()=>{ loadChatHistory(); },[]);
+  /** 대화 선택 */
+  const handleSelectConversation = async (id: string) => {
+    const data = await loadConversation(id);
+    setCurrentId(id);
+    setMessages(data);
+    connectSSE(id);
+  };
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-white">
-      <ChatSidebar chatList={chatList} currentId={currentId} select={loadConversation}/>
-      
-      {/* 메시지 없으면 EmptyState, 있으면 ChatWindow */}
+      <ChatSidebar
+        chatList={chatList}
+        currentId={currentId}
+        select={handleSelectConversation}
+      />
+
       <div className="flex-1 bg-white">
-        {messages.length===0 
-          ? <EmptyState input={input} setInput={setInput} send={send}/>
-          : <ChatWindow messages={messages} input={input} setInput={setInput} send={send} scrollRef={scrollRef}/>
-        }
+        {messages.length === 0 ? (
+          <EmptyState input={input} setInput={setInput} send={send} />
+        ) : (
+          <ChatWindow
+            messages={messages}
+            input={input}
+            setInput={setInput}
+            send={send}
+            scrollRef={scrollRef}
+          />
+        )}
       </div>
     </div>
   );
