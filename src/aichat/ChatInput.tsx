@@ -7,7 +7,7 @@ interface Props {
 // src/aichat/ChatInput.tsx
 export default function ChatInput({ input, setInput, send }: Props) {
   return (
-    <div className="w-full flex justify-center py-12">
+    <div className="w-full flex justify-center py-12 relative z-50">
       <div className="relative w-[900px] bg-white border border-gray-300 rounded-2xl shadow-md p-6">
         <textarea
           value={input}
@@ -17,7 +17,7 @@ export default function ChatInput({ input, setInput, send }: Props) {
         />
 
         <button
-          onClick={send}
+          onClick={() => send()}
           className="absolute bottom-5 right-5 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-md"
         >
           확인
