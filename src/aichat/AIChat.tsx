@@ -1,6 +1,6 @@
 // src/aichat/AIChat.tsx
 import { useEffect, useRef, useState } from "react";
-import { loadChatHistory, loadConversation } from "./api/aiChatApi";
+import { createNewChat, loadChatHistory, loadConversation } from "./api/aiChatApi";
 import ChatSidebar from "./ChatSidebar";
 import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
@@ -17,6 +17,9 @@ export default function AIChat() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+
+
 
   const token = useAuthStore.getState().jwtToken;
 
@@ -102,12 +105,25 @@ export default function AIChat() {
     connectSSE(id);
   };
 
+  const handleNewChat = async () => {
+  const { conversationId } = await createNewChat();
+
+  setCurrentId(conversationId);
+  setMessages([]);
+  connectSSE(conversationId);
+
+  loadChatHistory().then(setChatList);
+};
+
+
+
   return (
     <div className="flex h-[calc(100vh-64px)] bg-white">
       <ChatSidebar
         chatList={chatList}
         currentId={currentId}
         select={handleSelectConversation}
+        newChat={handleNewChat}
       />
 
       <div className="flex-1 bg-white">

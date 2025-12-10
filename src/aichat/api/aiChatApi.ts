@@ -51,3 +51,20 @@ export async function requestChatStream(message: string, conversationId: string 
     })
   });
 }
+
+export async function createNewChat() {
+  const token = useAuthStore.getState().jwtToken;
+  if (!token) throw new Error("No token");
+
+  const res = await fetch(`${BASE_URL}/api/new/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) throw new Error("Failed to start new chat");
+
+  return res.json(); // { conversationId: "xxx-..." }
+}
