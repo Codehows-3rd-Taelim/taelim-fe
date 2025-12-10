@@ -3,7 +3,6 @@ import LoginPage from "./login/pages/LoginPage";
 import { Route, Routes } from "react-router-dom";
 import { PrivateRoute } from "./PrivateRoute";
 import OperationManagement from "./OperationManagement/pages/OperationManagement";
-import ReportPage from "./aiReport/pages/AiReportPage";
 import AiReportPage from "./aiReport/pages/AiReportPage";
 import UserDashboardPage from "./Dashboard/pages/UserDashboardPage";
 
@@ -11,14 +10,6 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/report"
-        element={
-          <PrivateRoute>
-            <ReportPage />
-          </PrivateRoute>
-        }
-      />
       <Route
         path="/"
         element={

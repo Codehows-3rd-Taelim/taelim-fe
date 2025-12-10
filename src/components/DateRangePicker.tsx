@@ -7,7 +7,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import Popover from "@mui/material/Popover";
 import type { DateRangePickerProps } from "../type";
-import "dayjs/locale/ko"; // 📌 Dayjs 한국어 로케일
+import "dayjs/locale/ko";
 
 export default function DateRangePicker({
   value, // [startDate, endDate] 형태의 Dayjs 배열
@@ -41,7 +41,11 @@ export default function DateRangePicker({
       const end = tempEnd;
 
       // 부모로 선택된 값을 전달
-      onChange(end.isBefore(start) ? [end, start] : [start, end]);
+      onChange(
+        end.isBefore(start)
+          ? [start, end.endOf("day")] // swap 후 endOf('day') 적용
+          : [start, end.endOf("day")]
+      );
       closePicker(); // 팝오버 닫기
     }
   };
@@ -61,7 +65,7 @@ export default function DateRangePicker({
           backgroundColor: "white",
           border: "1px solid rgba(0,0,0,0.23)",
           borderRadius: 1,
-          fontSize: value[0] && value[1] ? 16 : 14,
+          fontSize: value[0] && value[1] ? 14 : 12,
           px: 1.5,
           py: 1.2,
           width: 220,
