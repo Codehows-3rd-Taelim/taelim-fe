@@ -19,3 +19,15 @@ export async function syncNow(): Promise<string> {
 
   return res.text(); // 백엔드에서 String 반환
 }
+
+export const getLastSyncTime = async () => {
+  const res = await fetch("api/api/sync/last", {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch last sync time");
+
+  return res.json(); // LocalDateTime 문자열 또는 null
+};

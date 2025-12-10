@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store";
 import {
@@ -15,10 +15,13 @@ import {
 } from "lucide-react";
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
 import type { User as UserType } from "../type";
-import { syncNow } from "../sync/syncApi";
+import { getLastSyncTime, syncNow } from "../sync/syncApi";
 
 export default function Header() {
   const navigate = useNavigate();
+
+  const [lastSync, setLastSync] = useState<string | null>(null);
+
 
   // 로그인한 사용자 정보
   const { logout, roleLevel, storeId, userId } = useAuthStore();
@@ -64,6 +67,19 @@ export default function Header() {
     { name: "운영 관리", path: "/manage", icon: Users },
   ];
 
+  useEffect(() => {
+    loadLastSync();
+  }, []);
+
+    const loadLastSync = async () => {
+  try {
+    const time = await getLastSyncTime();
+    setLastSync(time);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
   const handleLogoutClick = () => {
     logout();
     navigate("/login");
@@ -81,6 +97,10 @@ export default function Header() {
 
       const message = await syncNow();
       alert("✅ 동기화 완료\n" + message);
+
+      // 동기화 완료 → 마지막 시간 다시 불러오기
+      await loadLastSync();
+
     } catch (err: any) {
       console.error(err);
       alert("❌ 동기화 실패: " + err.message);
@@ -140,6 +160,14 @@ export default function Header() {
 
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
             <div className="flex items-center gap-2 md:gap-4 z-10">
+
+          {/* 마지막 동기화 시간 */}
+          <div className="text-white text-[10px] md:text-sm font-medium mr-2 whitespace-nowrap">
+            {lastSync
+              ? `마지막 동기화: ${new Date(lastSync).toLocaleString()}`
+              : "동기화 기록 없음"}
+          </div>   
+              
           {/* 동기화 버튼 */}
           <button
             onClick={handleSync}
@@ -151,7 +179,7 @@ export default function Header() {
               ${isSyncing ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700"}
             `}
           >
-            <div className="w-[40px] md:w-[50px] flex justify-center">
+            <div className="w-10 md:w-[50px] flex justify-center">
               {isSyncing ? (
                 <svg
                   className="animate-spin h-4 w-4 text-white"
