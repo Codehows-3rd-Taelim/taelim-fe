@@ -7,6 +7,7 @@ import AiReportPage from "./aiReport/pages/AiReportPage";
 import { Container, Box } from '@mui/material'
 import Header from './components/Header'
 import ReportPage from './report/pages/ReportPage'
+import UserDashboardPage from "./Dashboard/pages/UserDashboardPage";
 
 function App() {
   const location = useLocation();
@@ -24,7 +25,8 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             {/* <Route path="/ai/chat" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
             <Route path="/ai/report" element={<PrivateRoute><AiReportPage /></PrivateRoute>} />
-            {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
+            {/* <Route path="/dashboard/admin" element={<PrivateRoute><UserDashboardPage /></PrivateRoute>} /> */}
+            <Route path="/dashboard/user" element={<PrivateRoute><UserDashboardPage /></PrivateRoute>} />
             <Route path="/report" element={<PrivateRoute><ReportPage /></PrivateRoute>} />
             <Route path="/manage" element={<PrivateRoute><OperationManagement /></PrivateRoute>} />
           </Routes>
