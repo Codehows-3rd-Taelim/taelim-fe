@@ -28,7 +28,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             {/* <Route path="/ai/chat" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
-            <Route path="/ai/chat" element={<PrivateRoute> <div className="ai-chat-page"><AIChat /></div></PrivateRoute>}
+            <Route path="/" element={<PrivateRoute> <div className="ai-chat-page"><AIChat /></div></PrivateRoute>}
 />
 
             <Route path="/ai/report" element={<PrivateRoute><AiReportPage /></PrivateRoute>} />

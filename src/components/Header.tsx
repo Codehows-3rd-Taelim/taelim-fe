@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
 import type { User as UserType } from "../type";
+import { syncNow } from "../sync/syncApi";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -72,6 +73,17 @@ export default function Header() {
     setIsMobileMenuOpen(false);
   };
 
+  const handleSync = async () => {
+    try {
+      const message = await syncNow();
+      alert("✅ 동기화 완료\n" + message);
+    } catch (err: any) {
+      console.error(err);
+      alert("❌ 동기화 실패: " + err.message);
+    }
+
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-400 to-orange-500 shadow-lg">
       <div className="px-4 md:px-6">
@@ -121,9 +133,12 @@ export default function Header() {
           </div>
 
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
-          <div className="flex items-center gap-2 md:gap-4 z-10">
-            {/* 동기화 버튼 */}
-            <button className="flex items-center px-3 md:px-6 py-1.5 md:py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs md:text-sm font-semibold rounded-lg shadow-md transition-colors">
+            <div className="flex items-center gap-2 md:gap-4 z-10">
+              {/* 동기화 버튼 */}
+              <button
+                onClick={handleSync}
+                className="flex items-center px-3 md:px-6 py-1.5 md:py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs md:text-sm font-semibold rounded-lg shadow-md transition-colors"
+              >
               동기화
             </button>
 

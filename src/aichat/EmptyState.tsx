@@ -19,9 +19,9 @@ export default function EmptyState({input,setInput,send}:Props){
   return(
     <div className="flex flex-col items-center pt-65 bg-white min-h-full">
 
-      <h2 className="text-[22px] font-semibold mb-6">
+      <h1 className="text-[22px] font-semibold mb-6">
         안녕하세요. 무엇을 도와드릴까요?
-      </h2>
+      </h1>
 
       <div className="w-[900px] rounded-2xl border shadow-sm p-5 bg-white">
         <textarea
