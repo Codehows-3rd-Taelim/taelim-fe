@@ -14,6 +14,8 @@ export default function AIChat() {
   const [messages, setMessages] = useState<any[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -44,7 +46,16 @@ const connectSSE = (conversationId: string) => {
 
   eventSourceRef.current = es;
 
+  // SSE 연결 직후 실행됨 → AI가 응답 준비 중
+  es.onopen = () => {
+    setIsTyping(true);
+  };
+
+
+
   es.onmessage = (e) => {
+    setIsTyping(false);
+
     setMessages(prev => [...prev, { rawMessage: e.data, senderType: "AI" }]);
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -76,6 +87,8 @@ const connectSSE = (conversationId: string) => {
       { rawMessage: message, senderType: "USER" }
     ]);
     setInput("");
+
+    setIsTyping(true);
 
     const res = await fetch(`${BASE_URL}/api/agent/chat`, {
       method: "POST",
@@ -140,6 +153,7 @@ const connectSSE = (conversationId: string) => {
             setInput={setInput}
             send={send}
             scrollRef={scrollRef}
+            isTyping={isTyping}
           />
         )}
       </div>
