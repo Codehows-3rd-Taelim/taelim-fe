@@ -29,6 +29,8 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
   /** 사용자 이름 찾기 */
   const getUserName = (uid: number): string => {
     const user: UserType | undefined = userList.find(
@@ -75,11 +77,15 @@ export default function Header() {
 
   const handleSync = async () => {
     try {
+      setIsSyncing(true);
+
       const message = await syncNow();
       alert("✅ 동기화 완료\n" + message);
     } catch (err: any) {
       console.error(err);
       alert("❌ 동기화 실패: " + err.message);
+    }finally {
+       setIsSyncing(false);  
     }
 
   };
@@ -134,13 +140,48 @@ export default function Header() {
 
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
             <div className="flex items-center gap-2 md:gap-4 z-10">
-              {/* 동기화 버튼 */}
-              <button
-                onClick={handleSync}
-                className="flex items-center px-3 md:px-6 py-1.5 md:py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs md:text-sm font-semibold rounded-lg shadow-md transition-colors"
-              >
-              동기화
-            </button>
+          {/* 동기화 버튼 */}
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className={`
+              flex items-center justify-center
+              px-3 md:px-6 py-1.5 md:py-2
+              text-white text-xs md:text-sm font-semibold rounded-lg shadow-md transition-colors
+              ${isSyncing ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700"}
+            `}
+          >
+            <div className="w-[40px] md:w-[50px] flex justify-center">
+              {isSyncing ? (
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
+                </svg>
+              ) : (
+                "동기화"
+              )}
+            </div>
+          </button>
+
+
+
+
 
             {/* 사용자 메뉴 */}
             <div className="relative">
