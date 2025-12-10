@@ -5,7 +5,7 @@ import ChatSidebar from "./ChatSidebar";
 import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import { useAuthStore } from "../store";
-
+import { EventSourcePolyfill } from 'event-source-polyfill';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -24,32 +24,36 @@ export default function AIChat() {
   const token = useAuthStore.getState().jwtToken;
 
   /** SSE 연결 */
-  const connectSSE = (conversationId: string) => {
-    if (!conversationId) return;
 
-    // 기존 SSE 닫기
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
+
+const connectSSE = (conversationId: string) => {
+  if (!conversationId) return;
+
+  if (eventSourceRef.current) {
+    eventSourceRef.current.close();
+  }
+
+  const es = new EventSourcePolyfill(
+    `${BASE_URL}/api/agent/stream/${conversationId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
+  );
 
-    const es = new EventSource(
-      `${BASE_URL}/api/agent/stream/${conversationId}?token=${token}`
-    );
-    eventSourceRef.current = es;
+  eventSourceRef.current = es;
 
-    es.onmessage = (e) => {
-      setMessages(prev => [
-        ...prev,
-        { rawMessage: e.data, senderType: "AI" }
-      ]);
-      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    es.onerror = () => {
-      es.close();
-      eventSourceRef.current = null;
-    };
+  es.onmessage = (e) => {
+    setMessages(prev => [...prev, { rawMessage: e.data, senderType: "AI" }]);
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  es.onerror = () => {
+    es.close();
+    eventSourceRef.current = null;
+  };
+};
 
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
