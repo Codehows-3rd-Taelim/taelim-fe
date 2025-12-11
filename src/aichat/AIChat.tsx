@@ -36,7 +36,7 @@ const connectSSE = (conversationId: string) => {
   }
 
   const es = new EventSourcePolyfill(
-    `${BASE_URL}/api/agent/stream/${conversationId}`,
+    `${BASE_URL}/agent/stream/${conversationId}`,
     {
       headers: {
         Authorization: `Bearer ${token}`
@@ -90,7 +90,7 @@ const connectSSE = (conversationId: string) => {
 
     setIsTyping(true);
 
-    const res = await fetch(`${BASE_URL}/api/agent/chat`, {
+    const res = await fetch(`${BASE_URL}/agent/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

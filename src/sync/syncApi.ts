@@ -3,7 +3,7 @@ export async function syncNow(): Promise<string> {
   const token = localStorage.getItem("jwtToken");
   if (!token) throw new Error("로그인이 필요합니다.");
 
-  const res = await fetch("/api/api/sync/now", {
+  const res = await fetch("/api/sync/now", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -24,7 +24,7 @@ export const getLastSyncTime = async (): Promise<SyncRecordDTO> => {
   const token = localStorage.getItem("jwtToken");
   if (!token) throw new Error("로그인이 필요합니다.");
 
-  const res = await fetch("/api/api/sync/last", {
+  const res = await fetch("/api/sync/last", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
