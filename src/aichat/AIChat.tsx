@@ -22,9 +22,6 @@ export default function AIChat() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  /** 🔥 너 구조의 핵심: EventSource 생성은 API에서 하고,
-   *   컴포넌트는 핸들러만 관리한다.
-   */
   const connectSSE = (conversationId: string) => {
     if (!conversationId) return;
 
@@ -32,14 +29,13 @@ export default function AIChat() {
       eventSourceRef.current.close();
     }
 
-    // API에서 깔끔하게 생성해온 EventSource "완제품"
     const es = createEventSource(conversationId);
 
     es.onopen = () => {
       setIsTyping(true);
     };
 
-    es.onmessage = (e) => {
+    es.onmessage = (e:MessageEvent<string>) => {
       setIsTyping(false);
       setMessages(prev => [...prev, { rawMessage: e.data, senderType: "AI" }]);
       scrollRef.current?.scrollIntoView({ behavior: "smooth" });

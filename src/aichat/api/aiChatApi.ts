@@ -53,7 +53,6 @@ export async function createNewChat() {
   return res.json(); // { conversationId }
 }
 
-/** SSE EventSource 생성 (너 구조 핵심 부분) */
 export function createEventSource(conversationId: string) {
   const token = useAuthStore.getState().jwtToken;
 

@@ -6,7 +6,7 @@ interface ChatWindowProps {
   input: string;
   setInput: (v: string) => void;
   send: (v?: string) => void;
-  scrollRef: React.RefObject<HTMLDivElement>;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
   isTyping: boolean;  
 }
 
