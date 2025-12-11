@@ -15,12 +15,13 @@ import {
 } from "lucide-react";
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
 import type { User as UserType } from "../type";
-import { getLastSyncTime, syncNow } from "../sync/syncApi";
+import { getLastSyncTime, syncNow, type SyncRecordDTO } from "../sync/syncApi";
 
 export default function Header() {
   const navigate = useNavigate();
 
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [globalSync, setGlobalSync] = useState<string | null>(null);
 
 
   // 로그인한 사용자 정보
@@ -71,14 +72,34 @@ export default function Header() {
     loadLastSync();
   }, []);
 
-    const loadLastSync = async () => {
+const loadLastSync = async () => {
   try {
-    const time = await getLastSyncTime();
-    setLastSync(time);
+    const info: SyncRecordDTO = await getLastSyncTime();
+    setLastSync(info.lastSyncTime);
+    setGlobalSync(info.globalSyncTime);
   } catch (e) {
     console.error(e);
   }
 };
+
+const formatSyncTime = () => {
+  // 관리자: 항상 globalSyncTime 기준
+  if (roleLevel === 3) {
+    if (globalSync)
+      return `마지막 동기화: ${new Date(globalSync).toLocaleString()}`;
+    return "동기화 정보 없음";
+  }
+
+  // 일반 사용자
+  if (lastSync)
+    return `마지막 동기화: ${new Date(lastSync).toLocaleString()}`;
+
+  if (globalSync)
+    return `마지막 동기화(전체): ${new Date(globalSync).toLocaleString()}`;
+
+  return "동기화 정보 없음";
+};
+
 
   const handleLogoutClick = () => {
     logout();
@@ -96,14 +117,14 @@ export default function Header() {
       setIsSyncing(true);
 
       const message = await syncNow();
-      alert("✅ 동기화 완료\n" + message);
+      alert("동기화 완료\n" + message);
 
       // 동기화 완료 → 마지막 시간 다시 불러오기
       await loadLastSync();
 
     } catch (err: any) {
       console.error(err);
-      alert("❌ 동기화 실패: " + err.message);
+      alert("동기화 실패!: " + err.message);
     }finally {
        setIsSyncing(false);  
     }
@@ -161,12 +182,10 @@ export default function Header() {
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
             <div className="flex items-center gap-2 md:gap-4 z-10">
 
-          {/* 마지막 동기화 시간 */}
-          <div className="text-white text-[10px] md:text-sm font-medium mr-2 whitespace-nowrap">
-            {lastSync
-              ? `마지막 동기화: ${new Date(lastSync).toLocaleString()}`
-              : "동기화 기록 없음"}
-          </div>   
+          {/*  동기화 시간 표시 */}
+            <div className="text-white text-[10px] md:text-sm mr-2 whitespace-nowrap">
+              {formatSyncTime()}
+            </div>  
               
           {/* 동기화 버튼 */}
           <button
