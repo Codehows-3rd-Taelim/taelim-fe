@@ -1,13 +1,16 @@
 // src/aichat/AIChat.tsx
 import { useEffect, useRef, useState } from "react";
-import { createNewChat, loadChatHistory, loadConversation } from "./api/aiChatApi";
+import {
+  loadChatHistory,
+  loadConversation,
+  sendMessage,
+  createNewChat,
+  createEventSource
+} from "./api/aiChatApi";
+
 import ChatSidebar from "./ChatSidebar";
 import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
-import { useAuthStore } from "../store";
-import { EventSourcePolyfill } from 'event-source-polyfill';
-
-const BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function AIChat() {
   const [chatList, setChatList] = useState<any[]>([]);
@@ -16,64 +19,52 @@ export default function AIChat() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-
-  const scrollRef = useRef<HTMLDivElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
+  /** 🔥 너 구조의 핵심: EventSource 생성은 API에서 하고,
+   *   컴포넌트는 핸들러만 관리한다.
+   */
+  const connectSSE = (conversationId: string) => {
+    if (!conversationId) return;
 
-
-
-  const token = useAuthStore.getState().jwtToken;
-
-  /** SSE 연결 */
-
-
-const connectSSE = (conversationId: string) => {
-  if (!conversationId) return;
-
-  if (eventSourceRef.current) {
-    eventSourceRef.current.close();
-  }
-
-  const es = new EventSourcePolyfill(
-    `${BASE_URL}/agent/stream/${conversationId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
     }
-  );
 
-  eventSourceRef.current = es;
+    // API에서 깔끔하게 생성해온 EventSource "완제품"
+    const es = createEventSource(conversationId);
 
-  // SSE 연결 직후 실행됨 → AI가 응답 준비 중
-  es.onopen = () => {
-    setIsTyping(true);
+    es.onopen = () => {
+      setIsTyping(true);
+    };
+
+    es.onmessage = (e) => {
+      setIsTyping(false);
+      setMessages(prev => [...prev, { rawMessage: e.data, senderType: "AI" }]);
+      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    es.onerror = () => {
+      es.close();
+      eventSourceRef.current = null;
+      setIsTyping(false);
+    };
+
+    eventSourceRef.current = es;
   };
 
-
-
-  es.onmessage = (e) => {
-    setIsTyping(false);
-
-    setMessages(prev => [...prev, { rawMessage: e.data, senderType: "AI" }]);
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  es.onerror = () => {
-    es.close();
-    eventSourceRef.current = null;
-  };
-};
-
+  /** 초기 목록 로드 */
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
-  // 언마운트 시 SSE 정리
+  /** 언마운트 시 SSE 정리 */
   useEffect(() => {
     return () => {
-      if (eventSourceRef.current) eventSourceRef.current.close();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
     };
   }, []);
 
@@ -87,63 +78,44 @@ const connectSSE = (conversationId: string) => {
       { rawMessage: message, senderType: "USER" }
     ]);
     setInput("");
-
     setIsTyping(true);
 
-    const res = await fetch(`${BASE_URL}/agent/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        message,
-        conversationId: currentId,
-      }),
-    });
+    const newId = (await sendMessage(message, currentId)).trim();
+    const effectiveId = currentId ?? newId;
 
-    const newId = (await res.text()).trim();
+    if (!currentId) setCurrentId(newId);
 
-    if (!currentId) {
-      setCurrentId(newId);
-      connectSSE(newId);
-    } else {
-      connectSSE(currentId);
-    }
-
+    connectSSE(effectiveId);
     loadChatHistory().then(setChatList);
   };
 
-  /** 대화 선택 */
-  const handleSelectConversation = async (id: string) => {
+  /** 채팅 선택 */
+  const selectConversation = async (id: string) => {
     const data = await loadConversation(id);
-    setCurrentId(id);
+
     setMessages(data);
-    connectSSE(id);
+    setCurrentId(id);
   };
 
-  const handleNewChat = async () => {
-  const { conversationId } = await createNewChat();
+  /** 새 채팅 */
+  const newChat = async () => {
+    const { conversationId } = await createNewChat();
 
-  setCurrentId(conversationId);
-  setMessages([]);
-  connectSSE(conversationId);
-
-  loadChatHistory().then(setChatList);
-};
-
-
+    setMessages([]);
+    setCurrentId(conversationId);
+    loadChatHistory().then(setChatList);
+  };
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-white">
       <ChatSidebar
         chatList={chatList}
         currentId={currentId}
-        select={handleSelectConversation}
-        newChat={handleNewChat}
+        select={selectConversation}
+        newChat={newChat}
       />
 
-      <div className="flex-1 bg-white">
+      <div className="flex-1 bg-white ml-80">
         {messages.length === 0 ? (
           <EmptyState input={input} setInput={setInput} send={send} />
         ) : (
