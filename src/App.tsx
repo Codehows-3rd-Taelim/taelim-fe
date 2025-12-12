@@ -1,23 +1,15 @@
-import './App.css'
-import LoginPage from './login/pages/LoginPage'
-import { Route, Routes } from "react-router-dom"
-import { PrivateRoute } from './PrivateRoute'
-import OperationManagement from './operationManagement/pages/OperationManagement'
-import ReportPage from "./aiReport/pages/AiReportPage";
+import "./App.css";
+import LoginPage from "./login/pages/LoginPage";
+import { Route, Routes } from "react-router-dom";
+import { PrivateRoute } from "./PrivateRoute";
+import OperationManagement from "./operationManagement/pages/OperationManagement";
 import AiReportPage from "./aiReport/pages/AiReportPage";
+import UserDashboardPage from "./Dashboard/pages/UserDashboardPage";
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/report"
-        element={
-          <PrivateRoute>
-            <ReportPage />
-          </PrivateRoute>
-        }
-      />
       <Route
         path="/"
         element={
@@ -27,10 +19,19 @@ function App() {
         }
       />
       <Route
-        path="/ai/report"
+        path="/ai/Report"
         element={
           <PrivateRoute>
             <AiReportPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/user"
+        element={
+          <PrivateRoute>
+            <UserDashboardPage />
           </PrivateRoute>
         }
       />
