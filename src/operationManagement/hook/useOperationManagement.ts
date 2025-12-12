@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User, Store, ApiFormUser } from "../../type";
-import { checkDuplicateId, registerEmployee, getUsers } from "../api/EmployeeApi";
 import { getStores } from "../api/StoreApi";
+import { checkDuplicateId, getUsers, registerEmployee } from "../api/EmployeeApi";
 
 type LocalUserForm = ApiFormUser & { pwCheck: string };
 
@@ -27,7 +27,6 @@ export default function useOperationManagement() {
     const userStoreId = rawStoreId ? Number(rawStoreId) : 0;
     
     // 인증 상태를 나타내는 user 객체 (여기서는 단순히 인증 여부 판단용)
-    // 실제 애플리케이션에서는 userStoreId, roleLevel, id 등을 포함하는 객체여야 합니다.
     const user = jwtToken ? { roleLevel, storeId: userStoreId } : null; 
 
     // 매장/직원 목록
@@ -47,8 +46,6 @@ export default function useOperationManagement() {
         name: "",
         phone: "",
         email: "",
-        // roleLevel이 3(관리자)이면 기본값 MANAGER, 아니면 USER로 설정하는 것이 더 일반적일 수 있습니다.
-        // 현재 로직을 유지하면서 roleLevel에 따라 기본값을 설정합니다.
         role: roleLevel === 2 ? "USER" : "MANAGER", // 매장 담당자(2)는 등록 시 USER가 디폴트, 관리자(3)는 MANAGER가 디폴트
         storeId: roleLevel === 3 ? 0 : userStoreId,
     });
@@ -96,6 +93,20 @@ export default function useOperationManagement() {
         };
         loadData();
     }, [roleLevel, userStoreId, jwtToken]); // jwtToken이 변경되면 다시 로드
+
+    const currentStoreName = useMemo(() => {
+        // 1. 매장 로딩이 완료되었는지 확인
+        if (loadingStores) return "매장 정보 로딩 중...";
+
+        // 2. 관리자(roleLevel 3)일 경우
+        if (roleLevel === 3) return "통합 관리자";
+
+        // 3. 일반 사용자/매니저일 경우, allStores에서 userStoreId와 일치하는 매장 찾기
+        const store = allStores.find(s => s.storeId === userStoreId);
+        
+        // 4. 매장 이름 반환
+        return store ? store.shopName : "매장 정보를 찾을 수 없습니다.";
+    }, [allStores, userStoreId, roleLevel, loadingStores]);
 
     // 공통 핸들러
     const setFormValue = (name: string, value: string | number) => {
@@ -194,6 +205,7 @@ export default function useOperationManagement() {
         isPasswordMismatched,
         isPasswordValid,
         isRegisterButtonEnabled,
+        currentStoreName,
 
         // 함수
         setFormValue,

@@ -11,7 +11,7 @@ export const getStores = async (storeId?: number): Promise<Store[]> => {
     try {
         // 백엔드 컨트롤러: @GetMapping("/store")
         // storeId가 있을 경우 쿼리 파라미터로 포함: /store?storeId=1
-        const response = await axios.get(`${BASE_URL}/store`, {
+        const response = await axios.get(`${BASE_URL}/store/list`, {
             params: storeId ? { storeId } : undefined,
         });
         // 백엔드에서 List<Store>를 반환하므로, data는 Store[] 타입이 됩니다.
