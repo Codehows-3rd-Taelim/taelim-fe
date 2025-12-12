@@ -40,8 +40,9 @@ export default function ChatWindow({ messages, input, setInput, send, scrollRef,
       </div>
 
       <div className="w-[900px] mx-auto">
-        <ChatInput input={input} setInput={setInput} send={send} />
+       <ChatInput input={input} setInput={setInput} send={send} size="small" />
       </div>
+
     </div>
   );
 }
