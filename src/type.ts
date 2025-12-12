@@ -140,6 +140,10 @@ export interface Message {
   senderType: SenderType;
 }
 
-
+// 동기화 정보 DTO
+export interface SyncRecordDTO {
+  lastSyncTime: string | null;
+  globalSyncTime: string | null;
+}
 
 

@@ -14,8 +14,8 @@ import {
   X,
 } from "lucide-react";
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
-import type { User as UserType } from "../type";
-import { getLastSyncTime, syncNow, type SyncRecordDTO } from "../sync/syncApi";
+import type { SyncRecordDTO, User as UserType } from "../type";
+import { getLastSyncTime, syncNow } from "../sync/syncApi";
 
 export default function Header() {
   const navigate = useNavigate();

@@ -51,12 +51,12 @@ export default function AIChat() {
     eventSourceRef.current = es;
   };
 
-  /** 초기 목록 로드 */
+  // 초기 목록 로드 
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
-  /** 언마운트 시 SSE 정리 */
+  // 언마운트 시 SSE 정리 
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -65,7 +65,7 @@ export default function AIChat() {
     };
   }, []);
 
-  /** 메시지 전송 */
+  // 메시지 전송 
   const send = async (overrideText?: string) => {
     const message = overrideText ?? input;
     if (!message.trim()) return;
@@ -90,7 +90,7 @@ export default function AIChat() {
     loadChatHistory().then(setChatList);
   };
 
-  /** 채팅 선택 */
+  // 채팅 선택 
   const selectConversation = async (id: string) => {
     const data = await loadConversation(id);
 
@@ -98,7 +98,7 @@ export default function AIChat() {
     setCurrentId(id);
   };
 
-  /** 새 채팅 */
+  // 새 채팅 
   const newChat = async () => {
     const { conversationId } = await createNewChat();
 

@@ -4,7 +4,7 @@ import { EventSourcePolyfill } from "event-source-polyfill";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-/** 공통 헤더 */
+// 토큰 
 function authHeader() {
   const token = useAuthStore.getState().jwtToken;
   return {
@@ -13,7 +13,7 @@ function authHeader() {
   };
 }
 
-/** 채팅 목록 조회 */
+// 채팅 목록 조회 
 export async function loadChatHistory() {
   const res = await fetch(`${BASE_URL}/chat/history`, {
     headers: authHeader(),
@@ -22,7 +22,7 @@ export async function loadChatHistory() {
   return res.json();
 }
 
-/** 특정 대화 전체 메시지 조회 */
+// 특정 대화 전체 메시지 조회
 export async function loadConversation(id: string) {
   const res = await fetch(`${BASE_URL}/conversation/${id}`, {
     headers: authHeader(),
@@ -31,7 +31,7 @@ export async function loadConversation(id: string) {
   return res.json();
 }
 
-/** 메시지 전송 → 새 conversationId(첫 메시지면) 또는 기존 id 반환 */
+// 메시지 전송 → 새 conversationId(첫 메시지면) 또는 기존 id 반환 
 export async function sendMessage(message: string, conversationId: string | null) {
   const res = await fetch(`${BASE_URL}/agent/chat`, {
     method: "POST",
@@ -42,7 +42,7 @@ export async function sendMessage(message: string, conversationId: string | null
   return res.text();
 }
 
-/** 새 대화 생성 */
+// 새 대화 생성 
 export async function createNewChat() {
   const res = await fetch(`${BASE_URL}/new/chat`, {
     method: "POST",
