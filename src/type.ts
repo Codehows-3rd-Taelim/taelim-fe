@@ -134,5 +134,12 @@ export interface ChatMessage {
     isPending: boolean; // SSE 스트리밍 중인지 여부  
 }
 
+// SSE나 유저가 즉석에서 생성한 임시 메시지 
+export interface Message {
+  rawMessage: string;
+  senderType: SenderType;
+}
+
+
 
 

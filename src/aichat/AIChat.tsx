@@ -11,10 +11,11 @@ import {
 import ChatSidebar from "./ChatSidebar";
 import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
+import type { AiChatDTO, Message } from "../type";
 
 export default function AIChat() {
-  const [chatList, setChatList] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [chatList, setChatList] = useState<AiChatDTO[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);

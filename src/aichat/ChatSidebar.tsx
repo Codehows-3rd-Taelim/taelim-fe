@@ -1,5 +1,7 @@
+import type { AiChatDTO } from "../type";
+
 interface Props {
-  chatList: any[];
+  chatList: AiChatDTO[];
   currentId: string | null;
   select: (id: string) => void;
   newChat: () => void;   

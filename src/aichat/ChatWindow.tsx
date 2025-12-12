@@ -1,8 +1,9 @@
 // src/aichat/ChatWindow.tsx
+import type { Message } from "../type";
 import ChatInput from "./ChatInput";
 
 interface ChatWindowProps {
-  messages: any[];
+  messages: Message[];
   input: string;
   setInput: (v: string) => void;
   send: (v?: string) => void;
