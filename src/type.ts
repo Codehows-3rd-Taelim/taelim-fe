@@ -2,7 +2,12 @@ export type Store = {
     storeId: number;
     shopId: number;
     shopName: string;
-    industryId: number;
+    delYn?: string;
+    industryId?: number;
+    industry?: {
+        industryId: number;
+        industryName: string;
+    };
 }
 
 export type Industry = {
@@ -42,10 +47,10 @@ export type Robot = {
     mac: string;
     productCode: string;
     softVersion: string;
-    work_status: string;
+    status: number;
     nickname: string;
     battery: number;
-    online_yn: 0 | 1;
+    online: true | false;
     storeId: number;
 }
 
@@ -77,6 +82,7 @@ export type AiChat = {
     userId: number;
 }
 
+
 export type AiReport = {
     aiReportId: number;
     conversationId: number;
@@ -88,6 +94,17 @@ export type AiReport = {
     userId: number;
     name: string;
 }
+
+export type RawReport = {
+rawReport: string;
+}
+
+export type EventHandlers = {
+  onToken?: (token: string) => void;
+  onSavedReport?: (report: AiReport) => void;
+  onDone?: () => void;
+  onError?: (error: Event | null) => void;
+};
 
 import { Dayjs } from "dayjs";
 
@@ -147,3 +164,114 @@ export interface SyncRecordDTO {
 }
 
 
+// 로봇 상태 데이터 타입 (도넛/파이 차트용)
+export interface RobotStatus {
+    working: number;
+    standby: number;
+    charging: number;
+    offline: number;
+}
+
+// 작업 성과 KPI 데이터 타입
+export interface Performance {
+    laborTimeSaving: number;
+    taskCount: number;
+    costSaving: number;
+    waterSaving: number;
+    co2Reduction: number;
+    powerConsumption?: number; // 실제 전력 소비 (kWh)
+    waterConsumption?: number; // 실제 물 소비 (L)
+}
+
+// 일별 차트 데이터 기본 구조 (라인/막대 차트용)
+export interface DailyChartData {
+    labels: string[]; // 날짜 레이블
+    myRobots: number[]; // 특정 값 1
+    avgTime: number[]; // 특정 값 2
+}
+
+// 구역별 청소 횟수 (막대 차트)
+export interface AreaCleanCount {
+    areaNames: string[];
+    cleanCounts: number[];
+}
+
+// 일별 작업 상태 (누적 막대 차트)
+export interface DailyTaskStatus {
+    labels: string[];
+    success: number[];
+    fail: number[];
+    manual: number[];
+}
+
+// 일별 완료율 (라인 차트)
+export interface DailyCompletionRate {
+    labels: string[];
+    rates: number[];
+}
+
+// ---------------------------------------------------------
+// 일반 사용자/매장 담당자용 대시보드 데이터 타입
+export interface UserDashboardData {
+    robotStatus: RobotStatus;
+    performance: Performance;
+    dailyOperationTime: DailyChartData;
+    areaCleanCount: AreaCleanCount;
+    dailyTaskTime: DailyChartData;
+    dailyTaskStatus: DailyTaskStatus;
+    dailyCompletionRate: DailyCompletionRate;
+}
+
+// ---------------------------------------------------------
+// 관리자용 매장 요약 데이터 (테이블 행)
+export type StoreSummary = {
+    storeId: number;
+    shopName: string;
+    robotCount: number;
+    workingRobots: number;
+    cleanTimeTotal: number; // 분
+    areaCleanedTotal: number; // m²
+};
+
+// 관리자용 대시보드 데이터 타입
+export interface AdminDashboardData {
+  totalRobots: number;
+  totalWorking: number;
+  totalOffline: number;
+
+  storeSummaries: StoreSummary[];
+
+  industryOperationTime: DailyChartData;
+  storeCleanTime: { labels: string[]; times: number[] };
+  storeCleanArea: { labels: string[]; areas: number[] };
+
+  robotTopTime: RobotTopTime[];
+  storeStatusCount: StoreStatusCount[];
+  industryCompare: IndustryCompare[];
+  industryStoreCount: IndustryStoreCount[];
+}
+
+export interface RobotTopTime {
+  robotId: number;
+  robotName: string;
+  workTime: number; // 총 가동시간 (분 or 시간)
+}
+
+export interface StoreStatusCount {
+  status: "ACTIVE" | "INACTIVE" | "ERROR";
+  count: number;
+  [key: string]: string | number;
+}
+
+export interface IndustryCompare {
+  industryId: number;
+  industryName: string;
+  totalTime: number; // 전체 가동 시간
+  totalArea: number; // 전체 청소 면적
+}
+
+export type IndustryStoreCount = {
+  industryId: number;
+  industryName: string;
+  storeCount: number;
+};

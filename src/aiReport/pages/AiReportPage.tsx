@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import dayjs, { Dayjs } from "dayjs";
-import "dayjs/locale/ko"; // 한국어 로케일 적용
-import isBetween from "dayjs/plugin/isBetween"; // 날짜 범위 비교 플러그인
-import SearchIcon from "@mui/icons-material/Search";
-dayjs.extend(isBetween); // dayjs에 플러그인 확장
+import "dayjs/locale/ko";
+import isBetween from "dayjs/plugin/isBetween";
+dayjs.extend(isBetween);
 
 import {
   Box,
@@ -16,76 +21,226 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
   IconButton,
   Collapse,
+  CircularProgress,
 } from "@mui/material";
 
+import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import type { DateRange } from "@mui/x-date-pickers-pro/models";
 
+import type { DateRange } from "@mui/x-date-pickers-pro";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
-import { getAiReport } from "../api/AiReportApi";
+
 import type { AiReport } from "../../type";
+import ReportContent from "../components/ReportContent";
+import { getAiReport, getRawReport, postAiReport } from "../api/AiReportApi";
 
-// AI 보고서 페이지 컴포넌트
+interface StreamingReport extends AiReport {
+  streamingRawReport?: string;
+}
+
 export default function AiReportPage() {
-  // 보고서 데이터 (예시용)
-  // const [AiReportData, setAiReportData] = useState<AiReportData[]>([]);
-  // type은 만들었는데 api 만들고 DB연결하고 해야해
-
-  /** 🔍 검색 입력용 State (검색 버튼 누르기 전까지 반영 안 됨) */
+  const [query, setQuery] = useState("");
   const [searchTextInput, setSearchTextInput] = useState("");
   const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([
     null,
     null,
   ]);
-  /** 🔍 실제 검색에 사용되는 State */
   const [searchText, setSearchText] = useState("");
   const [dateRange, setDateRange] = useState<DateRange<Dayjs>>([null, null]);
-
-  const [AiReportData, setAiReportData] = useState<AiReport[]>([]);
-
-  // 테이블 행 확장 상태 (열린 행 ID 저장)
+  const [aiReportData, setAiReportData] = useState<StreamingReport[]>([]);
   const [openRow, setOpenRow] = useState<number | null>(null);
-  // 현재 페이지 번호
   const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // 날짜 범위 구조 분해
+  const streamingBufferRef = useRef<string>("");
+  const streamingUpdateTimerRef = useRef<number | null>(null);
+
   const [startDate, endDate] = dateRange;
 
   useEffect(() => {
-    const loadData = async () => {
+    async function loadReports() {
       try {
         const data = await getAiReport();
         setAiReportData(data);
-      } catch (err) {
-        console.error("AI리포트 데이터 불러오기 실패", err);
+      } catch (e) {
+        console.error("보고서 목록 로드 오류:", e);
+        setError("보고서 목록을 불러오는 데 실패했습니다.");
       }
-    };
-    loadData();
+    }
+    loadReports();
   }, []);
 
-  /** 필터링 로직 */
-  const filteredReports = AiReportData.filter((r) => {
-    // 제목에 검색어 포함 여부
-    const matchText = searchText === "" || r.rawMessage.includes(searchText);
-    // 생성일자가 선택한 기간 내에 있는지 확인
-    const matchPeriod =
-      startDate && endDate
-        ? dayjs(r.createdAt).isBetween(startDate, endDate, null, "[]")
-        : true;
-    return matchText && matchPeriod;
-  });
+  const updateStreamingReport = useCallback(() => {
+    if (streamingBufferRef.current) {
+      setAiReportData((prevReports) => {
+        const streamingReport = prevReports.find((r) => r.aiReportId === -1);
+        if (!streamingReport) return prevReports;
 
-  /** 페이지네이션 로직 */
-  const reportsPerPage = 20; // 한 페이지에 보여줄 보고서 수
-  const totalPages = Math.ceil(filteredReports.length / reportsPerPage); // 총 페이지 수
-  const startIndex = (page - 1) * reportsPerPage; // 현재 페이지 시작 인덱스
-  const endIndex = startIndex + reportsPerPage; // 현재 페이지 끝 인덱스
-  const paginatedReports = filteredReports.slice(startIndex, endIndex); // 현재 페이지에 보여줄 보고서 목록
+        return prevReports.map((r) =>
+          r.aiReportId === -1
+            ? { ...r, streamingRawReport: streamingBufferRef.current }
+            : r
+        );
+      });
+    }
+  }, []);
+
+  const handleGenerateReport = async () => {
+    if (!query.trim()) return;
+    setError(null);
+    setIsLoading(true);
+    streamingBufferRef.current = "";
+    const conversationId = crypto.randomUUID();
+
+    // 임시 보고서 추가
+    setAiReportData((prev) => [
+      {
+        aiReportId: -1,
+        conversationId: 0,
+        startTime: dayjs().toISOString(),
+        endTime: dayjs().toISOString(),
+        createdAt: dayjs().toISOString(),
+        rawMessage: query,
+        rawReport: "",
+        userId: 0,
+        name: "나",
+        streamingRawReport: "",
+      },
+      ...prev,
+    ]);
+    setOpenRow(-1);
+
+    const handlers = {
+      onReportInfo: (message: string) => {
+        alert(`⚠️ 보고서 생성 불가: ${message}`);
+      },
+      onMessage: (token: string) => {
+        streamingBufferRef.current += token;
+
+        if (streamingUpdateTimerRef.current) {
+          clearTimeout(streamingUpdateTimerRef.current);
+        }
+
+        streamingUpdateTimerRef.current = window.setTimeout(() => {
+          updateStreamingReport();
+        }, 100);
+      },
+      onSavedReport: (savedReport: AiReport) => {
+        if (streamingUpdateTimerRef.current) {
+          clearTimeout(streamingUpdateTimerRef.current);
+        }
+
+        setAiReportData((prevReports) => {
+          const updatedReports = [
+            {
+              ...savedReport,
+              rawReport: savedReport.rawReport || streamingBufferRef.current,
+            },
+            ...prevReports.filter((r) => r.aiReportId !== -1),
+          ];
+          return updatedReports;
+        });
+
+        streamingBufferRef.current = "";
+        setOpenRow(savedReport.aiReportId);
+      },
+      onDone: () => {
+        setIsLoading(false);
+        setQuery("");
+        setPage(1);
+        setAiReportData((prevReports) =>
+          prevReports.filter((r) => r.aiReportId !== -1)
+        );
+      },
+      onError: (err: Error) => {
+        console.error("SSE 요청 오류:", err);
+        setError(err.message || "보고서 생성 중 오류가 발생했습니다.");
+        setIsLoading(false);
+        setAiReportData((prevReports) =>
+          prevReports.filter((r) => r.aiReportId !== -1)
+        );
+      },
+    };
+
+    try {
+      await postAiReport(query, conversationId, handlers);
+    } catch (error) {
+      console.error("보고서 생성 요청 시작 오류:", error);
+      handlers.onError(error as Error);
+    }
+  };
+
+  const handleRowClick = async (report: AiReport | StreamingReport) => {
+    const reportId = report.aiReportId;
+
+    if (openRow === reportId) {
+      setOpenRow(null);
+      return;
+    }
+
+    if (reportId === -1) {
+      setOpenRow(reportId);
+      return;
+    }
+
+    if (!report.rawReport) {
+      setOpenRow(reportId);
+
+      try {
+        const contentData: string = await getRawReport(reportId);
+        setAiReportData((prevData) =>
+          prevData.map((r) =>
+            r.aiReportId === reportId ? { ...r, rawReport: contentData } : r
+          )
+        );
+      } catch (error) {
+        console.error("상세 보고서 조회 오류:", error);
+        setOpenRow(null);
+        setError("상세 보고서를 불러오는 데 실패했습니다.");
+        return;
+      }
+    }
+
+    setOpenRow(reportId);
+  };
+
+  // 🔥 핵심 최적화 3: 필터링과 정렬을 useMemo로 메모이제이션
+  const filteredReports = useMemo(() => {
+    const filtered = aiReportData.filter((r) => {
+      if (r.aiReportId === -1) return true;
+
+      const matchText = searchText === "" || r.rawMessage.includes(searchText);
+      const matchPeriod =
+        startDate && endDate
+          ? dayjs(r.createdAt).isBetween(startDate, endDate, null, "[]")
+          : true;
+
+      return matchText && matchPeriod;
+    });
+
+    // 정렬
+    filtered.sort((a, b) => {
+      if (a.aiReportId === -1) return -1;
+      if (b.aiReportId === -1) return 1;
+      return dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
+    });
+
+    return filtered;
+  }, [aiReportData, searchText, startDate, endDate]);
+
+  // 🔥 핵심 최적화 4: 페이지네이션도 useMemo로
+  const paginatedReports = useMemo(() => {
+    const reportsPerPage = 20;
+    const startIndex = (page - 1) * reportsPerPage;
+    return filteredReports.slice(startIndex, startIndex + reportsPerPage);
+  }, [filteredReports, page]);
+
+  const totalPages = Math.ceil(filteredReports.length / 20);
 
   return (
     <Box
@@ -94,71 +249,73 @@ export default function AiReportPage() {
         minHeight: "100vh",
         px: 6,
         py: 4,
-        bgcolor: "#f7f7f7", // 배경색
+        bgcolor: "#f7f7f7",
       }}
     >
-      {/* 상단 검색 안내 영역 */}
+      {error && (
+        <Paper sx={{ p: 2, mb: 2, bgcolor: "error.light", color: "white" }}>
+          <Box fontWeight="bold">오류: {error}</Box>
+        </Paper>
+      )}
+
       <Paper sx={{ p: 3, mb: 4 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Box>
-            <TextField
-              placeholder={`조회하고 싶은 보고서 내용을 입력해 주세요.\n원하는 기간 등을 입력하면 더욱 자세한 보고서가 조회됩니다.`}
-              multiline
-              sx={{ width: 900 }}
-            />
-            <Button variant="contained" color="warning" sx={{ ml: 1, p: 3.4 }}>
-              조회
-            </Button>
-          </Box>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <TextField
+            placeholder={`조회하고 싶은 보고서 내용을 입력해 주세요.\n원하는 기간 등을 입력하면 더욱 자세한 보고서가 조회됩니다.`}
+            multiline
+            sx={{ width: "100%" }}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            disabled={isLoading}
+          />
+          <Button
+            variant="contained"
+            color="warning"
+            sx={{ p: 3, height: 78 }}
+            onClick={handleGenerateReport}
+            disabled={isLoading || !query.trim()}
+          >
+            {isLoading ? "생성 중…" : "조회"}
+          </Button>
         </Box>
       </Paper>
 
-      {/* 검색 UI (날짜 + 내용 입력 + 버튼) */}
       <Box display="flex" alignItems="center" gap={2} sx={{ ml: 4 }}>
-        {/* 생성일자 필터 */}
         <Box display="flex" alignItems="center" gap={2}>
           <span>생성일자</span>
           <DateRangePicker
             value={dateRangeInput}
             onChange={setDateRangeInput}
-            fullWidth={false}
             size="small"
           />
         </Box>
 
-        {/* 내용 필터 */}
         <Box display="flex" alignItems="center" gap={2}>
           <span>내용</span>
           <TextField
             value={searchTextInput}
             onChange={(e) => setSearchTextInput(e.target.value)}
-            sx={{ width: 500, backgroundColor: "white" }}
-            variant="outlined"
+            sx={{ width: 500, bgcolor: "white" }}
             size="small"
           />
-
-          {/* 🔍 검색 버튼 (눌러야만 검색 적용됨) */}
           <IconButton
-            sx={{ mr: 3, mb: 3, mt: 3 }}
             onClick={() => {
               setSearchText(searchTextInput);
               setDateRange(dateRangeInput);
-              setPage(1); // 검색 시 첫 페이지로 이동
+              setPage(1);
             }}
           >
             <SearchIcon />
           </IconButton>
-
-          {/* 초기화 버튼 */}
           <Button
+            sx={{ color: "black", borderColor: "black" }}
             variant="outlined"
-            sx={{ borderColor: "black", fontWeight: "bold", color: "black" }}
             onClick={() => {
               setSearchText("");
               setDateRange([null, null]);
               setSearchTextInput("");
               setDateRangeInput([null, null]);
-              setPage(1); // 초기화 후 첫 페이지로 이동
+              setPage(1);
             }}
           >
             초기화
@@ -166,16 +323,7 @@ export default function AiReportPage() {
         </Box>
       </Box>
 
-      {/* 보고서 테이블 */}
-      <TableContainer
-        component={Paper}
-        sx={{
-          borderRadius: 3,
-          maxHeight: 790,
-          overflowY: "auto",
-          mt: 3,
-        }}
-      >
+      <TableContainer component={Paper} sx={{ borderRadius: 3, mt: 3 }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -187,14 +335,18 @@ export default function AiReportPage() {
               <TableCell align="center"></TableCell>
             </TableRow>
           </TableHead>
-
           <TableBody>
             {paginatedReports.map((r) => (
               <React.Fragment key={r.aiReportId}>
-                {/* 보고서 기본 정보 행 */}
                 <TableRow>
-                  <TableCell align="center">{r.aiReportId}</TableCell>
-                  <TableCell align="left">{r.rawMessage}</TableCell>
+                  <TableCell align="center">
+                    {r.aiReportId === -1 ? (
+                      <CircularProgress size={16} color="warning" />
+                    ) : (
+                      r.aiReportId
+                    )}
+                  </TableCell>
+                  <TableCell>{r.rawMessage}</TableCell>
                   <TableCell align="center">
                     {dayjs(r.startTime).format("YYYY-MM-DD")} ~{" "}
                     {dayjs(r.endTime).format("YYYY-MM-DD")}
@@ -204,13 +356,9 @@ export default function AiReportPage() {
                   </TableCell>
                   <TableCell align="center">{r.name}</TableCell>
                   <TableCell align="center">
-                    {/* 상세 내용 토글 버튼 */}
                     <IconButton
-                      onClick={() =>
-                        setOpenRow(
-                          openRow === r.aiReportId ? null : r.aiReportId
-                        )
-                      }
+                      onClick={() => handleRowClick(r)}
+                      disabled={r.aiReportId === -1 && !r.streamingRawReport}
                     >
                       {openRow === r.aiReportId ? (
                         <KeyboardArrowUpIcon />
@@ -221,14 +369,15 @@ export default function AiReportPage() {
                   </TableCell>
                 </TableRow>
 
-                {/* 상세 내용 (Collapse로 토글) */}
                 <TableRow>
                   <TableCell colSpan={6} sx={{ p: 0 }}>
-                    <Collapse in={openRow === r.aiReportId} timeout="auto">
+                    <Collapse in={openRow === r.aiReportId}>
                       <Box sx={{ p: 3, bgcolor: "#fafafa" }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {r.rawReport}
-                        </Typography>
+                        <ReportContent
+                          markdown={
+                            r.streamingRawReport || r.rawReport || "로딩 중..."
+                          }
+                        />
                       </Box>
                     </Collapse>
                   </TableCell>
@@ -239,7 +388,6 @@ export default function AiReportPage() {
         </Table>
       </TableContainer>
 
-      {/* 페이지네이션 */}
       <Pagination
         page={page}
         totalPages={totalPages}

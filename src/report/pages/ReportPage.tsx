@@ -52,7 +52,7 @@ export default function ReportPage() {
   
   // 디폴트 날짜 계산
   const getDefaultDateRange = (): DateRange<Dayjs> => [
-    dayjs().subtract(3, "day"),
+    dayjs().subtract(7, "day"),
     dayjs(),
   ];
 
