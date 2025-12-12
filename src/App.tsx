@@ -2,7 +2,7 @@ import "./App.css";
 import LoginPage from "./login/pages/LoginPage";
 import { Route, Routes } from "react-router-dom";
 import { PrivateRoute } from "./PrivateRoute";
-import OperationManagement from "./OperationManagement/pages/OperationManagement";
+import OperationManagement from "./operationManagement/pages/OperationManagement";
 import AiReportPage from "./aiReport/pages/AiReportPage";
 import UserDashboardPage from "./Dashboard/pages/UserDashboardPage";
 

@@ -63,7 +63,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-white font-inter">
+    <div className="flex flex-col min-h-screen bg-white md:flex-row font-inter">
       {/* 왼쪽 이미지 */}
       <div className="hidden md:flex md:w-[55%] justify-center items-center p-4">
         <img
@@ -78,21 +78,23 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* 제목 */}
           <div className="mb-6 text-center">
-            <h1 className="text-4xl font-extrabold text-gray-800 mb-2">로그인</h1>
+            <h1 className="mb-2 text-4xl font-extrabold text-gray-800">
+              로그인
+            </h1>
             <div className="text-4xl font-bold">
               <span className="text-gray-900">Inus</span>
               <span className="text-red-600">tree</span>
-              <span className="text-gray-500 text-xl font-normal ml-2">
+              <span className="ml-2 text-xl font-normal text-gray-500">
                 로봇관리 플랫폼
               </span>
             </div>
           </div>
 
-          <div className="border-2 border-amber-300 rounded-xl shadow-2xl p-8 bg-white">
+          <div className="p-8 bg-white border-2 shadow-2xl border-amber-300 rounded-xl">
             {/* 오류 메시지 */}
             {loginError && (
               <div className="flex items-center p-3 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50">
-                <XCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+                <XCircle className="flex-shrink-0 w-5 h-5 mr-2" />
                 <span>{loginError}</span>
               </div>
             )}
@@ -104,7 +106,7 @@ export default function LoginPage() {
                 placeholder="아이디를 입력하세요"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-base text-gray-700 focus:border-amber-400 focus:shadow-md"
+                className="w-full px-4 py-3 text-base text-gray-700 border border-gray-300 rounded-lg outline-none focus:border-amber-400 focus:shadow-md"
               />
 
               {/* 비밀번호 */}
@@ -115,7 +117,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={handlePasswordKeyPress}
-                  className="w-full pr-12 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+                  className="w-full px-4 py-3 pr-12 text-gray-700 border border-gray-300 rounded-lg outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
                 />
 
                 <button
@@ -130,16 +132,19 @@ export default function LoginPage() {
               {/* 버튼 */}
               <button
                 onClick={handleSubmit}
-                className="w-full py-3 bg-orange-600 text-black font-semibold rounded-lg text-lg mt-4 shadow-md hover:bg-orange-700"
+                className="w-full py-3 mt-4 text-lg font-semibold text-black bg-orange-600 rounded-lg shadow-md hover:bg-orange-700"
               >
                 로그인
               </button>
             </div>
 
-            <p className="text-xs text-gray-400 mt-6 text-center">
-              비밀번호를 잊어버렸다면<br />
-              <span className="text-orange-600 font-semibold">관리자에게 문의</span>하여
-              재설정할 수 있습니다.
+            <p className="mt-6 text-xs text-center text-gray-400">
+              비밀번호를 잊어버렸다면
+              <br />
+              <span className="font-semibold text-orange-600">
+                관리자에게 문의
+              </span>
+              하여 재설정할 수 있습니다.
             </p>
           </div>
         </div>
