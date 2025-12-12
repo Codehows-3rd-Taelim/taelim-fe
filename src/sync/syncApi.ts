@@ -19,7 +19,7 @@ export async function syncNow(): Promise<string> {
     throw new Error(errorText || "동기화 실패");
   }
 
-  return res.text(); // 백엔드에서 String 반환
+  return res.text(); 
 }
 
 // 마지막 동기화 시간
@@ -35,7 +35,7 @@ export const getLastSyncTime = async (): Promise<SyncRecordDTO> => {
 
   if (!res.ok) throw new Error("Failed to fetch last sync time");
 
-  return res.json(); // { lastSyncTime, globalSyncTime }
+  return res.json();
 };
 
 

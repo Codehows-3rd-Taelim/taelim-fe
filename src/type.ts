@@ -126,12 +126,12 @@ export interface ChatPromptRequest {
 }
 
 export interface ChatMessage {
-    id: string; // 프론트엔드에서 사용할 고유 ID (aiChatId 또는 임시 ID)
+    id: string; 
     conversationId: string;
     senderType: SenderType;
     content: string;
     timestamp: string;
-    isPending: boolean; // SSE 스트리밍 중인지 여부  
+    isPending: boolean; // 
 }
 
 // SSE나 유저가 즉석에서 생성한 임시 메시지 
