@@ -26,21 +26,10 @@ export default function OperationMobileLayout(
     setList,
     getStoreName,
     handlePasswordKeyPress,
-    handleLogout,
   } = props;
 
   return (
     <div className="p-4">
-      {/* 로그아웃 버튼 */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={handleLogout}
-          className="px-3 py-2 text-black bg-orange-500 rounded-md hover:bg-orange-600"
-        >
-          로그아웃
-        </button>
-      </div>
-
       {/* 직원 등록 폼 */}
       {roleLevel !== 1 ? (
         <div className="p-4 mb-6 bg-white shadow-md rounded-xl">

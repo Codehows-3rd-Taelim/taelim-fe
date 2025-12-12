@@ -1,42 +1,76 @@
-import './App.css'
-import LoginPage from './login/pages/LoginPage'
-import { Route, Routes } from "react-router-dom"
-import { PrivateRoute } from './PrivateRoute'
-import OperationManagement from './operationManagement/pages/OperationManagement'
-import ReportPage from "./aiReport/pages/AiReportPage";
+import "./App.css";
+import LoginPage from "./login/pages/LoginPage";
+import { Route, Routes, useLocation } from "react-router-dom";
+import { PrivateRoute } from "./PrivateRoute";
+import OperationManagement from "./operationManagement/pages/OperationManagement";
 import AiReportPage from "./aiReport/pages/AiReportPage";
+import { Container, Box } from "@mui/material";
+import Header from "./components/Header";
+import ReportPage from "./report/pages/ReportPage";
+import AIChat from "./aichat/AIChat";
+import DashboardPage from "./Dashboard/pages/DashboardPage";
 
 function App() {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/report"
-        element={
-          <PrivateRoute>
-            <ReportPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/"
-        element={
-          <PrivateRoute>
-            <OperationManagement />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/ai/report"
-        element={
-          <PrivateRoute>
-            <AiReportPage />
-          </PrivateRoute>
-        }
-      />
-      {/* 다른 보호된 라우트들도 여기에 추가 */}
-      {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
-    </Routes>
+    <>
+      {!isLoginPage && <Header />}
+      <Box
+        sx={{
+          pt: isLoginPage ? 0 : "64px", // 헤더 높이만큼 padding-top 추가
+          minHeight: "100vh",
+        }}
+      >
+        <Container maxWidth="xl" sx={{ maxWidth: "1800px !important" }}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <AIChat />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/ai/report"
+              element={
+                <PrivateRoute>
+                  <AiReportPage />
+                </PrivateRoute>
+              }
+            />
+            {/* <Route path="/dashboard/admin" element={<PrivateRoute><UserDashboardPage /></PrivateRoute>} /> */}
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <DashboardPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/report"
+              element={
+                <PrivateRoute>
+                  <ReportPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/manage"
+              element={
+                <PrivateRoute>
+                  <OperationManagement />
+                </PrivateRoute>
+              }
+            />
+          </Routes>
+        </Container>
+      </Box>
+    </>
   );
 }
 

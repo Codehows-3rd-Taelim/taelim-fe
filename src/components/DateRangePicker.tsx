@@ -7,7 +7,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import Popover from "@mui/material/Popover";
 import type { DateRangePickerProps } from "../type";
-import "dayjs/locale/ko"; // 📌 Dayjs 한국어 로케일
+import "dayjs/locale/ko";
 
 export default function DateRangePicker({
   value, // [startDate, endDate] 형태의 Dayjs 배열
@@ -41,7 +41,11 @@ export default function DateRangePicker({
       const end = tempEnd;
 
       // 부모로 선택된 값을 전달
-      onChange(end.isBefore(start) ? [end, start] : [start, end]);
+      onChange(
+        end.isBefore(start)
+          ? [start, end.endOf("day")] // swap 후 endOf('day') 적용
+          : [start, end.endOf("day")]
+      );
       closePicker(); // 팝오버 닫기
     }
   };
@@ -49,7 +53,7 @@ export default function DateRangePicker({
   const open = Boolean(anchorEl); // Popover 열림 여부
 
   return (
-    // 📌 MUI Date Pickers에서 Dayjs를 한국어(locale=ko)로 사용하도록 설정
+    //  MUI Date Pickers에서 Dayjs를 한국어(locale=ko)로 사용하도록 설정
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ko">
       {/* ---------------------- 선택 박스 영역 ---------------------- */}
       <Box
@@ -61,21 +65,21 @@ export default function DateRangePicker({
           backgroundColor: "white",
           border: "1px solid rgba(0,0,0,0.23)",
           borderRadius: 1,
-          fontSize: value[0] && value[1] ? 16 : 14,
+          fontSize: value[0] && value[1] ? 14 : 12,
           px: 1.5,
           py: 1.2,
-          width: 220,
+          width: 250,
           cursor: "pointer",
         }}
       >
         {/* 선택된 날짜 범위 표시 */}
-        <span>
+        <Box sx={{ flex: 1, whiteSpace: "nowrap" }}>
           {value[0] && value[1]
             ? `${value[0].format("YYYY-MM-DD")} ~ ${value[1].format(
                 "YYYY-MM-DD"
               )}`
             : label}
-        </span>
+        </Box>
 
         {/* 달력 아이콘 */}
         <CalendarTodayIcon fontSize="small" />
