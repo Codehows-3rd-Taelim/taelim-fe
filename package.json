@@ -20,6 +20,7 @@
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
     "dayjs": "^1.11.19",
+    "event-source-polyfill": "^1.0.31",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.554.0",
     "react": "^19.2.1",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.1.17",
+    "@types/html2canvas": "^0.5.35",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

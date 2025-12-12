@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store";
 import {
@@ -14,10 +14,15 @@ import {
   X,
 } from "lucide-react";
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
-import type { User as UserType } from "../type";
+import type { SyncRecordDTO, User as UserType } from "../type";
+import { getLastSyncTime, syncNow } from "../sync/syncApi";
 
 export default function Header() {
   const navigate = useNavigate();
+
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [globalSync, setGlobalSync] = useState<string | null>(null);
+
 
   // 로그인한 사용자 정보
   const { logout, roleLevel, storeId, userId } = useAuthStore();
@@ -27,6 +32,8 @@ export default function Header() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  const [isSyncing, setIsSyncing] = useState(false);
 
   /** 사용자 이름 찾기 */
   const getUserName = (uid: number): string => {
@@ -61,6 +68,39 @@ export default function Header() {
     { name: "운영 관리", path: "/manage", icon: Users },
   ];
 
+  useEffect(() => {
+    loadLastSync();
+  }, []);
+
+const loadLastSync = async () => {
+  try {
+    const info: SyncRecordDTO = await getLastSyncTime();
+    setLastSync(info.lastSyncTime);
+    setGlobalSync(info.globalSyncTime);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const formatSyncTime = () => {
+  // 관리자: 항상 globalSyncTime 기준
+  if (roleLevel === 3) {
+    if (globalSync)
+      return `마지막 동기화: ${new Date(globalSync).toLocaleString()}`;
+    return "동기화 정보 없음";
+  }
+
+  // 일반 사용자
+  if (lastSync)
+    return `마지막 동기화: ${new Date(lastSync).toLocaleString()}`;
+
+  if (globalSync)
+    return `마지막 동기화(전체): ${new Date(globalSync).toLocaleString()}`;
+
+  return "동기화 정보 없음";
+};
+
+
   const handleLogoutClick = () => {
     logout();
     navigate("/login");
@@ -72,8 +112,28 @@ export default function Header() {
     setIsMobileMenuOpen(false);
   };
 
+  const handleSync = async () => {
+    try {
+      setIsSyncing(true);
+
+      const message = await syncNow();
+      alert("동기화 완료\n" + message);
+
+      // 동기화 완료 → 마지막 시간 다시 불러오기
+      await loadLastSync();
+
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error(err);
+      alert("동기화 실패!: " + error.message);
+    }finally {
+       setIsSyncing(false);  
+    }
+
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-400 to-orange-500 shadow-lg">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-linear-to-r from-orange-400 to-orange-500 shadow-lg">
       <div className="px-4 md:px-6">
         <div className="relative flex items-center justify-between h-16">
           {/* 모바일: 햄버거 메뉴 (맨 왼쪽) */}
@@ -121,11 +181,55 @@ export default function Header() {
           </div>
 
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
-          <div className="flex items-center gap-2 md:gap-4 z-10">
-            {/* 동기화 버튼 */}
-            <button className="flex items-center px-3 md:px-6 py-1.5 md:py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs md:text-sm font-semibold rounded-lg shadow-md transition-colors">
-              동기화
-            </button>
+            <div className="flex items-center gap-2 md:gap-4 z-10">
+
+          {/*  동기화 시간 표시 */}
+            <div className="text-white text-[10px] md:text-sm mr-2 whitespace-nowrap">
+              {formatSyncTime()}
+            </div>  
+              
+          {/* 동기화 버튼 */}
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className={`
+              flex items-center justify-center
+              px-3 md:px-6 py-1.5 md:py-2
+              text-white text-xs md:text-sm font-semibold rounded-lg shadow-md transition-colors
+              ${isSyncing ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700"}
+            `}
+          >
+            <div className="w-10 md:w-[50px] flex justify-center">
+              {isSyncing ? (
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
+                </svg>
+              ) : (
+                "동기화"
+              )}
+            </div>
+          </button>
+
+
+
+
 
             {/* 사용자 메뉴 */}
             <div className="relative">

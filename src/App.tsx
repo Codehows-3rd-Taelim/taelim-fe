@@ -4,10 +4,14 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { PrivateRoute } from "./PrivateRoute";
 import OperationManagement from "./operationManagement/pages/OperationManagement";
 import AiReportPage from "./aiReport/pages/AiReportPage";
-import { Container, Box } from "@mui/material";
-import Header from "./components/Header";
-import ReportPage from "./report/pages/ReportPage";
-import DashboardPage from "./Dashboard/pages/DashboardPage";
+import { Container, Box } from '@mui/material'
+import Header from './components/Header'
+import ReportPage from './report/pages/ReportPage'
+import AIChat from './aichat/AIChat'
+
+
+
+
 
 function App() {
   const location = useLocation();

@@ -124,6 +124,46 @@ export interface PaginationProps {
   maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수 (기본값 5)
 };
 
+export type SenderType = 'USER' | 'AI';
+
+export interface AiChatDTO {
+  aiChatId: number;
+  conversationId: string;
+  senderType: SenderType;
+  rawMessage: string;
+  createdAt: string; // LocalDateTime
+  messageIndex: number;
+  userId: number;
+  userName: string;
+}
+
+export interface ChatPromptRequest {
+  message: string;
+  conversationId: string | null; // 새 대화 시작 시 null
+}
+
+export interface ChatMessage {
+    id: string; 
+    conversationId: string;
+    senderType: SenderType;
+    content: string;
+    timestamp: string;
+    isPending: boolean; // 
+}
+
+// SSE나 유저가 즉석에서 생성한 임시 메시지 
+export interface Message {
+  rawMessage: string;
+  senderType: SenderType;
+}
+
+// 동기화 정보 DTO
+export interface SyncRecordDTO {
+  lastSyncTime: string | null;
+  globalSyncTime: string | null;
+}
+
+
 // 로봇 상태 데이터 타입 (도넛/파이 차트용)
 export interface RobotStatus {
     working: number;
