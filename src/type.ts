@@ -82,6 +82,7 @@ export type AiChat = {
     userId: number;
 }
 
+
 export type AiReport = {
     aiReportId: number;
     conversationId: number;
@@ -92,6 +93,10 @@ export type AiReport = {
     rawReport: string;
     userId: number;
     name: string;
+}
+
+export type RawReport = {
+rawReport: string;
 }
 
 export type EventHandlers = {
