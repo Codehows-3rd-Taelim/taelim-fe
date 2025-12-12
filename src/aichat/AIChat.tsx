@@ -77,12 +77,16 @@ export default function AIChat() {
     setInput("");
     setIsTyping(true);
 
-    const newId = (await sendMessage(message, currentId)).trim();
-    const effectiveId = currentId ?? newId;
+   
+    const effectiveId = currentId ?? crypto.randomUUID();
+    connectSSE(effectiveId);
 
+
+    const newId = (await sendMessage(message, effectiveId)).trim();
     if (!currentId) setCurrentId(newId);
 
-    connectSSE(effectiveId);
+    
+    
     loadChatHistory().then(setChatList);
   };
 
