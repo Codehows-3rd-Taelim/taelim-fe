@@ -2,7 +2,12 @@ export type Store = {
     storeId: number;
     shopId: number;
     shopName: string;
-    industryId: number;
+    delYn?: string;
+    industryId?: number;
+    industry?: {
+        industryId: number;
+        industryName: string;
+    };
 }
 
 export type Industry = {
@@ -185,11 +190,43 @@ export type StoreSummary = {
 
 // 관리자용 대시보드 데이터 타입
 export interface AdminDashboardData {
-    totalRobots: number;
-    totalWorking: number;
-    totalOffline: number;
-    storeSummaries: StoreSummary[];
-    industryOperationTime: DailyChartData;
-    storeCleanTime: { labels: string[]; times: number[] };
-    storeCleanArea: { labels: string[]; areas: number[] };
+  totalRobots: number;
+  totalWorking: number;
+  totalOffline: number;
+
+  storeSummaries: StoreSummary[];
+
+  industryOperationTime: DailyChartData;
+  storeCleanTime: { labels: string[]; times: number[] };
+  storeCleanArea: { labels: string[]; areas: number[] };
+
+  robotTopTime: RobotTopTime[];
+  storeStatusCount: StoreStatusCount[];
+  industryCompare: IndustryCompare[];
+  industryStoreCount: IndustryStoreCount[];
 }
+
+export interface RobotTopTime {
+  robotId: number;
+  robotName: string;
+  workTime: number; // 총 가동시간 (분 or 시간)
+}
+
+export interface StoreStatusCount {
+  status: "ACTIVE" | "INACTIVE" | "ERROR";
+  count: number;
+  [key: string]: string | number;
+}
+
+export interface IndustryCompare {
+  industryId: number;
+  industryName: string;
+  totalTime: number; // 전체 가동 시간
+  totalArea: number; // 전체 청소 면적
+}
+
+export type IndustryStoreCount = {
+  industryId: number;
+  industryName: string;
+  storeCount: number;
+};
