@@ -42,10 +42,10 @@ export type Robot = {
     mac: string;
     productCode: string;
     softVersion: string;
-    work_status: string;
+    status: number;
     nickname: string;
     battery: number;
-    online_yn: 0 | 1;
+    online: true | false;
     storeId: number;
 }
 
@@ -114,18 +114,7 @@ export interface PaginationProps {
   maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수 (기본값 5)
 };
 
-
-
-
-//---------------------------------------------------------
-//---------------------------------------------------------
-
-
-// src/type/DashboardType.ts (또는 src/type.ts)
-
-/**
- * 로봇 상태 데이터 타입
- */
+// 로봇 상태 데이터 타입 (도넛/파이 차트용)
 export interface RobotStatus {
     working: number;
     standby: number;
@@ -133,38 +122,74 @@ export interface RobotStatus {
     offline: number;
 }
 
-/**
- * 작업 성과 KPI 데이터 타입
- */
+// 작업 성과 KPI 데이터 타입
 export interface Performance {
-    costSaving: number;
     laborTimeSaving: number;
-    co2Reduction: number;
+    taskCount: number;
+    costSaving: number;
     waterSaving: number;
+    co2Reduction: number;
+    powerConsumption?: number; // 실제 전력 소비 (kWh)
+    waterConsumption?: number; // 실제 물 소비 (L)
 }
 
-/**
- * 일별 차트 데이터 기본 구조
- */
+// 일별 차트 데이터 기본 구조 (라인/막대 차트용)
 export interface DailyChartData {
-    labels: string[];
-    myRobots: number[];
-    avgTime: number[];
+    labels: string[]; // 날짜 레이블
+    myRobots: number[]; // 특정 값 1
+    avgTime: number[]; // 특정 값 2
 }
 
-/**
- * 전체 대시보드 데이터 타입
- * (areaCleanCount, dailyTaskTime 등 나머지 차트 데이터는 임시로 any 처리)
- */
-export interface DashboardData {
+// 구역별 청소 횟수 (막대 차트)
+export interface AreaCleanCount {
+    areaNames: string[];
+    cleanCounts: number[];
+}
+
+// 일별 작업 상태 (누적 막대 차트)
+export interface DailyTaskStatus {
+    labels: string[];
+    success: number[];
+    fail: number[];
+    manual: number[];
+}
+
+// 일별 완료율 (라인 차트)
+export interface DailyCompletionRate {
+    labels: string[];
+    rates: number[];
+}
+
+// ---------------------------------------------------------
+// 일반 사용자/매장 담당자용 대시보드 데이터 타입
+export interface UserDashboardData {
     robotStatus: RobotStatus;
     performance: Performance;
     dailyOperationTime: DailyChartData;
-    areaCleanCount: any; 
-    dailyTaskTime: any;
-    dailyTaskStatus: any;
-    dailyCompletionRate: any;
+    areaCleanCount: AreaCleanCount;
+    dailyTaskTime: DailyChartData;
+    dailyTaskStatus: DailyTaskStatus;
+    dailyCompletionRate: DailyCompletionRate;
 }
 
-//---------------------------------------------------------
-//---------------------------------------------------------
+// ---------------------------------------------------------
+// 관리자용 매장 요약 데이터 (테이블 행)
+export type StoreSummary = {
+    storeId: number;
+    shopName: string;
+    robotCount: number;
+    workingRobots: number;
+    cleanTimeTotal: number; // 분
+    areaCleanedTotal: number; // m²
+};
+
+// 관리자용 대시보드 데이터 타입
+export interface AdminDashboardData {
+    totalRobots: number;
+    totalWorking: number;
+    totalOffline: number;
+    storeSummaries: StoreSummary[];
+    industryOperationTime: DailyChartData;
+    storeCleanTime: { labels: string[]; times: number[] };
+    storeCleanArea: { labels: string[]; areas: number[] };
+}
