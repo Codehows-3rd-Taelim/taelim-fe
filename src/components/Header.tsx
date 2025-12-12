@@ -23,7 +23,6 @@ export default function Header() {
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [globalSync, setGlobalSync] = useState<string | null>(null);
 
-
   // 로그인한 사용자 정보
   const { logout, roleLevel, storeId, userId } = useAuthStore();
 
@@ -61,7 +60,7 @@ export default function Header() {
   };
 
   const navItems = [
-    { name: "홈", path: "/ai/chat", icon: Home },
+    { name: "홈", path: "/", icon: Home },
     { name: "AI보고서", path: "/ai/report", icon: FileText },
     { name: "대시보드", path: "/dashboard", icon: BarChart3 },
     { name: "작업목록 / 보고서", path: "/report", icon: ClipboardList },
@@ -72,34 +71,33 @@ export default function Header() {
     loadLastSync();
   }, []);
 
-const loadLastSync = async () => {
-  try {
-    const info: SyncRecordDTO = await getLastSyncTime();
-    setLastSync(info.lastSyncTime);
-    setGlobalSync(info.globalSyncTime);
-  } catch (e) {
-    console.error(e);
-  }
-};
+  const loadLastSync = async () => {
+    try {
+      const info: SyncRecordDTO = await getLastSyncTime();
+      setLastSync(info.lastSyncTime);
+      setGlobalSync(info.globalSyncTime);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
-const formatSyncTime = () => {
-  // 관리자: 항상 globalSyncTime 기준
-  if (roleLevel === 3) {
+  const formatSyncTime = () => {
+    // 관리자: 항상 globalSyncTime 기준
+    if (roleLevel === 3) {
+      if (globalSync)
+        return `마지막 동기화: ${new Date(globalSync).toLocaleString()}`;
+      return "동기화 정보 없음";
+    }
+
+    // 일반 사용자
+    if (lastSync)
+      return `마지막 동기화: ${new Date(lastSync).toLocaleString()}`;
+
     if (globalSync)
-      return `마지막 동기화: ${new Date(globalSync).toLocaleString()}`;
+      return `마지막 동기화(전체): ${new Date(globalSync).toLocaleString()}`;
+
     return "동기화 정보 없음";
-  }
-
-  // 일반 사용자
-  if (lastSync)
-    return `마지막 동기화: ${new Date(lastSync).toLocaleString()}`;
-
-  if (globalSync)
-    return `마지막 동기화(전체): ${new Date(globalSync).toLocaleString()}`;
-
-  return "동기화 정보 없음";
-};
-
+  };
 
   const handleLogoutClick = () => {
     logout();
@@ -121,34 +119,32 @@ const formatSyncTime = () => {
 
       // 동기화 완료 → 마지막 시간 다시 불러오기
       await loadLastSync();
-
     } catch (err: unknown) {
       const error = err as Error;
       console.error(err);
       alert("동기화 실패!: " + error.message);
-    }finally {
-       setIsSyncing(false);  
+    } finally {
+      setIsSyncing(false);
     }
-
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-linear-to-r from-orange-400 to-orange-500 shadow-lg">
+    <header className="fixed top-0 left-0 right-0 z-50 shadow-lg bg-linear-to-r from-orange-400 to-orange-500">
       <div className="px-4 md:px-6">
         <div className="relative flex items-center justify-between h-16">
           {/* 모바일: 햄버거 메뉴 (맨 왼쪽) */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden text-white p-2 z-10"
+            className="z-10 p-2 text-white md:hidden"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
           {/* 데스크탑: 로고 + 메뉴 */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="items-center hidden gap-8 md:flex">
             {/* 로고 */}
             <div
-              className="text-white font-bold text-xl tracking-wide cursor-pointer"
+              className="text-xl font-bold tracking-wide text-white cursor-pointer"
               onClick={() => navigate("/")}
             >
               Inufleet
@@ -162,7 +158,7 @@ const formatSyncTime = () => {
                   <button
                     key={item.name}
                     onClick={() => handleNavClick(item.path)}
-                    className="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg hover:bg-white/10"
                   >
                     <Icon size={18} />
                     <span>{item.name}</span>
@@ -174,62 +170,61 @@ const formatSyncTime = () => {
 
           {/* 모바일: 로고 (중앙) */}
           <div
-            className="absolute left-1/2 transform -translate-x-1/2 text-white font-bold text-lg tracking-wide cursor-pointer md:hidden"
+            className="absolute text-lg font-bold tracking-wide text-white transform -translate-x-1/2 cursor-pointer left-1/2 md:hidden"
             onClick={() => navigate("/")}
           >
             Inufleet
           </div>
 
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
-            <div className="flex items-center gap-2 md:gap-4 z-10">
-
-          {/*  동기화 시간 표시 */}
+          <div className="z-10 flex items-center gap-2 md:gap-4">
+            {/*  동기화 시간 표시 */}
             <div className="text-white text-[10px] md:text-sm mr-2 whitespace-nowrap">
               {formatSyncTime()}
-            </div>  
-              
-          {/* 동기화 버튼 */}
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className={`
+            </div>
+
+            {/* 동기화 버튼 */}
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className={`
               flex items-center justify-center
               px-3 md:px-6 py-1.5 md:py-2
               text-white text-xs md:text-sm font-semibold rounded-lg shadow-md transition-colors
-              ${isSyncing ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700"}
+              ${
+                isSyncing
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-amber-600 hover:bg-amber-700"
+              }
             `}
-          >
-            <div className="w-10 md:w-[50px] flex justify-center">
-              {isSyncing ? (
-                <svg
-                  className="animate-spin h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  ></path>
-                </svg>
-              ) : (
-                "동기화"
-              )}
-            </div>
-          </button>
-
-
-
-
+            >
+              <div className="w-10 md:w-[50px] flex justify-center">
+                {isSyncing ? (
+                  <svg
+                    className="w-4 h-4 text-white animate-spin"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                ) : (
+                  "동기화"
+                )}
+              </div>
+            </button>
 
             {/* 사용자 메뉴 */}
             <div className="relative">
@@ -238,7 +233,7 @@ const formatSyncTime = () => {
                 className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 text-white rounded-lg hover:bg-white/10 transition-colors"
               >
                 <User size={24} className="md:w-7 md:h-7" />
-                <div className="hidden sm:flex flex-col items-start">
+                <div className="flex-col items-start hidden sm:flex">
                   <span className="text-sm font-medium leading-tight">
                     {getUserDisplayText()}
                   </span>
@@ -264,10 +259,10 @@ const formatSyncTime = () => {
                     className="fixed inset-0 z-10"
                     onClick={() => setIsUserMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-full bg-orange-400 rounded-lg shadow-lg overflow-hidden z-20">
+                  <div className="absolute right-0 z-20 w-full mt-2 overflow-hidden bg-orange-400 rounded-lg shadow-lg">
                     <button
                       onClick={handleLogoutClick}
-                      className="w-full px-4 py-3 text-white font-medium text-center hover:bg-white/10 transition-colors"
+                      className="w-full px-4 py-3 font-medium text-center text-white transition-colors hover:bg-white/10"
                     >
                       로그아웃
                     </button>
@@ -280,7 +275,7 @@ const formatSyncTime = () => {
 
         {/* 모바일 메뉴 */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-white/20 py-4">
+          <div className="py-4 border-t md:hidden border-white/20">
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -288,7 +283,7 @@ const formatSyncTime = () => {
                   <button
                     key={item.name}
                     onClick={() => handleNavClick(item.path)}
-                    className="flex items-center gap-3 px-4 py-3 text-white text-sm font-medium rounded-lg hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-white transition-colors rounded-lg hover:bg-white/10"
                   >
                     <Icon size={18} />
                     <span>{item.name}</span>

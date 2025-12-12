@@ -4,14 +4,11 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { PrivateRoute } from "./PrivateRoute";
 import OperationManagement from "./operationManagement/pages/OperationManagement";
 import AiReportPage from "./aiReport/pages/AiReportPage";
-import { Container, Box } from '@mui/material'
-import Header from './components/Header'
-import ReportPage from './report/pages/ReportPage'
-import AIChat from './aichat/AIChat'
-
-
-
-
+import { Container, Box } from "@mui/material";
+import Header from "./components/Header";
+import ReportPage from "./report/pages/ReportPage";
+import AIChat from "./aichat/AIChat";
+import DashboardPage from "./Dashboard/pages/DashboardPage";
 
 function App() {
   const location = useLocation();
@@ -29,7 +26,14 @@ function App() {
         <Container maxWidth="xl" sx={{ maxWidth: "1800px !important" }}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            {/* <Route path="/ai/chat" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <AIChat />
+                </PrivateRoute>
+              }
+            />
             <Route
               path="/ai/report"
               element={
