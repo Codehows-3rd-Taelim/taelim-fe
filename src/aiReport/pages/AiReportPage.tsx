@@ -36,7 +36,7 @@ import Pagination from "../../components/Pagination";
 
 import type { AiReport } from "../../type";
 import ReportContent from "../components/ReportContent";
-import { getAiReport, getRawReport, postAiReport } from "../api/AiReportApi";
+import { getAiReport, getRawReport, createAiReport, subscribeAiReport } from "../api/AiReportApi";
 
 interface StreamingReport extends AiReport {
   streamingRawReport?: string;
@@ -92,12 +92,12 @@ export default function AiReportPage() {
 
   const handleGenerateReport = async () => {
     if (!query.trim()) return;
+
     setError(null);
     setIsLoading(true);
     streamingBufferRef.current = "";
-    const conversationId = crypto.randomUUID();
 
-    // 임시 보고서 추가
+    // 🔹 임시 스트리밍 보고서 먼저 추가
     setAiReportData((prev) => [
       {
         aiReportId: -1,
@@ -115,63 +115,66 @@ export default function AiReportPage() {
     ]);
     setOpenRow(-1);
 
-    const handlers = {
-      onReportInfo: (message: string) => {
-        alert(`⚠️ 보고서 생성 불가: ${message}`);
-      },
-      onMessage: (token: string) => {
-        streamingBufferRef.current += token;
+    try {
+      // 1단계: 보고서 생성 요청 (POST)
+      const conversationId = await createAiReport(query);
 
-        if (streamingUpdateTimerRef.current) {
-          clearTimeout(streamingUpdateTimerRef.current);
-        }
+      // 2단계: SSE 구독
+      subscribeAiReport(conversationId, {
+        onMessage: (token: string) => {
+          streamingBufferRef.current += token;
 
-        streamingUpdateTimerRef.current = window.setTimeout(() => {
-          updateStreamingReport();
-        }, 100);
-      },
-      onSavedReport: (savedReport: AiReport) => {
-        if (streamingUpdateTimerRef.current) {
-          clearTimeout(streamingUpdateTimerRef.current);
-        }
+          if (streamingUpdateTimerRef.current) {
+            clearTimeout(streamingUpdateTimerRef.current);
+          }
 
-        setAiReportData((prevReports) => {
-          const updatedReports = [
+          streamingUpdateTimerRef.current = window.setTimeout(() => {
+            updateStreamingReport();
+          }, 100);
+        },
+
+        onSavedReport: (savedReport: AiReport) => {
+          if (streamingUpdateTimerRef.current) {
+            clearTimeout(streamingUpdateTimerRef.current);
+          }
+
+          setAiReportData((prevReports) => [
             {
               ...savedReport,
-              rawReport: savedReport.rawReport || streamingBufferRef.current,
+              rawReport:
+                savedReport.rawReport || streamingBufferRef.current,
             },
             ...prevReports.filter((r) => r.aiReportId !== -1),
-          ];
-          return updatedReports;
-        });
+          ]);
 
-        streamingBufferRef.current = "";
-        setOpenRow(savedReport.aiReportId);
-      },
-      onDone: () => {
-        setIsLoading(false);
-        setQuery("");
-        setPage(1);
-        setAiReportData((prevReports) =>
-          prevReports.filter((r) => r.aiReportId !== -1)
-        );
-      },
-      onError: (err: Error) => {
-        console.error("SSE 요청 오류:", err);
-        setError(err.message || "보고서 생성 중 오류가 발생했습니다.");
-        setIsLoading(false);
-        setAiReportData((prevReports) =>
-          prevReports.filter((r) => r.aiReportId !== -1)
-        );
-      },
-    };
+          streamingBufferRef.current = "";
+          setOpenRow(savedReport.aiReportId);
+        },
 
-    try {
-      await postAiReport(query, conversationId, handlers);
-    } catch (error) {
-      console.error("보고서 생성 요청 시작 오류:", error);
-      handlers.onError(error as Error);
+        onDone: () => {
+          setIsLoading(false);
+          setQuery("");
+          setPage(1);
+
+          setAiReportData((prevReports) =>
+            prevReports.filter((r) => r.aiReportId !== -1)
+          );
+        },
+
+        onError: (e) => {
+          console.error("SSE 오류:", e);
+          setError("보고서 생성 중 오류가 발생했습니다.");
+          setIsLoading(false);
+
+          setAiReportData((prevReports) =>
+            prevReports.filter((r) => r.aiReportId !== -1)
+          );
+        },
+      });
+    } catch (err) {
+      console.error("보고서 생성 시작 실패:", err);
+      setError("보고서 생성 요청에 실패했습니다.");
+      setIsLoading(false);
     }
   };
 
