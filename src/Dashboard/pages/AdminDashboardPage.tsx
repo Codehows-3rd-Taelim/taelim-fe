@@ -11,9 +11,9 @@ import AdminStoreTable from "../components/admin/AdminStoreTable";
 import AdminIndustryTimeChart from "../components/admin/AdminIndustryTimeChart";
 import AdminStoreCleanTimeChart from "../components/admin/AdminStoreCleanTimeChart";
 import AdminStoreCleanAreaChart from "../components/admin/AdminStoreCleanAreaChart";
-import AdminRobotTopChart from "../components/admin/AdminRobotTopChart";
-import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
-import AdminIndustryCompareChart from "../components/admin/AdminIndustryCompareChart";
+// import AdminRobotTopChart from "../components/admin/AdminRobotTopChart";
+// import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
+// import AdminIndustryCompareChart from "../components/admin/AdminIndustryCompareChart";
 
 export default function AdminDashboardPage() {
   const {
@@ -68,7 +68,7 @@ export default function AdminDashboardPage() {
       {/* KPI */}
       <AdminKpiSection data={data} />
 
-       <div className="bg-white p-6 rounded-xl shadow">
+       {/* <div className="bg-white p-6 rounded-xl shadow">
         <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업시간</h2>
         <AdminRobotTopChart data={data.robotTopTime} />
       </div>
@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
       <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">산업별 매장 수</h2>
           <AdminIndustryCompareChart data={data.industryStoreCount} />
-      </div>
+      </div> */}
 
       {/* 매장 테이블 */}
       <div className="bg-white p-6 rounded-xl shadow">
