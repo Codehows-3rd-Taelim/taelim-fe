@@ -9,7 +9,7 @@ import ReportPage from "./report/pages/ReportPage";
 import AIChat from "./aichat/AIChat";
 import DashboardPage from "./Dashboard/pages/DashboardPage";
 import AuthProvider from "./AuthProvider";
-import Header from "./Components/Header";
+import Header from "./components/Header";
 
 function App() {
   const location = useLocation();

@@ -10,25 +10,7 @@ import "dayjs/locale/ko";
 import isBetween from "dayjs/plugin/isBetween";
 dayjs.extend(isBetween);
 
-import {
-  Box,
-  TextField,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Collapse,
-  CircularProgress,
-} from "@mui/material";
-
-import SearchIcon from "@mui/icons-material/Search";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import { ChevronDown, ChevronUp, Search, Loader2 } from "lucide-react";
 
 import type { DateRange } from "@mui/x-date-pickers-pro";
 import DateRangePicker from "../../components/DateRangePicker";
@@ -246,73 +228,64 @@ export default function AiReportPage() {
   const totalPages = Math.ceil(filteredReports.length / 20);
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        minHeight: "100vh",
-        px: 6,
-        py: 4,
-        bgcolor: "#f7f7f7",
-      }}
-    >
+    <div className="w-full min-h-screen px-6 py-4 bg-[#f7f7f7]">
       {error && (
-        <Paper sx={{ p: 2, mb: 2, bgcolor: "error.light", color: "white" }}>
-          <Box fontWeight="bold">오류: {error}</Box>
-        </Paper>
+        <div className="p-4 mb-4 bg-red-100 text-white rounded-lg">
+          <div className="font-bold">오류: {error}</div>
+        </div>
       )}
 
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <TextField
-            placeholder={`조회하고 싶은 보고서 내용을 입력해 주세요.\n원하는 기간 등을 입력하면 더욱 자세한 보고서가 조회됩니다.`}
-            multiline
-            sx={{ width: "100%" }}
+      <div className="bg-white p-6 mb-6 rounded-lg shadow">
+        <div className="flex gap-4">
+          <textarea
+            placeholder="조회하고 싶은 보고서 내용을 입력해 주세요.
+원하는 기간 등을 입력하면 더욱 자세한 보고서가 조회됩니다."
+            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+            rows={3}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             disabled={isLoading}
           />
-          <Button
-            variant="contained"
-            color="warning"
-            sx={{ p: 3, height: 78 }}
+          <button
+            className="px-6 py-3 bg-orange-500 text-white rounded font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed h-[78px]"
             onClick={handleGenerateReport}
             disabled={isLoading || !query.trim()}
           >
             {isLoading ? "생성 중…" : "조회"}
-          </Button>
-        </Box>
-      </Paper>
+          </button>
+        </div>
+      </div>
 
-      <Box display="flex" alignItems="center" gap={2} sx={{ ml: 4 }}>
-        <Box display="flex" alignItems="center" gap={2}>
+      <div className="flex items-center gap-4 ml-4">
+        <div className="flex items-center gap-4">
           <span>생성일자</span>
           <DateRangePicker
             value={dateRangeInput}
             onChange={setDateRangeInput}
             size="small"
           />
-        </Box>
+        </div>
 
-        <Box display="flex" alignItems="center" gap={2}>
+        <div className="flex items-center gap-4">
           <span>내용</span>
-          <TextField
+          <input
+            type="text"
             value={searchTextInput}
             onChange={(e) => setSearchTextInput(e.target.value)}
-            sx={{ width: 500, bgcolor: "white" }}
-            size="small"
+            className="w-[500px] px-3 py-2 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <IconButton
+          <button
             onClick={() => {
               setSearchText(searchTextInput);
               setDateRange(dateRangeInput);
               setPage(1);
             }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
-            <SearchIcon />
-          </IconButton>
-          <Button
-            sx={{ color: "black", borderColor: "black" }}
-            variant="outlined"
+            <Search size={20} />
+          </button>
+          <button
+            className="px-4 py-2 border border-black text-black rounded hover:bg-gray-50 transition-colors"
             onClick={() => {
               setSearchText("");
               setDateRange([null, null]);
@@ -322,80 +295,87 @@ export default function AiReportPage() {
             }}
           >
             초기화
-          </Button>
-        </Box>
-      </Box>
+          </button>
+        </div>
+      </div>
 
-      <TableContainer component={Paper} sx={{ borderRadius: 3, mt: 3 }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell align="center">no</TableCell>
-              <TableCell align="center">질문 내용</TableCell>
-              <TableCell align="center">보고서 기간</TableCell>
-              <TableCell align="center">생성일자</TableCell>
-              <TableCell align="center">작성자</TableCell>
-              <TableCell align="center"></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedReports.map((r) => (
-              <React.Fragment key={r.aiReportId}>
-                <TableRow>
-                  <TableCell align="center">
-                    {r.aiReportId === -1 ? (
-                      <CircularProgress size={16} color="warning" />
-                    ) : (
-                      r.aiReportId
-                    )}
-                  </TableCell>
-                  <TableCell>{r.rawMessage}</TableCell>
-                  <TableCell align="center">
-                    {dayjs(r.startTime).format("YYYY-MM-DD")} ~{" "}
-                    {dayjs(r.endTime).format("YYYY-MM-DD")}
-                  </TableCell>
-                  <TableCell align="center">
-                    {dayjs(r.createdAt).format("YYYY-MM-DD")}
-                  </TableCell>
-                  <TableCell align="center">{r.name}</TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={() => handleRowClick(r)}
-                      disabled={r.aiReportId === -1 && !r.streamingRawReport}
-                    >
-                      {openRow === r.aiReportId ? (
-                        <KeyboardArrowUpIcon />
+      <div className="bg-white rounded-lg shadow overflow-hidden mt-6">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 sticky top-0">
+              <tr>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">no</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">질문 내용</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">보고서 기간</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">생성일자</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">작성자</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedReports.map((r) => (
+                <React.Fragment key={r.aiReportId}>
+                  <tr className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-center text-sm">
+                      {r.aiReportId === -1 ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-orange-500 mx-auto" />
                       ) : (
-                        <KeyboardArrowDownIcon />
+                        r.aiReportId
                       )}
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
+                    </td>
+                    <td className="px-4 py-3 text-sm">{r.rawMessage}</td>
+                    <td className="px-4 py-3 text-center text-sm">
+                      {dayjs(r.startTime).format("YYYY-MM-DD")} ~{" "}
+                      {dayjs(r.endTime).format("YYYY-MM-DD")}
+                    </td>
+                    <td className="px-4 py-3 text-center text-sm">
+                      {dayjs(r.createdAt).format("YYYY-MM-DD")}
+                    </td>
+                    <td className="px-4 py-3 text-center text-sm">{r.name}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => handleRowClick(r)}
+                        disabled={r.aiReportId === -1 && !r.streamingRawReport}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {openRow === r.aiReportId ? (
+                          <ChevronUp size={20} />
+                        ) : (
+                          <ChevronDown size={20} />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
 
-                <TableRow>
-                  <TableCell colSpan={6} sx={{ p: 0 }}>
-                    <Collapse in={openRow === r.aiReportId}>
-                      <Box sx={{ p: 3, bgcolor: "#fafafa" }}>
-                        <ReportContent
-                          markdown={
-                            r.streamingRawReport || r.rawReport || "로딩 중..."
-                          }
-                        />
-                      </Box>
-                    </Collapse>
-                  </TableCell>
-                </TableRow>
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                  <tr>
+                    <td colSpan={6} className="p-0">
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ${
+                          openRow === r.aiReportId ? "max-h-[2000px]" : "max-h-0"
+                        }`}
+                      >
+                        <div className="p-6 bg-[#fafafa]">
+                          <ReportContent
+                            markdown={
+                              r.streamingRawReport || r.rawReport || "로딩 중..."
+                            }
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <Pagination
         page={page}
         totalPages={totalPages}
         onPageChange={(newPage) => setPage(newPage)}
       />
-    </Box>
+    </div>
   );
 }
