@@ -5,10 +5,11 @@ import { PrivateRoute } from "./PrivateRoute";
 import OperationManagement from "./operationManagement/pages/OperationManagement";
 import AiReportPage from "./aiReport/pages/AiReportPage";
 import { Container, Box } from "@mui/material";
-import Header from "./components/Header";
 import ReportPage from "./report/pages/ReportPage";
 import AIChat from "./aichat/AIChat";
 import DashboardPage from "./Dashboard/pages/DashboardPage";
+import AuthProvider from "./AuthProvider";
+import Header from "./Components/Header";
 
 function App() {
   const location = useLocation();
@@ -16,6 +17,7 @@ function App() {
 
   return (
     <>
+     <AuthProvider>
       {!isLoginPage && <Header />}
       <Box
         sx={{
@@ -70,6 +72,7 @@ function App() {
           </Routes>
         </Container>
       </Box>
+      </AuthProvider>
     </>
   );
 }
