@@ -21,7 +21,7 @@ function getStatusStyle(robot: Robot) {
 function getStatusLabel(robot: Robot) {
   if (!robot.online) return "오프라인";
   if (robot.status === 1) return "작업중";
-  if (robot.status === 2) return "충전중";
+  if (robot.isCharging === 1) return "충전중";
   return "대기중";
 }
 

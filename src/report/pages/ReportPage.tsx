@@ -120,7 +120,7 @@ export default function ReportPage() {
     if (hours === 0) {
       return `${totalMinutes}분 ${seconds}초`;
     } else {
-      return `${hours}시 ${minutes}분 ${seconds}초`;
+      return `${hours}시간 ${minutes}분 ${seconds}초`;
     }
   };
 
@@ -353,7 +353,7 @@ export default function ReportPage() {
                 <TableCell align="center">
                   {formatDynamicTime(r.cleanTime)}
                 </TableCell>
-                <TableCell align="center">{r.cleanArea}</TableCell>
+                <TableCell align="center">{r.cleanArea==null ? "-" : r.cleanArea}</TableCell>
                 <TableCell align="center">
                   {Math.round(r.costBattery * 1.3 * 100) / 10000}
                 </TableCell>

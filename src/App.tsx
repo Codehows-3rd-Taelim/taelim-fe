@@ -9,6 +9,7 @@ import Header from "./components/Header";
 import ReportPage from "./report/pages/ReportPage";
 import AIChat from "./aichat/AIChat";
 import DashboardPage from "./Dashboard/pages/DashboardPage";
+// import AuthProvider from "./AuthProvider";
 
 function App() {
   const location = useLocation();
@@ -16,6 +17,7 @@ function App() {
 
   return (
     <>
+      {/* <AuthProvider /> */}
       {!isLoginPage && <Header />}
       <Box
         sx={{

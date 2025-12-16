@@ -119,7 +119,7 @@ export default function AiReportPage() {
       // 1단계: 보고서 생성 요청 (POST)
       const conversationId = await createAiReport(query);
 
-      // 2단계: SSE 구독
+      // ✅ 2단계: SSE 구독
       subscribeAiReport(conversationId, {
         onMessage: (token: string) => {
           streamingBufferRef.current += token;
