@@ -12,6 +12,9 @@ import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import type { AiChatDTO, Message } from "../type";
 
+// 🔥 추가
+import { fetchUnreadNotifications } from "../notificationApi";
+
 export default function AIChat() {
   const [chatList, setChatList] = useState<AiChatDTO[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,93 +24,91 @@ export default function AIChat() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // 초기 목록 로드 
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
+  // 🔥 알림 강제 pull (SSE 유실 대비)
+  const pullNotificationOnce = async () => {
+    await fetchUnreadNotifications();
+  };
 
   const send = async (overrideText?: string) => {
-  const message = overrideText ?? input;
-  if (!message.trim()) return;
-  if (isTyping) return;
+    const message = overrideText ?? input;
+    if (!message.trim()) return;
+    if (isTyping) return;
 
-  const effectiveId = currentId ?? crypto.randomUUID();
-
-  // USER 메시지 추가
-  setMessages(prev => [
-    ...prev,
-    { rawMessage: message, senderType: "USER" }
-  ]);
-  setInput("");
-  setIsTyping(true);
-
-  try {
-    const res = await sendChatStream(message, effectiveId);
-
-    if (!currentId) {
-      setCurrentId(effectiveId);
-    }
-
-    const reader = res.body!.getReader();
-    const decoder = new TextDecoder("utf-8");
-
-    let aiMessage = "";
+    const effectiveId = currentId ?? crypto.randomUUID();
 
     setMessages(prev => [
       ...prev,
-      { rawMessage: "", senderType: "AI" }
+      { rawMessage: message, senderType: "USER" }
     ]);
+    setInput("");
+    setIsTyping(true);
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
+    try {
+      const res = await sendChatStream(message, effectiveId);
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split("\n");
+      if (!currentId) setCurrentId(effectiveId);
 
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder("utf-8");
 
-        const token = line.replace("data:", "").trim();
-        if (!token) continue;
+      let aiMessage = "";
 
-        aiMessage += token;
+      setMessages(prev => [
+        ...prev,
+        { rawMessage: "", senderType: "AI" }
+      ]);
 
-        setMessages(prev => {
-          const copy = [...prev];
-          const last = copy[copy.length - 1];
-          if (last?.senderType === "AI") {
-            last.rawMessage += token;
-          }
-          return copy;
-        });
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const token = line.replace("data:", "").trim();
+          if (!token) continue;
+
+          aiMessage += token;
+
+          setMessages(prev => {
+            const copy = [...prev];
+            const last = copy[copy.length - 1];
+            if (last?.senderType === "AI") {
+              last.rawMessage += token;
+            }
+            return copy;
+          });
+
+          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
       }
+
+      loadChatHistory().then(setChatList);
+
+      // 🔥🔥🔥 핵심 한 줄 (이거 때문에 해결됨)
+      pullNotificationOnce();
+
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsTyping(false);
     }
+  };
 
-    loadChatHistory().then(setChatList);
-
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setIsTyping(false);
-  }
-};
-
-  // 채팅 선택 
   const selectConversation = async (id: string) => {
     const data = await loadConversation(id);
-
     setMessages(data);
     setCurrentId(id);
   };
 
-  // 새 채팅 
   const newChat = async () => {
     const { conversationId } = await createNewChat();
-
     setMessages([]);
     setCurrentId(conversationId);
     loadChatHistory().then(setChatList);
