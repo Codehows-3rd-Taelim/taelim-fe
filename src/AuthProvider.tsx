@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Snackbar, Alert } from "@mui/material";
 import { useAuthStore } from "./store";
 import { createNotificationEventSource } from "./aichat/api/aiChatApi";
@@ -13,30 +13,49 @@ export default function AuthProvider({
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  useEffect(() => {
-    if (!token) return;
+  // EventSource retryTimer 관리 (
+  const esRef = useRef<EventSource | null>(null);
+  const retryTimerRef = useRef<number | null>(null);
 
-    let es: EventSource | null = null;
-    let retryTimer: number | null = null;
+  useEffect(() => {
+    // 토큰 없으면 SSE 연결하지 않음
+    if (!token) {
+      esRef.current?.close();
+      esRef.current = null;
+
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+      return;
+    }
 
     const connect = () => {
-      es = createNotificationEventSource();
+      // 재연결 시점에도 토큰 재확인
+      if (!useAuthStore.getState().jwtToken) return;
+
+      const es = createNotificationEventSource();
       if (!es) return;
 
-      es.addEventListener("AI_CHAT_DONE", (e: MessageEvent) => {
+      esRef.current = es;
+
+      es.addEventListener("AI_CHAT_DONE", () => {
         setToastMessage("AI 챗봇 답변이 도착했습니다");
         setToastOpen(true);
       });
 
-      es.addEventListener("AI_REPORT_DONE", (e: MessageEvent) => {
+      es.addEventListener("AI_REPORT_DONE", () => {
         setToastMessage("AI 보고서 생성이 완료되었습니다");
         setToastOpen(true);
       });
 
       es.addEventListener("AI_REPORT_FAILED", (e: MessageEvent) => {
-        const data = JSON.parse(e.data);
-
-        setToastMessage(data.message ?? "AI 보고서 생성에 실패했습니다.");
+        try {
+          const data = JSON.parse(e.data);
+          setToastMessage(data.message ?? "AI 보고서 생성에 실패했습니다.");
+        } catch {
+          setToastMessage("AI 보고서 생성에 실패했습니다.");
+        }
         setToastOpen(true);
       });
 
@@ -44,20 +63,28 @@ export default function AuthProvider({
       es.addEventListener("PING", () => {});
 
       es.onerror = () => {
-        es?.close();
-        es = null;
+        es.close();
+        esRef.current = null;
 
-        // 3초 후 재연결
-        retryTimer = window.setTimeout(connect, 3000);
+        // 토큰 있을 때만 재연결
+        if (useAuthStore.getState().jwtToken) {
+          retryTimerRef.current = window.setTimeout(connect, 3000);
+        }
       };
     };
 
     // 최초 연결
     connect();
 
+    // cleanup
     return () => {
-      es?.close();
-      if (retryTimer) clearTimeout(retryTimer);
+      esRef.current?.close();
+      esRef.current = null;
+
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
     };
   }, [token]);
 
