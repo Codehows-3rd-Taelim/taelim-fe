@@ -134,6 +134,7 @@ export interface ChatMessage {
 
 // SSE나 유저가 즉석에서 생성한 임시 메시지 
 export interface Message {
+  id: string;
   rawMessage: string;
   senderType: SenderType;
 }

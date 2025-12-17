@@ -28,36 +28,48 @@ export default function AIChat() {
 
 
 
-  const send = async (overrideText?: string) => {
-    const message = overrideText ?? input;
-    if (!message.trim()) return;
-    if (isTyping) return;
+const send = async (overrideText?: string) => {
+  const message = overrideText ?? input;
+  if (!message.trim()) return;
+  if (isTyping) return;
 
-    const effectiveId = currentId ?? crypto.randomUUID();
+  const effectiveId = currentId ?? crypto.randomUUID();
 
+  // USER 메시지
+  setMessages(prev => [
+    ...prev,
+    {
+      id: crypto.randomUUID(),
+      rawMessage: message,
+      senderType: "USER",
+    },
+  ]);
+
+  setInput("");
+  setIsTyping(true);
+
+  // 임시 AI 메시지 ID
+  const tempAiMessageId = `temp-ai-${crypto.randomUUID()}`;
+
+  try {
+    const res = await sendChatStream(message, effectiveId);
+
+    if (!currentId) setCurrentId(effectiveId);
+
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    // 임시 AI 메시지 먼저 추가
     setMessages(prev => [
       ...prev,
-      { rawMessage: message, senderType: "USER" }
+      {
+        id: tempAiMessageId,
+        rawMessage: "",
+        senderType: "AI",
+      },
     ]);
-    setInput("");
-    setIsTyping(true);
 
-    try {
-      const res = await sendChatStream(message, effectiveId);
-
-      if (!currentId) setCurrentId(effectiveId);
-
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder("utf-8");
-
-      let aiMessage = "";
-
-      setMessages(prev => [
-        ...prev,
-        { rawMessage: "", senderType: "AI" }
-      ]);
-
-     while (true) {
+    while (true) {
       const { value, done } = await reader.read();
       if (done) break;
 
@@ -69,31 +81,35 @@ export default function AIChat() {
         const token = line.replace("data:", "").trim();
         if (!token) continue;
 
-        aiMessage += token;
-
-        setMessages(prev => {
-          const copy = [...prev];
-          const last = copy[copy.length - 1];
-          if (last?.senderType === "AI") {
-            last.rawMessage += token;
-          }
-          return copy;
-        });
+        // 임시 AI 메시지에만 append
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === tempAiMessageId
+              ? { ...m, rawMessage: m.rawMessage + token }
+              : m
+          )
+        );
 
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     }
 
-// 채팅 목록만 갱신
-loadChatHistory().then(setChatList);
+  } catch (e) {
+    console.error(e);
 
+    // 스트림 에러 시 임시 AI 메시지 제거
+    setMessages(prev =>
+      prev.filter(m => m.id !== tempAiMessageId)
+    );
 
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsTyping(false);
-    }
-  };
+  } finally {
+    setIsTyping(false);
+
+    // 사이드바만 갱신 
+    loadChatHistory().then(setChatList);
+  }
+};
+
 
   const selectConversation = async (id: string) => {
     const data = await loadConversation(id);
