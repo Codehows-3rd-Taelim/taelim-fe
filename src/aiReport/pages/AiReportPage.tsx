@@ -36,7 +36,12 @@ import Pagination from "../../components/Pagination";
 
 import type { AiReport } from "../../type";
 import ReportContent from "../components/ReportContent";
-import { getAiReport, getRawReport, createAiReport, subscribeAiReport } from "../api/AiReportApi";
+import {
+  getAiReport,
+  getRawReport,
+  createAiReport,
+  subscribeAiReport,
+} from "../api/AiReportApi";
 
 interface StreamingReport extends AiReport {
   streamingRawReport?: string;
@@ -141,8 +146,7 @@ export default function AiReportPage() {
           setAiReportData((prevReports) => [
             {
               ...savedReport,
-              rawReport:
-                savedReport.rawReport || streamingBufferRef.current,
+              rawReport: savedReport.rawReport || streamingBufferRef.current,
             },
             ...prevReports.filter((r) => r.aiReportId !== -1),
           ]);
@@ -250,7 +254,7 @@ export default function AiReportPage() {
       sx={{
         width: "100%",
         minHeight: "100vh",
-        px: 6,
+        px: 10,
         py: 4,
         bgcolor: "#f7f7f7",
       }}

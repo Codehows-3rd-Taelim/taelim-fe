@@ -9,21 +9,34 @@ import Header from "./components/Header";
 import ReportPage from "./report/pages/ReportPage";
 import AIChat from "./aichat/AIChat";
 import DashboardPage from "./Dashboard/pages/DashboardPage";
+import Footer from "./components/Footer";
 
 function App() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
 
   return (
-    <>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       {!isLoginPage && <Header />}
+
       <Box
+        component="main"
         sx={{
-          pt: isLoginPage ? 0 : "64px", // 헤더 높이만큼 padding-top 추가
-          minHeight: "100vh",
+          pt: isLoginPage ? 0 : "64px",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <Container maxWidth="xl" sx={{ maxWidth: "1800px !important" }}>
+        <Container
+          maxWidth={false}
+          sx={{
+            width: "100%",
+            maxWidth: "2400px",
+            px: 3,
+            flex: 1,
+          }}
+        >
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route
@@ -42,7 +55,6 @@ function App() {
                 </PrivateRoute>
               }
             />
-            {/* <Route path="/dashboard/admin" element={<PrivateRoute><UserDashboardPage /></PrivateRoute>} /> */}
             <Route
               path="/dashboard"
               element={
@@ -70,7 +82,13 @@ function App() {
           </Routes>
         </Container>
       </Box>
-    </>
+
+      {!isLoginPage && (
+        <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
+          <Footer />
+        </Box>
+      )}
+    </Box>
   );
 }
 

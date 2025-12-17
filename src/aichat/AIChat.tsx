@@ -5,7 +5,7 @@ import {
   loadConversation,
   sendMessage,
   createNewChat,
-  createEventSource
+  createEventSource,
 } from "./api/aiChatApi";
 
 import ChatSidebar from "./ChatSidebar";
@@ -36,9 +36,12 @@ export default function AIChat() {
       setIsTyping(true);
     };
 
-    es.onmessage = (e:MessageEvent<string>) => {
+    es.onmessage = (e: MessageEvent<string>) => {
       setIsTyping(false);
-      setMessages(prev => [...prev, { rawMessage: e.data, senderType: "AI" }]);
+      setMessages((prev) => [
+        ...prev,
+        { rawMessage: e.data, senderType: "AI" },
+      ]);
       scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
@@ -51,12 +54,12 @@ export default function AIChat() {
     eventSourceRef.current = es;
   };
 
-  // 초기 목록 로드 
+  // 초기 목록 로드
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
-  // 언마운트 시 SSE 정리 
+  // 언마운트 시 SSE 정리
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -65,32 +68,28 @@ export default function AIChat() {
     };
   }, []);
 
-  // 메시지 전송 
+  // 메시지 전송
   const send = async (overrideText?: string) => {
     const message = overrideText ?? input;
     if (!message.trim()) return;
 
-    setMessages(prev => [
+    setMessages((prev) => [
       ...prev,
-      { rawMessage: message, senderType: "USER" }
+      { rawMessage: message, senderType: "USER" },
     ]);
     setInput("");
     setIsTyping(true);
 
-   
     const effectiveId = currentId ?? crypto.randomUUID();
     connectSSE(effectiveId);
-
 
     const newId = (await sendMessage(message, effectiveId)).trim();
     if (!currentId) setCurrentId(newId);
 
-    
-    
     loadChatHistory().then(setChatList);
   };
 
-  // 채팅 선택 
+  // 채팅 선택
   const selectConversation = async (id: string) => {
     const data = await loadConversation(id);
 
@@ -98,7 +97,7 @@ export default function AIChat() {
     setCurrentId(id);
   };
 
-  // 새 채팅 
+  // 새 채팅
   const newChat = async () => {
     const { conversationId } = await createNewChat();
 
@@ -108,7 +107,7 @@ export default function AIChat() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-white">
+    <div className="flex min-h-[calc(100vh-64px-160px)] bg-white">
       <ChatSidebar
         chatList={chatList}
         currentId={currentId}

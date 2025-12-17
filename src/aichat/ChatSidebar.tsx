@@ -4,18 +4,21 @@ interface Props {
   chatList: AiChatDTO[];
   currentId: string | null;
   select: (id: string) => void;
-  newChat: () => void;   
+  newChat: () => void;
 }
 
-export default function ChatSidebar({ chatList, currentId, select, newChat }: Props) {
-
-
+export default function ChatSidebar({
+  chatList,
+  currentId,
+  select,
+  newChat,
+}: Props) {
   return (
-    <aside 
+    <aside
       id="sidebar"
-      className="w-80 bg-[#fffaf3] border-r px-2 py-4 overflow-y-auto fixed top-16 left-0 h-[calc(100vh-64px)]"
+      className="w-80 bg-[#fffaf3] border-r px-2 py-4 overflow-y-auto fixed top-16 left-0 h-[calc(100vh-64px)] z-10"
+      style={{ maxHeight: "calc(100vh - 64px)" }}
     >
-
       {/* 🔹 새 채팅 버튼 */}
       <button
         onClick={newChat}
@@ -32,7 +35,7 @@ export default function ChatSidebar({ chatList, currentId, select, newChat }: Pr
 
       {/* 🔹 채팅 목록 */}
       <div className="flex flex-col gap-1 mt-1">
-        {chatList.map(c => (
+        {chatList.map((c) => (
           <button
             key={c.conversationId}
             onClick={() => select(c.conversationId)}
@@ -42,11 +45,12 @@ export default function ChatSidebar({ chatList, currentId, select, newChat }: Pr
                 : ""
             }`}
           >
-            {c.rawMessage.length > 10 ? c.rawMessage.slice(0, 10) + "…" : c.rawMessage}
+            {c.rawMessage.length > 10
+              ? c.rawMessage.slice(0, 10) + "…"
+              : c.rawMessage}
           </button>
         ))}
       </div>
-
     </aside>
   );
 }
