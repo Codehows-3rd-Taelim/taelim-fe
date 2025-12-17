@@ -16,23 +16,22 @@ function authHeader() {
 }
 
 /* ===============================
-   타입
+   타입 (1단계 최소)
 ================================ */
 export interface Notification {
   notificationId: number;
   message: string;
   type: string;
-  read: boolean;
   createdAt: string;
 }
 
 /* ===============================
-   HTTP API
+   HTTP API (1단계)
 ================================ */
 
-// 미읽음 알림 조회
-export async function fetchUnreadNotifications(): Promise<Notification[]> {
-  const res = await fetch(`${BASE_URL}/notifications/unread`, {
+// 🔔 아직 토스트 안 뜬 알림 조회
+export async function fetchUndeliveredNotifications(): Promise<Notification[]> {
+  const res = await fetch(`${BASE_URL}/notifications/undelivered`, {
     headers: authHeader(),
   });
 
@@ -40,11 +39,11 @@ export async function fetchUnreadNotifications(): Promise<Notification[]> {
   return res.json();
 }
 
-// 알림 읽음 처리
-export async function markNotificationAsRead(
+// 🔔 토스트 노출 완료 처리
+export async function markNotificationDelivered(
   notificationId: number
 ): Promise<void> {
-  await fetch(`${BASE_URL}/notifications/${notificationId}/read`, {
+  await fetch(`${BASE_URL}/notifications/${notificationId}/delivered`, {
     method: "POST",
     headers: authHeader(),
   });
@@ -63,7 +62,7 @@ export function createNotificationEventSource(): EventSource | null {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-      retry: -1,
+      retry: -1, // 자동 재연결 끔 (pull로 보정)
     }
   );
 }

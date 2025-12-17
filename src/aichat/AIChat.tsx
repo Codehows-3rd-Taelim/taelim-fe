@@ -12,8 +12,6 @@ import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import type { AiChatDTO, Message } from "../type";
 
-// 🔥 추가
-import { fetchUnreadNotifications } from "../notificationApi";
 
 export default function AIChat() {
   const [chatList, setChatList] = useState<AiChatDTO[]>([]);
@@ -28,10 +26,7 @@ export default function AIChat() {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
-  // 🔥 알림 강제 pull (SSE 유실 대비)
-  const pullNotificationOnce = async () => {
-    await fetchUnreadNotifications();
-  };
+
 
   const send = async (overrideText?: string) => {
     const message = overrideText ?? input;
@@ -62,37 +57,36 @@ export default function AIChat() {
         { rawMessage: "", senderType: "AI" }
       ]);
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+     while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n");
 
-        for (const line of lines) {
-          if (!line.startsWith("data:")) continue;
-          const token = line.replace("data:", "").trim();
-          if (!token) continue;
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const token = line.replace("data:", "").trim();
+        if (!token) continue;
 
-          aiMessage += token;
+        aiMessage += token;
 
-          setMessages(prev => {
-            const copy = [...prev];
-            const last = copy[copy.length - 1];
-            if (last?.senderType === "AI") {
-              last.rawMessage += token;
-            }
-            return copy;
-          });
+        setMessages(prev => {
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last?.senderType === "AI") {
+            last.rawMessage += token;
+          }
+          return copy;
+        });
 
-          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
+        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
       }
+    }
 
-      loadChatHistory().then(setChatList);
+// 채팅 목록만 갱신
+loadChatHistory().then(setChatList);
 
-      // 🔥🔥🔥 핵심 한 줄 (이거 때문에 해결됨)
-      pullNotificationOnce();
 
     } catch (e) {
       console.error(e);

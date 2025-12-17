@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Snackbar, Alert } from "@mui/material";
 import { useAuthStore } from "./store";
-import { createNotificationEventSource, fetchUnreadNotifications, markNotificationAsRead, type Notification } from "./notificationApi";
-
-
+import {
+  createNotificationEventSource,
+  fetchUndeliveredNotifications,
+  markNotificationDelivered,
+  type Notification,
+} from "./notificationApi";
 
 /* ===============================
-   AuthProvider
+   AuthProvider (STEP 1)
 ================================ */
 export default function AuthProvider({
   children,
@@ -15,92 +18,64 @@ export default function AuthProvider({
 }) {
   const token = useAuthStore((state) => state.jwtToken);
 
+  // 토스트 상태
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [currentNotificationId, setCurrentNotificationId] =
-    useState<number | null>(null);
 
+  // 현재 표시 중인 알림
+  const currentNotification = useRef<Notification | null>(null);
 
-    
-
-    
-  // 중복 방지
+  // 중복 토스트 방지
   const shownNotificationIds = useRef<Set<number>>(new Set());
 
-  // SSE 관리
+  // SSE ref
   const esRef = useRef<EventSource | null>(null);
-  const retryTimerRef = useRef<number | null>(null);
 
   /* ===============================
-     알림 처리
+     알림 pull & 토스트 표시
   ================================ */
-const handleNotificationSignal = async () => {
-  console.log("🔥 NOTIFICATION SIGNAL"); // ✅ 여기 딱 1줄 추가 (맨 위)
+  const pullUndelivered = async () => {
+    const list = await fetchUndeliveredNotifications();
+    if (!list.length) return;
 
-  const list: Notification[] = await fetchUnreadNotifications();
-  if (!list.length) return;
+    // 아직 안 보여준 것 중 첫 번째
+    const next = list.find(
+      (n) => !shownNotificationIds.current.has(n.notificationId)
+    );
+    if (!next) return;
 
-  const next = list.find(
-    (n) => !shownNotificationIds.current.has(n.notificationId)
-  );
-  if (!next) return;
+    shownNotificationIds.current.add(next.notificationId);
+    currentNotification.current = next;
 
-  shownNotificationIds.current.add(next.notificationId);
-  setCurrentNotificationId(next.notificationId);
-  setToastMessage(next.message);
-  setToastOpen(true);
-};
+    setToastMessage(next.message);
+    setToastOpen(true);
 
-
-  const markAsRead = async () => {
-    if (currentNotificationId == null) return;
-    await markNotificationAsRead(currentNotificationId);
+    // 5초 후 delivered 처리
+    setTimeout(() => {
+      markNotificationDelivered(next.notificationId);
+    }, 5000);
   };
 
   /* ===============================
      SSE 연결
   ================================ */
   useEffect(() => {
-  if (!token) return;
+    if (!token) return;
 
-  // 🔥 기존 연결 정리
-  esRef.current?.close();
-  esRef.current = null;
+    const es = createNotificationEventSource();
+    esRef.current = es;
 
-  const es = createNotificationEventSource();
-  if (!es) return;
+    // SSE는 신호만
+    es?.addEventListener("NOTIFICATION", pullUndelivered);
 
-  console.log("🔥 SSE CONNECTED");
+    // 로그인 직후 보정 pull
+    pullUndelivered();
 
-  esRef.current = es;
-
-  es.addEventListener("NOTIFICATION", handleNotificationSignal);
-
-  es.onerror = () => {
-    console.log("🔥 SSE ERROR → RECONNECT");
-    es.close();
-    esRef.current = null;
-    retryTimerRef.current = window.setTimeout(() => {
-      if (useAuthStore.getState().jwtToken) {
-        // 🔁 토큰 살아있으면 재연결
-        const retryEs = createNotificationEventSource();
-        if (!retryEs) return;
-
-        esRef.current = retryEs;
-        retryEs.addEventListener("NOTIFICATION", handleNotificationSignal);
-      }
-    }, 3000);
-  };
-
-  // 로그인 직후 미읽음 즉시 체크
-  handleNotificationSignal();
-
-  return () => {
-    es.close();
-    esRef.current = null;
-    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-  };
-}, [token]); // 🔥 token 바뀔 때마다 무조건 재연결
+    return () => {
+      es?.close();
+      esRef.current = null;
+    };
+  }, [token]);
 
   /* ===============================
      UI
@@ -111,17 +86,14 @@ const handleNotificationSignal = async () => {
 
       <Snackbar
         open={toastOpen}
-        autoHideDuration={4000}
+        autoHideDuration={5000}
         onClose={() => setToastOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
         <Alert
-          onClose={() => {
-            setToastOpen(false);
-            markAsRead();
-          }}
           severity="info"
           variant="filled"
+          onClose={() => setToastOpen(false)}
           sx={{ cursor: "pointer" }}
         >
           {toastMessage}
