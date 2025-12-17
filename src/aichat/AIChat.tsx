@@ -3,9 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   loadChatHistory,
   loadConversation,
-  sendMessage,
+  sendChatStream,
   createNewChat,
-  createEventSource,
 } from "./api/aiChatApi";
 
 import ChatSidebar from "./ChatSidebar";
@@ -20,59 +19,21 @@ export default function AIChat() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-  const eventSourceRef = useRef<EventSource | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-
-  const connectSSE = (conversationId: string) => {
-    if (!conversationId) return;
-
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
-
-    const es = createEventSource(conversationId);
-
-    es.onopen = () => {
-      setIsTyping(true);
-    };
-
-    es.onmessage = (e: MessageEvent<string>) => {
-      setIsTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        { rawMessage: e.data, senderType: "AI" },
-      ]);
-      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    es.onerror = () => {
-      es.close();
-      eventSourceRef.current = null;
-      setIsTyping(false);
-    };
-
-    eventSourceRef.current = es;
-  };
 
   // 초기 목록 로드
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
-  // 언마운트 시 SSE 정리
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
-
-  // 메시지 전송
   const send = async (overrideText?: string) => {
     const message = overrideText ?? input;
     if (!message.trim()) return;
+    if (isTyping) return;
 
+    const effectiveId = currentId ?? crypto.randomUUID();
+
+    // USER 메시지 추가
     setMessages((prev) => [
       ...prev,
       { rawMessage: message, senderType: "USER" },
@@ -80,13 +41,54 @@ export default function AIChat() {
     setInput("");
     setIsTyping(true);
 
-    const effectiveId = currentId ?? crypto.randomUUID();
-    connectSSE(effectiveId);
+    try {
+      const res = await sendChatStream(message, effectiveId);
 
-    const newId = (await sendMessage(message, effectiveId)).trim();
-    if (!currentId) setCurrentId(newId);
+      if (!currentId) {
+        setCurrentId(effectiveId);
+      }
 
-    loadChatHistory().then(setChatList);
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      let aiMessage = "";
+
+      setMessages((prev) => [...prev, { rawMessage: "", senderType: "AI" }]);
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+
+          const token = line.replace("data:", "").trim();
+          if (!token) continue;
+
+          aiMessage += token;
+
+          setMessages((prev) => {
+            const copy = [...prev];
+            const last = copy[copy.length - 1];
+            if (last?.senderType === "AI") {
+              last.rawMessage += token;
+            }
+            return copy;
+          });
+
+          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+
+      loadChatHistory().then(setChatList);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   // 채팅 선택
