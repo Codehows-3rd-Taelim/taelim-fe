@@ -29,7 +29,7 @@ export interface Notification {
    HTTP API (1단계)
 ================================ */
 
-// 🔔 아직 토스트 안 뜬 알림 조회
+//  아직 토스트 안 뜬 알림 조회
 export async function fetchUndeliveredNotifications(): Promise<Notification[]> {
   const res = await fetch(`${BASE_URL}/notifications/undelivered`, {
     headers: authHeader(),
@@ -39,7 +39,7 @@ export async function fetchUndeliveredNotifications(): Promise<Notification[]> {
   return res.json();
 }
 
-// 🔔 토스트 노출 완료 처리
+//  토스트 노출 완료 처리
 export async function markNotificationDelivered(
   notificationId: number
 ): Promise<void> {

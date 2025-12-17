@@ -11,6 +11,7 @@ import ChatSidebar from "./ChatSidebar";
 import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import type { AiChatDTO, Message } from "../type";
+import { fetchUndeliveredNotifications } from "../notificationApi";
 
 
 export default function AIChat() {
@@ -105,8 +106,14 @@ const send = async (overrideText?: string) => {
   } finally {
     setIsTyping(false);
 
-    // 사이드바만 갱신 
+    // 사이드바 갱신 
     loadChatHistory().then(setChatList);
+
+    // 1번 pull
+    setTimeout(() => {
+      fetchUndeliveredNotifications();
+    }, 100);
+   
   }
 };
 

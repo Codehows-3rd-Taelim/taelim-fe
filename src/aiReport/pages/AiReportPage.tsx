@@ -37,6 +37,7 @@ import Pagination from "../../components/Pagination";
 import type { AiReport } from "../../type";
 import ReportContent from "../components/ReportContent";
 import { getAiReport, getRawReport, createAiReport, subscribeAiReport } from "../api/AiReportApi";
+import { fetchUndeliveredNotifications } from "../../notificationApi";
 
 interface StreamingReport extends AiReport {
   streamingRawReport?: string;
@@ -159,6 +160,11 @@ export default function AiReportPage() {
           setAiReportData((prevReports) =>
             prevReports.filter((r) => r.aiReportId !== -1)
           );
+
+          // 보고서 완료 후 pull (1번)
+          setTimeout(() => {
+            fetchUndeliveredNotifications();
+          }, 300); // 3초
         },
 
         onError: (e) => {
