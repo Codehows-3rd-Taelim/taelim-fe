@@ -9,8 +9,9 @@ import type { DateRange } from "@mui/x-date-pickers-pro";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
 import type { AiReport } from "../../type";
-import ReportContent from "../components/ReportContent";
+// import ReportContent from "../components/ReportContent";
 import { getAiReport, getRawReport, createAiReport, subscribeAiReport } from "../api/AiReportApi";
+import AiReportDetail from "../components/AiReportDetail";
 
 type LoadingReport = AiReport & { rawReport: "loading" };
 type ReportWithLoading = AiReport | LoadingReport;
@@ -79,7 +80,7 @@ export default function AiReportPage() {
     setPage(1);
 
     try {
-      // 1️⃣ SSE 먼저 연결
+      // 1. SSE 먼저 연결
       eventSourceRef.current = subscribeAiReport(
         conversationId,
         async (savedReport) => {
@@ -120,7 +121,7 @@ export default function AiReportPage() {
         }
       );
 
-      // 2️⃣ 그 다음 POST
+      // 2️. 그 다음 POST
       await createAiReport(conversationId, query);
 
       if (queryRef.current) queryRef.current.value = "";
@@ -345,7 +346,8 @@ export default function AiReportPage() {
                         }`}
                       >
                         <div className="p-6 bg-[#fafafa]">
-                          {isLoadingReport(r) ? (
+                          <AiReportDetail report={r} />
+                          {/* {isLoadingReport(r) ? (
                             <div className="flex flex-col items-center justify-center py-12 gap-4">
                               <Loader2
                                 className="animate-spin text-orange-500"
@@ -360,7 +362,7 @@ export default function AiReportPage() {
                             </div>
                           ) : (
                             <ReportContent markdown={r.rawReport} />
-                          )}
+                          )} */}
                         </div>
                       </div>
                     </td>
