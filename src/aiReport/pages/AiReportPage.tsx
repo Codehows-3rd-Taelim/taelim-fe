@@ -1,34 +1,26 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ko";
 import isBetween from "dayjs/plugin/isBetween";
 dayjs.extend(isBetween);
 
 import { ChevronDown, ChevronUp, Search, Loader2 } from "lucide-react";
-
 import type { DateRange } from "@mui/x-date-pickers-pro";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
-
 import type { AiReport } from "../../type";
 import ReportContent from "../components/ReportContent";
 import { getAiReport, getRawReport, createAiReport, subscribeAiReport } from "../api/AiReportApi";
 
-// 로딩 중인 임시 보고서 타입
-type LoadingReport = AiReport & {
-  rawReport: "loading";
-};
-
-// 일반 보고서 또는 로딩 보고서
+type LoadingReport = AiReport & { rawReport: "loading" };
 type ReportWithLoading = AiReport | LoadingReport;
 
-// 타입 가드: 로딩 중인 보고서인지 확인
 function isLoadingReport(report: ReportWithLoading): report is LoadingReport {
   return report.rawReport === "loading";
 }
 
 export default function AiReportPage() {
-  const queryRef = React.useRef<HTMLTextAreaElement>(null);
+  const queryRef = useRef<HTMLTextAreaElement>(null);
   const [searchTextInput, setSearchTextInput] = useState("");
   const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([null, null]);
   const [searchText, setSearchText] = useState("");
@@ -38,189 +30,221 @@ export default function AiReportPage() {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const [startDate, endDate] = dateRange;
 
   // 초기 보고서 로드
   useEffect(() => {
-    async function loadReports() {
-      try {
-        const data = await getAiReport();
-        setAiReportData(data);
-      } catch (e) {
-        console.error("보고서 목록 로드 오류:", e);
-        setError("보고서 목록을 불러오는 데 실패했습니다.");
-      }
-    }
-    loadReports();
+    getAiReport()
+      .then(setAiReportData)
+      .catch(() => setError("보고서 목록 로드 실패"));
   }, []);
+
+  useEffect(() => {
+    return () => {
+      eventSourceRef.current?.close();
+    };
+  }, []);
+
 
   // 보고서 생성
   const handleGenerateReport = async () => {
-    const query = queryRef.current?.value.trim() || "";
-    if (!query) return;
+    const query = queryRef.current?.value.trim();
+    if (!query) {
+      setError("질문 내용을 입력해주세요.");
+      return;
+    }
 
-    setError(null);
+    const conversationId = crypto.randomUUID();
+
     setIsLoading(true);
+    setError(null);
 
-    // 임시 로딩 보고서를 목록 상단에 추가
-    const tempReportId = -Date.now(); // 임시 ID (음수로 구분)
+    // 임시 보고서
     const tempReport: LoadingReport = {
-      aiReportId: tempReportId,
-      conversationId: 0,
+      aiReportId: -Date.now(),
+      conversationId,
       rawMessage: query,
+      rawReport: "loading",
       startTime: "",
       endTime: "",
       createdAt: new Date().toISOString(),
-      name: "생성 중...",
-      rawReport: "loading",
-      userId: 0,
+      userId: -1,
+      name: "생성중...",
     };
 
-    setAiReportData((prev) => [tempReport, ...prev]);
-    setOpenRow(tempReportId); // 자동으로 펼치기
+    setAiReportData(prev => [tempReport, ...prev]);
+    setOpenRow(tempReport.aiReportId);
+    setPage(1);
 
-    // 1. POST로 생성 요청
-    let conversationId: string;
     try {
-      conversationId = await createAiReport(query);
-    } catch (err) {
-      console.error("보고서 생성 요청 실패", err);
-      setError("보고서 생성 요청에 실패했습니다.");
-      setIsLoading(false);
-      // 임시 보고서 제거
-      setAiReportData((prev) => prev.filter((r) => r.aiReportId !== tempReportId));
-      setOpenRow(null);
-      return;
-    }
+      // 1️⃣ SSE 먼저 연결
+      eventSourceRef.current = subscribeAiReport(
+        conversationId,
+        async (savedReport) => {
+          try {
+            const reports = await getAiReport();
+            const target = reports.find(
+              r => r.conversationId === savedReport.conversationId
+            );
 
-    // 2. SSE 구독
-    subscribeAiReport(
-      conversationId,
-      async (newReport: AiReport) => {
-        try {
-          // rawReport가 없으면 fetch
-          if (!newReport.rawReport) {
-            const contentData = await getRawReport(newReport.aiReportId);
-            newReport.rawReport = contentData;
+            if (target) {
+              const raw = await getRawReport(target.aiReportId);
+              const completed = { ...target, rawReport: raw };
+
+              setAiReportData(prev => {
+                const filtered = prev.filter(
+                  r => r.conversationId !== conversationId
+                );
+                return [completed, ...filtered];
+              });
+
+              setOpenRow(target.aiReportId);
+            }
+          } finally {
+            // ✅ 무조건 실행
+            setIsLoading(false);
+            eventSourceRef.current?.close();
+            eventSourceRef.current = null;
           }
-
-          // 임시 보고서를 실제 보고서로 교체
-          setAiReportData((prev) => 
-            prev.map((r) => (r.aiReportId === tempReportId ? newReport : r))
+        },
+        (msg) => {
+          setError(msg);
+          setAiReportData(prev =>
+            prev.filter(r => r.conversationId !== conversationId)
           );
-          setOpenRow(newReport.aiReportId); // 실제 ID로 업데이트
-          
-          // 입력창 초기화
-          if (queryRef.current) {
-            queryRef.current.value = "";
-          }
-          
-          setIsLoading(false);              // 버튼 활성화
-          setError(null);
-        } catch (err) {
-          console.error("상세 보고서 로드 실패", err);
-          setError("보고서 로드 실패");
           setIsLoading(false);
-          // 임시 보고서 제거
-          setAiReportData((prev) => prev.filter((r) => r.aiReportId !== tempReportId));
-          setOpenRow(null);
+          eventSourceRef.current?.close();
+          eventSourceRef.current = null;
         }
-      },
-      (err: Error) => {
-        console.error("SSE 오류", err);
-        setError("보고서 생성 중 오류가 발생했습니다.");
-        setIsLoading(false);
-        // 임시 보고서 제거
-        setAiReportData((prev) => prev.filter((r) => r.aiReportId !== tempReportId));
-        setOpenRow(null);
-      }
-    );
+      );
+
+      // 2️⃣ 그 다음 POST
+      await createAiReport(conversationId, query);
+
+      if (queryRef.current) queryRef.current.value = "";
+
+    } catch (e) {
+      setError("보고서 생성 요청 실패");
+      setIsLoading(false);
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+    }
   };
 
+  // 상세 클릭
   const handleRowClick = async (report: ReportWithLoading) => {
-    const reportId = report.aiReportId;
-
-    if (openRow === reportId) {
+    if (openRow === report.aiReportId) {
       setOpenRow(null);
       return;
     }
-
-    // 로딩 중인 보고서는 클릭해도 아무 동작 안 함
-    if (isLoadingReport(report)) {
-      return;
-    }
+    if (isLoadingReport(report)) return;
 
     if (!report.rawReport) {
       try {
-        const contentData = await getRawReport(reportId);
-        setAiReportData((prevData) =>
-          prevData.map((r) => (r.aiReportId === reportId ? { ...r, rawReport: contentData } : r))
+        const content = await getRawReport(report.aiReportId);
+        setAiReportData((prev) =>
+          prev.map((r) =>
+            r.aiReportId === report.aiReportId ? { ...r, rawReport: content } : r
+          )
         );
-      } catch (error) {
-        console.error("상세 보고서 조회 오류:", error);
-        setError("상세 보고서를 불러오는 데 실패했습니다.");
-        return;
+      } catch {
+        setError("상세 보고서 로드 실패");
       }
     }
-
-    setOpenRow(reportId);
+    setOpenRow(report.aiReportId);
   };
 
-  // 필터링 및 정렬
+  // 필터링 & 페이징
   const filteredReports = useMemo(() => {
+    console.log("🔍 filteredReports 계산 시작, aiReportData:", aiReportData.length, "개");
+    
     const filtered = aiReportData.filter((r) => {
-      const matchText = searchText === "" || r.rawMessage.includes(searchText);
+      // 로딩 중인 임시 보고서는 필터링 없이 통과
+      if (isLoadingReport(r)) {
+        console.log("🔍 임시 보고서 발견:", r.aiReportId);
+        return true;
+      }
+      
+      const matchText = !searchText || r.rawMessage.includes(searchText);
       const matchPeriod =
-        startDate && endDate ? dayjs(r.createdAt).isBetween(startDate, endDate, null, "[]") : true;
+        startDate && endDate
+          ? dayjs(r.createdAt).isBetween(startDate, endDate, null, "[]")
+          : true;
       return matchText && matchPeriod;
     });
-
-    filtered.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
-    return filtered;
+    
+    console.log("🔍 필터링 후:", filtered.length, "개");
+    
+    const sorted = filtered.sort((a, b) => {
+      // 임시 보고서(음수 ID)는 항상 맨 위로
+      if (a.aiReportId < 0) return -1;
+      if (b.aiReportId < 0) return 1;
+      
+      // 나머지는 생성일자 기준 내림차순
+      return dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
+    });
+    
+    console.log("🔍 정렬 후:", sorted.length, "개, 첫번째:", sorted[0]?.aiReportId);
+    return sorted;
   }, [aiReportData, searchText, startDate, endDate]);
 
   const paginatedReports = useMemo(() => {
-    const reportsPerPage = 20;
-    const startIndex = (page - 1) * reportsPerPage;
-    return filteredReports.slice(startIndex, startIndex + reportsPerPage);
+    const perPage = 20;
+    const start = (page - 1) * perPage;
+    const result = filteredReports.slice(start, start + perPage);
+    console.log("📊 paginatedReports:", result.length, "개", result.map(r => ({
+      id: r.aiReportId, 
+      message: r.rawMessage.substring(0, 20),
+      isLoading: isLoadingReport(r)
+    })));
+    return result;
   }, [filteredReports, page]);
 
   const totalPages = Math.ceil(filteredReports.length / 20);
 
   return (
     <div className="w-full min-h-screen px-6 py-4 bg-[#f7f7f7]">
-      {error && (
-        <div className="p-4 mb-4 bg-red-100 text-red-700 rounded-lg">
-          <div className="font-bold">오류: {error}</div>
+      {/* {error && (
+        <div className="p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold">
+          {error}
         </div>
-      )}
+      )} */}
 
-      <div className="bg-white p-6 mb-6 rounded-lg shadow">
-        <div className="flex gap-4">
-          <textarea
-            ref={queryRef}
-            placeholder="조회하고 싶은 보고서 내용을 입력해 주세요."
-            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
-            rows={3}
-            disabled={isLoading}
-          />
-          <button
-            className="px-6 py-3 bg-orange-500 text-white rounded font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed h-[78px]"
-            onClick={handleGenerateReport}
-            disabled={isLoading}
-          >
-            {isLoading ? "생성 중…" : "조회"}
-          </button>
-        </div>
+      <div className="bg-white p-6 mb-6 rounded-lg shadow flex gap-4">
+        <textarea
+          ref={queryRef}
+          placeholder="조회하고 싶은 보고서 내용을 입력해 주세요."
+          className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+          rows={3}
+          disabled={isLoading}
+        />
+        <button
+          className="px-6 py-3 bg-orange-500 text-white rounded font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed h-[78px] min-w-[100px]"
+          onClick={handleGenerateReport}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="animate-spin" size={20} />
+              <span>생성 중</span>
+            </div>
+          ) : (
+            "조회"
+          )}
+        </button>
       </div>
 
+      {/* 필터 */}
       <div className="flex items-center gap-4 ml-4 mb-4">
         <div className="flex items-center gap-4">
           <span>생성일자</span>
-          <DateRangePicker value={dateRangeInput} onChange={setDateRangeInput} size="small" />
+          <DateRangePicker
+            value={dateRangeInput}
+            onChange={setDateRangeInput}
+          />
         </div>
-
         <div className="flex items-center gap-4">
           <span>내용</span>
           <input
@@ -240,7 +264,6 @@ export default function AiReportPage() {
             <Search size={20} />
           </button>
           <button
-            className="px-4 py-2 border border-black text-black rounded hover:bg-gray-50 transition-colors"
             onClick={() => {
               setSearchText("");
               setDateRange([null, null]);
@@ -248,22 +271,34 @@ export default function AiReportPage() {
               setDateRangeInput([null, null]);
               setPage(1);
             }}
+            className="px-4 py-2 border border-black text-black rounded hover:bg-gray-50 transition-colors"
           >
             초기화
           </button>
         </div>
       </div>
 
+      {/* 보고서 테이블 */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">no</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">질문 내용</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">보고서 기간</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">생성일자</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">작성자</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  no
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  질문 내용
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  보고서 기간
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  생성일자
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  작성자
+                </th>
                 <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b"></th>
               </tr>
             </thead>
@@ -271,40 +306,60 @@ export default function AiReportPage() {
               {paginatedReports.map((r) => (
                 <React.Fragment key={r.aiReportId}>
                   <tr className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-center text-sm">{r.aiReportId > 0 ? r.aiReportId : "-"}</td>
+                    <td className="px-4 py-3 text-center text-sm">
+                      {r.aiReportId > 0 ? r.aiReportId : "-"}
+                    </td>
                     <td className="px-4 py-3 text-sm">{r.rawMessage}</td>
                     <td className="px-4 py-3 text-center text-sm">
-                      {r.startTime ? dayjs(r.startTime).format("YYYY-MM-DD") : "-"} ~{" "}
+                      {r.startTime
+                        ? dayjs(r.startTime).format("YYYY-MM-DD")
+                        : "-"}{" "}
+                      ~{" "}
                       {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
                     </td>
-                    <td className="px-4 py-3 text-center text-sm">{dayjs(r.createdAt).format("YYYY-MM-DD")}</td>
+                    <td className="px-4 py-3 text-center text-sm">
+                      {dayjs(r.createdAt).format("YYYY-MM-DD")}
+                    </td>
                     <td className="px-4 py-3 text-center text-sm">{r.name}</td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleRowClick(r)}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                        className="p-1 hover:bg-gray-200 rounded transition-colors disabled:cursor-not-allowed"
                         disabled={isLoadingReport(r)}
                       >
-                        {openRow === r.aiReportId ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        {openRow === r.aiReportId ? (
+                          <ChevronUp size={20} />
+                        ) : (
+                          <ChevronDown size={20} />
+                        )}
                       </button>
                     </td>
                   </tr>
-
                   <tr>
                     <td colSpan={6} className="p-0">
                       <div
                         className={`overflow-hidden transition-all duration-300 ${
-                          openRow === r.aiReportId ? "max-h-[2000px]" : "max-h-0"
+                          openRow === r.aiReportId
+                            ? "max-h-[2000px]"
+                            : "max-h-0"
                         }`}
                       >
                         <div className="p-6 bg-[#fafafa]">
                           {isLoadingReport(r) ? (
                             <div className="flex flex-col items-center justify-center py-12 gap-4">
-                              <Loader2 className="animate-spin text-orange-500" size={48} />
-                              <p className="text-lg text-gray-600 font-medium">보고서 생성중...</p>
+                              <Loader2
+                                className="animate-spin text-orange-500"
+                                size={48}
+                              />
+                              <p className="text-lg text-gray-600 font-medium">
+                                보고서 생성중...
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                잠시만 기다려주세요
+                              </p>
                             </div>
                           ) : (
-                            <ReportContent markdown={r.rawReport || "로딩 중..."} />
+                            <ReportContent markdown={r.rawReport} />
                           )}
                         </div>
                       </div>
@@ -317,7 +372,7 @@ export default function AiReportPage() {
         </div>
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={(newPage) => setPage(newPage)} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

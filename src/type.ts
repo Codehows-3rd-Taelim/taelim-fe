@@ -79,7 +79,7 @@ export type Report = {
 /* ======= ai chat ======= */
 export type AiChat = {
   aiChatId: number;
-  conversationId: number;
+  conversationId: string;
   senderType: "USER" | "AI";
   rawMessage: string;
   createdAt: string;
@@ -92,7 +92,7 @@ export type SenderType = 'USER' | 'AI';
 /* ======= ai report ======= */
 export type AiReport = {
     aiReportId: number;
-    conversationId: number;
+    conversationId: string;
     startTime: string;
     endTime: string;
     createdAt: string;
