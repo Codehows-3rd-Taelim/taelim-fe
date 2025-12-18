@@ -17,83 +17,83 @@ function App() {
   const isLoginPage = location.pathname === "/login";
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-    <>
-     <AuthProvider>
-      {!isLoginPage && <Header />}
-
+    <AuthProvider>
       <Box
-        component="main"
-        sx={{
-          pt: isLoginPage ? 0 : "64px",
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-        }}
+        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
       >
-        <Container
-          maxWidth={false}
+        {!isLoginPage && <Header />}
+
+        <Box
+          component="main"
           sx={{
-            width: "100%",
-            maxWidth: "2400px",
-            px: 3,
+            pt: isLoginPage ? 0 : "64px",
             flex: 1,
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <AIChat />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/ai/report"
-              element={
-                <PrivateRoute>
-                  <AiReportPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <DashboardPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/report"
-              element={
-                <PrivateRoute>
-                  <ReportPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/manage"
-              element={
-                <PrivateRoute>
-                  <OperationManagement />
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </Container>
-      </Box>
-
-      {!isLoginPage && (
-        <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
-          <Footer />
+          <Container
+            maxWidth={false}
+            sx={{
+              width: "100%",
+              maxWidth: "2400px",
+              px: 3,
+              flex: 1,
+            }}
+          >
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <AIChat />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/ai/report"
+                element={
+                  <PrivateRoute>
+                    <AiReportPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <DashboardPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/report"
+                element={
+                  <PrivateRoute>
+                    <ReportPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/manage"
+                element={
+                  <PrivateRoute>
+                    <OperationManagement />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </Container>
         </Box>
-      )}
-    </Box>
-      </AuthProvider>
-    </>
+
+        {!isLoginPage && (
+          <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
+            <Footer />
+          </Box>
+        )}
+      </Box>
+    </AuthProvider>
   );
 }
 

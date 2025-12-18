@@ -15,27 +15,55 @@ export const getReport = async (
   startDate?: string,
   endDate?: string
 ): Promise<Report[]> => {
-    try {
-        const params: ReportParams = {
-            ...(storeId && { storeId }),
-            ...(startDate && { startDate }),
-            ...(endDate && { endDate }),
-        };
+  try {
+    const params: ReportParams = {
+      ...(storeId && { storeId }),
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
+    };
 
-        console.log("🌐 API 호출 파라미터:", params);
+    console.log("🌐 API 호출 파라미터:", params);
 
-        const response = await axios.get(`${BASE_URL}/report/list`, {
-            params,
-        });
+    const response = await axios.get(`${BASE_URL}/report/list`, {
+      params,
+    });
 
-        console.log("✅ API 응답 받음:", response.data.length, "개");
+    console.log("✅ API 응답 받음:", response.data.length, "개");
 
-        return response.data; 
-    } catch (error) {
-        console.error("보고서 조회 API 오류:", error);
-        const errorMessage = axios.isAxiosError(error) && error.response 
-            ? error.response.data || "보고서 조회 중 서버 오류가 발생했습니다." 
-            : "보고서 조회 중 통신 오류가 발생했습니다.";
-        throw new Error(errorMessage);
-    }
+    return response.data;
+  } catch (error) {
+    console.error("보고서 조회 API 오류:", error);
+    const errorMessage =
+      axios.isAxiosError(error) && error.response
+        ? error.response.data || "보고서 조회 중 서버 오류가 발생했습니다."
+        : "보고서 조회 중 통신 오류가 발생했습니다.";
+    throw new Error(errorMessage);
+  }
+};
+
+interface ReportPageParams {
+  page: number; // ⚠️ 0-base
+  size: number;
+  storeId?: number;
+  startDate: string;
+  endDate: string;
+  sortKey?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+interface PageResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+}
+
+export const getReportPage = async (
+  params: ReportPageParams
+): Promise<PageResponse<Report>> => {
+  const response = await axios.get(`${BASE_URL}/report/page`, {
+    params,
+  });
+  return response.data;
 };

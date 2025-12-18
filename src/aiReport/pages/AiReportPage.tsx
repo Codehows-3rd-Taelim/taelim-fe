@@ -1,8 +1,6 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ko";
-import isBetween from "dayjs/plugin/isBetween";
-dayjs.extend(isBetween);
 
 import { ChevronDown, ChevronUp, Search, Loader2 } from "lucide-react";
 
@@ -13,7 +11,7 @@ import Pagination from "../../components/Pagination";
 import type { AiReport } from "../../type";
 import ReportContent from "../components/ReportContent";
 import {
-  getAiReport,
+  getAiReportPage,
   getRawReport,
   createAiReport,
   subscribeAiReport,
@@ -44,24 +42,44 @@ export default function AiReportPage() {
   const [aiReportData, setAiReportData] = useState<ReportWithLoading[]>([]);
   const [openRow, setOpenRow] = useState<number | null>(null);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [startDate, endDate] = dateRange;
 
-  // 초기 보고서 로드
-  useEffect(() => {
-    async function loadReports() {
-      try {
-        const data = await getAiReport();
-        setAiReportData(data);
-      } catch (e) {
-        console.error("보고서 목록 로드 오류:", e);
-        setError("보고서 목록을 불러오는 데 실패했습니다.");
-      }
+  // 보고서 목록 로드
+  const loadReports = async (currentPage: number) => {
+    setIsFetching(true);
+    try {
+      const startDateStr = startDate
+        ? startDate.format("YYYY-MM-DD")
+        : undefined;
+      const endDateStr = endDate ? endDate.format("YYYY-MM-DD") : undefined;
+
+      const response = await getAiReportPage(
+        currentPage - 1, // 백엔드가 0-based인 경우
+        20,
+        searchText || undefined,
+        startDateStr,
+        endDateStr
+      );
+
+      setAiReportData(response.content);
+      setTotalPages(response.totalPages);
+    } catch (e) {
+      console.error("보고서 목록 로드 오류:", e);
+      setError("보고서 목록을 불러오는 데 실패했습니다.");
+    } finally {
+      setIsFetching(false);
     }
-    loadReports();
-  }, []);
+  };
+
+  // 초기 로드 및 필터/페이지 변경시 로드
+  useEffect(() => {
+    loadReports(page);
+  }, [page, searchText, startDate, endDate]);
 
   // 보고서 생성
   const handleGenerateReport = async () => {
@@ -128,6 +146,10 @@ export default function AiReportPage() {
 
           setIsLoading(false); // 버튼 활성화
           setError(null);
+
+          // 목록 새로고침 (새 보고서가 정확한 위치에 표시되도록)
+          loadReports(1);
+          setPage(1);
         } catch (err) {
           console.error("상세 보고서 로드 실패", err);
           setError("보고서 로드 실패");
@@ -183,30 +205,19 @@ export default function AiReportPage() {
     setOpenRow(reportId);
   };
 
-  // 필터링 및 정렬
-  const filteredReports = useMemo(() => {
-    const filtered = aiReportData.filter((r) => {
-      const matchText = searchText === "" || r.rawMessage.includes(searchText);
-      const matchPeriod =
-        startDate && endDate
-          ? dayjs(r.createdAt).isBetween(startDate, endDate, null, "[]")
-          : true;
-      return matchText && matchPeriod;
-    });
+  const handleSearch = () => {
+    setSearchText(searchTextInput);
+    setDateRange(dateRangeInput);
+    setPage(1); // 검색 시 첫 페이지로
+  };
 
-    filtered.sort(
-      (a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()
-    );
-    return filtered;
-  }, [aiReportData, searchText, startDate, endDate]);
-
-  const paginatedReports = useMemo(() => {
-    const reportsPerPage = 20;
-    const startIndex = (page - 1) * reportsPerPage;
-    return filteredReports.slice(startIndex, startIndex + reportsPerPage);
-  }, [filteredReports, page]);
-
-  const totalPages = Math.ceil(filteredReports.length / 20);
+  const handleReset = () => {
+    setSearchText("");
+    setDateRange([null, null]);
+    setSearchTextInput("");
+    setDateRangeInput([null, null]);
+    setPage(1);
+  };
 
   return (
     <div className="w-full min-h-screen px-6 py-4 bg-[#f7f7f7]">
@@ -251,27 +262,20 @@ export default function AiReportPage() {
             type="text"
             value={searchTextInput}
             onChange={(e) => setSearchTextInput(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             className="w-[500px] px-3 py-2 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
-            onClick={() => {
-              setSearchText(searchTextInput);
-              setDateRange(dateRangeInput);
-              setPage(1);
-            }}
+            onClick={handleSearch}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            disabled={isFetching}
           >
             <Search size={20} />
           </button>
           <button
             className="px-4 py-2 border border-black text-black rounded hover:bg-gray-50 transition-colors"
-            onClick={() => {
-              setSearchText("");
-              setDateRange([null, null]);
-              setSearchTextInput("");
-              setDateRangeInput([null, null]);
-              setPage(1);
-            }}
+            onClick={handleReset}
+            disabled={isFetching}
           >
             초기화
           </button>
@@ -279,6 +283,11 @@ export default function AiReportPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
+        {isFetching && (
+          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+            <Loader2 className="animate-spin text-orange-500" size={32} />
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 sticky top-0">
@@ -302,80 +311,97 @@ export default function AiReportPage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedReports.map((r) => (
-                <React.Fragment key={r.aiReportId}>
-                  <tr className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-center text-sm">
-                      {r.aiReportId > 0 ? r.aiReportId : "-"}
-                    </td>
-                    <td className="px-4 py-3 text-sm">{r.rawMessage}</td>
-                    <td className="px-4 py-3 text-center text-sm">
-                      {r.startTime
-                        ? dayjs(r.startTime).format("YYYY-MM-DD")
-                        : "-"}{" "}
-                      ~{" "}
-                      {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
-                    </td>
-                    <td className="px-4 py-3 text-center text-sm">
-                      {dayjs(r.createdAt).format("YYYY-MM-DD")}
-                    </td>
-                    <td className="px-4 py-3 text-center text-sm">{r.name}</td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => handleRowClick(r)}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                        disabled={isLoadingReport(r)}
-                      >
-                        {openRow === r.aiReportId ? (
-                          <ChevronUp size={20} />
-                        ) : (
-                          <ChevronDown size={20} />
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={6} className="p-0">
-                      <div
-                        className={`overflow-hidden transition-all duration-300 ${
-                          openRow === r.aiReportId
-                            ? "max-h-[2000px]"
-                            : "max-h-0"
-                        }`}
-                      >
-                        <div className="p-6 bg-[#fafafa]">
-                          {isLoadingReport(r) ? (
-                            <div className="flex flex-col items-center justify-center py-12 gap-4">
-                              <Loader2
-                                className="animate-spin text-orange-500"
-                                size={48}
-                              />
-                              <p className="text-lg text-gray-600 font-medium">
-                                보고서 생성중...
-                              </p>
-                            </div>
+              {aiReportData.length === 0 && !isFetching ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-12 text-center text-gray-500"
+                  >
+                    조회된 보고서가 없습니다.
+                  </td>
+                </tr>
+              ) : (
+                aiReportData.map((r) => (
+                  <React.Fragment key={r.aiReportId}>
+                    <tr className="border-b hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-center text-sm">
+                        {r.aiReportId > 0 ? r.aiReportId : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm">{r.rawMessage}</td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {r.startTime
+                          ? dayjs(r.startTime).format("YYYY-MM-DD")
+                          : "-"}{" "}
+                        ~{" "}
+                        {r.endTime
+                          ? dayjs(r.endTime).format("YYYY-MM-DD")
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {dayjs(r.createdAt).format("YYYY-MM-DD")}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {r.name}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => handleRowClick(r)}
+                          className="p-1 hover:bg-gray-200 rounded transition-colors"
+                          disabled={isLoadingReport(r)}
+                        >
+                          {openRow === r.aiReportId ? (
+                            <ChevronUp size={20} />
                           ) : (
-                            <ReportContent
-                              markdown={r.rawReport || "로딩 중..."}
-                            />
+                            <ChevronDown size={20} />
                           )}
+                        </button>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td colSpan={6} className="p-0">
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ${
+                            openRow === r.aiReportId
+                              ? "max-h-[2000px]"
+                              : "max-h-0"
+                          }`}
+                        >
+                          <div className="p-6 bg-[#fafafa]">
+                            {isLoadingReport(r) ? (
+                              <div className="flex flex-col items-center justify-center py-12 gap-4">
+                                <Loader2
+                                  className="animate-spin text-orange-500"
+                                  size={48}
+                                />
+                                <p className="text-lg text-gray-600 font-medium">
+                                  보고서 생성중...
+                                </p>
+                              </div>
+                            ) : (
+                              <ReportContent
+                                markdown={r.rawReport || "로딩 중..."}
+                              />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                </React.Fragment>
-              ))}
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        onPageChange={(newPage) => setPage(newPage)}
-      />
+      {totalPages > 0 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(newPage: number) => setPage(newPage)}
+        />
+      )}
     </div>
   );
 }

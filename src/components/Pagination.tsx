@@ -28,7 +28,9 @@ export default function Pagination({
         key={i}
         // 현재 페이지는 "contained"(채워진 버튼), 나머지는 "outlined"(테두리 버튼)
         variant={page === i ? "contained" : "outlined"}
-        onClick={() => onPageChange(i)} // 클릭 시 해당 페이지로 이동
+        onClick={() => {
+          if (page !== i) onPageChange(i);
+        }}
         sx={{
           minWidth: 36, // 버튼 최소 너비
           color: page === i ? "white" : "black", // 현재 페이지는 흰 글씨

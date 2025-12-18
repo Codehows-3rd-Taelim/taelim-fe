@@ -1,15 +1,14 @@
 import axios from "axios";
-import type { AiReport, RawReport } from "../../type";
+import type { AiReport, PaginationResponse, RawReport } from "../../type";
 import { EventSourcePolyfill } from "event-source-polyfill";
-import { useAuthStore } from "../../store";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-//리포트 전체 가져오기 rawReport제외
-export const getAiReport = async (): Promise<AiReport[]> => {
-  const response = await axios.get(`${BASE_URL}/ai/report`);
-  return response.data;
-};
+// //리포트 전체 가져오기 rawReport제외
+// export const getAiReport = async (): Promise<AiReport[]> => {
+//   const response = await axios.get(`${BASE_URL}/ai/report`);
+//   return response.data;
+// };
 
 //rawReport 가져오기
 export const getRawReport = async (reportId: number): Promise<string> => {
@@ -45,9 +44,12 @@ export const subscribeAiReport = (
 ) => {
   const token = localStorage.getItem("jwtToken");
 
-  const es = new EventSourcePolyfill(`${BASE_URL}/ai/report/stream/${conversationId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const es = new EventSourcePolyfill(
+    `${BASE_URL}/ai/report/stream/${conversationId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
 
   es.onmessage = (e) => {
     if (!e.data || e.data === "[DONE]") return;
@@ -71,4 +73,24 @@ export const subscribeAiReport = (
   };
 
   return es;
+};
+
+export const getAiReportPage = async (
+  page: number,
+  size: number = 20,
+  searchText?: string,
+  startDate?: string,
+  endDate?: string
+): Promise<PaginationResponse<AiReport>> => {
+  const res = await axios.get(`${BASE_URL}/ai/report`, {
+    params: {
+      page,
+      size,
+      ...(searchText ? { searchText } : {}),
+      ...(startDate ? { startDate } : {}),
+      ...(endDate ? { endDate } : {}),
+    },
+  });
+
+  return res.data;
 };
