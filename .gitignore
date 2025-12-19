@@ -24,3 +24,8 @@ dist-ssr
 *.sln
 *.sw?
 package-lock.json
+<<<<<<< Updated upstream
+=======
+package-lock.json
+package-lock.json
+>>>>>>> Stashed changes
