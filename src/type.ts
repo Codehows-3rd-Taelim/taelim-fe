@@ -173,11 +173,11 @@ export interface DateRangePickerProps {
 
 /* ======= 페이징 ======= */
 export interface PaginationProps {
- page: number; // 현재 페이지 번호
-  totalPages: number; // 전체 페이지 수
-  onPageChange: (page: number) => void; // 페이지 변경 시 호출되는 함수
-  maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수 (기본값 5)
-};
+  page: number;
+  totalPages: number;
+  onPageChange: (newPage: number) => void;
+  maxButtons?: number;
+}
 
 
 /* 동기화 정보 DTO */
@@ -297,4 +297,12 @@ export type IndustryStoreCount = {
   industryId: number;
   industryName: string;
   storeCount: number;
+};
+
+export type PaginationResponse<T> = {
+  content: T[];
+  page: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
 };

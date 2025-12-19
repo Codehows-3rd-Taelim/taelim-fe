@@ -149,7 +149,7 @@ export default function useOperationManagement() {
     const handleRegister = async () => {
         if (!isRegisterButtonEnabled) {
             alert("입력값을 확인해주세요.");
-            return;
+            throw new Error("입력값 검증 실패"); // 에러를 던져서 모달이 닫히지 않도록
         }
 
         const { pwCheck: _pwCheck, ...payload } = form;
@@ -163,9 +163,11 @@ export default function useOperationManagement() {
             const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
             const updated = await getUsers(storeIdToFetch);
             setList(updated);
+            // 성공 시 에러를 던지지 않음
         } catch (err) {
             console.error(err);
             alert("직원 등록 실패");
+            throw err; // 에러를 다시 던져서 모달이 닫히지 않도록
         }
     };
 
@@ -209,6 +211,7 @@ export default function useOperationManagement() {
 
         // 함수
         setFormValue,
+        setIsIdChecked,
         handleIdCheck,
         handleRegister,
         handleLogout,

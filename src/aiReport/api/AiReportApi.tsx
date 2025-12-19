@@ -1,13 +1,14 @@
 import axios from "axios";
-import type { AiReport, RawReport } from "../../type";
+import type { AiReport, PaginationResponse, RawReport } from "../../type";
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-//리포트 전체 가져오기 rawReport제외
-export const getAiReport = async (): Promise<AiReport[]> => {
-  const response = await axios.get(`${BASE_URL}/ai/report`);
-  return response.data;
-};
+// //리포트 전체 가져오기 rawReport제외
+// export const getAiReport = async (): Promise<AiReport[]> => {
+//   const response = await axios.get(`${BASE_URL}/ai/report`);
+//   return response.data;
+// };
 
 //rawReport 가져오기
 export const getRawReport = async (reportId: number): Promise<string> => {
@@ -23,17 +24,13 @@ export const getRawReport = async (reportId: number): Promise<string> => {
  */
 export const createAiReport = async (message: string) => {
   const token = localStorage.getItem("jwtToken");
-
   const res = await axios.post(
     `${BASE_URL}/ai/report`,
     { message },
     {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     }
   );
-
   return res.data.conversationId as string;
 };
 
@@ -42,36 +39,58 @@ export const createAiReport = async (message: string) => {
  */
 export const subscribeAiReport = (
   conversationId: string,
-  handlers: {
-    onMessage: (token: string) => void;
-    onSavedReport: (report: AiReport) => void;
-    onDone: () => void;
-    onError: (e: Event) => void;
-  }
+  onNewReport: (report: AiReport) => void,
+  onError: (err: any) => void
 ) => {
   const token = localStorage.getItem("jwtToken");
 
-  const es = new EventSource(
-    `${BASE_URL}/ai/report/stream/${conversationId}?token=${token}`
+  const es = new EventSourcePolyfill(
+    `${BASE_URL}/ai/report/stream/${conversationId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
   );
 
-  es.addEventListener("message", (e) => {
-    handlers.onMessage(e.data);
-  });
+  es.onmessage = (e) => {
+    if (!e.data || e.data === "[DONE]") return;
+    try {
+      const parsed = JSON.parse(e.data);
+      if (parsed.type === "savedReport") {
+        onNewReport(parsed.data);
+        es.close();
+      } else if (parsed.type === "error") {
+        onError(parsed.data);
+        es.close();
+      }
+    } catch (err) {
+      console.error("SSE 데이터 파싱 실패", err);
+    }
+  };
 
-  es.addEventListener("savedReport", (e) => {
-    handlers.onSavedReport(JSON.parse(e.data));
-  });
-
-  es.addEventListener("done", () => {
-    handlers.onDone();
-    es.close();
-  });
-
-  es.onerror = (e) => {
-    handlers.onError(e);
+  es.onerror = (err) => {
+    onError(err);
     es.close();
   };
 
   return es;
+};
+
+export const getAiReportPage = async (
+  page: number,
+  size: number = 20,
+  searchText?: string,
+  startDate?: string,
+  endDate?: string
+): Promise<PaginationResponse<AiReport>> => {
+  const res = await axios.get(`${BASE_URL}/ai/report`, {
+    params: {
+      page,
+      size,
+      ...(searchText ? { searchText } : {}),
+      ...(startDate ? { startDate } : {}),
+      ...(endDate ? { endDate } : {}),
+    },
+  });
+
+  return res.data;
 };
