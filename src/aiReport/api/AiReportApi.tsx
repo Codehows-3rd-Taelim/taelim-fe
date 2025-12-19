@@ -54,8 +54,15 @@ export const subscribeAiReport = (
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      // polyfill 타임아웃을 서버 heartbeat보다 크게
+      heartbeatTimeout: 120_000,
     }
   );
+
+  // heartbeat를 "activity"로 인식시키기
+  es.addEventListener("heartbeat", () => {
+    console.debug("ai report heartbeat");
+  });
 
   es.addEventListener("savedReport", (e: MessageEvent) => {
     onSaved(JSON.parse(e.data));

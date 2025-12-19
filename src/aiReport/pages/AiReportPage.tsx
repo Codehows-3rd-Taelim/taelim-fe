@@ -57,7 +57,7 @@ export default function AiReportPage() {
       return;
     }
 
-    const conversationId = crypto.randomUUID();
+    const conversationId = `report-${crypto.randomUUID()}`;
 
     setIsLoading(true);
     setError(null);
