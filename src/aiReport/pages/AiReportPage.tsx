@@ -104,7 +104,7 @@ export default function AiReportPage() {
               setOpenRow(target.aiReportId);
             }
           } finally {
-            // ✅ 무조건 실행
+            // 무조건 실행
             setIsLoading(false);
             eventSourceRef.current?.close();
             eventSourceRef.current = null;
@@ -319,7 +319,7 @@ export default function AiReportPage() {
                       {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
                     </td>
                     <td className="px-4 py-3 text-center text-sm">
-                      {dayjs(r.createdAt).format("YYYY-MM-DD")}
+                      {dayjs(r.createdAt).format("YYYY-MM-DD HH:mm")}
                     </td>
                     <td className="px-4 py-3 text-center text-sm">{r.name}</td>
                     <td className="px-4 py-3 text-center">
