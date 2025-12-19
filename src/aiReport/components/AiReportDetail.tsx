@@ -4,15 +4,18 @@ import ReportContent from "../components/ReportContent";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import type { AiReport } from "../../type";
+import { deleteAiReport } from "../api/AiReportApi";
 
 type LoadingReport = AiReport & { rawReport: "loading" };
 type ReportWithLoading = AiReport | LoadingReport;
 
 interface AiReportDetailProps {
   report: ReportWithLoading;
+  onDeleted?: (reportId: number) => void;
 }
 
-export default function AiReportDetail({ report }: AiReportDetailProps) {
+export default function AiReportDetail({ report, onDeleted }: AiReportDetailProps) {
+  const isLoading = report.rawReport === "loading";
   const printRef = useRef<HTMLDivElement | null>(null);
 
   const formatDate = (value?: string | Date) => {
@@ -106,41 +109,58 @@ export default function AiReportDetail({ report }: AiReportDetailProps) {
     }
     };
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <Loader2 className="animate-spin text-orange-500" size={48} />
+        <p className="text-lg font-medium text-gray-700">
+          보고서 생성 중입니다
+        </p>
+        <p className="text-sm text-gray-500">
+          잠시만 기다려 주세요
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="border rounded shadow bg-gray-50 overflow-hidden">
-      <div className="flex justify-end gap-2 p-4 bg-white border-b">
+    <>
+      {/* 버튼 영역 */}
+      <div className="flex justify-end gap-2 mb-4">
         <button
           onClick={handlePrint}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          disabled={report.rawReport === "loading"}
+          className="px-4 py-2 bg-blue-500 text-white rounded"
         >
           프린트
         </button>
-
         <button
           onClick={handlePdfDownload}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          disabled={report.rawReport === "loading"}
+          className="px-4 py-2 bg-red-500 text-white rounded"
         >
           PDF 다운로드
         </button>
+        <button
+          onClick={async () => {
+            if (!window.confirm("해당 보고서를 삭제하시겠습니까?")) return;
+
+            try {
+              await deleteAiReport(report.aiReportId);
+              alert("삭제되었습니다.");
+              onDeleted?.(report.aiReportId);
+            } catch {
+              alert("삭제 실패");
+            }
+          }}
+          className="px-4 py-2 bg-gray-700 text-white rounded"
+        >
+          삭제
+        </button>
       </div>
 
-      <div ref={printRef} className="p-6 bg-white">
-        {report.rawReport === "loading" ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <Loader2 className="animate-spin text-orange-500" size={48} />
-            <p className="text-lg text-gray-600 font-medium">
-              보고서 생성중...
-            </p>
-            <p className="text-sm text-gray-500">
-              잠시만 기다려주세요
-            </p>
-          </div>
-        ) : (
-          <ReportContent markdown={report.rawReport || ""} />
-        )}
+      {/* AI 보고서 */}
+      <div ref={printRef}>
+        <ReportContent markdown={report.rawReport} />
       </div>
-    </div>
+    </>
   );
 }

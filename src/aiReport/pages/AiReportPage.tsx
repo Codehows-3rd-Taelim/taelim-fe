@@ -32,6 +32,7 @@ export default function AiReportPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const prefetchedRef = useRef<Set<number>>(new Set());
 
   const [startDate, endDate] = dateRange;
 
@@ -140,8 +141,12 @@ export default function AiReportPage() {
       setOpenRow(null);
       return;
     }
+    // 로딩중 임시 리포트는 클릭 막기
     if (isLoadingReport(report)) return;
 
+    setOpenRow(report.aiReportId);
+
+    // rawReport 없을 때만 백그라운드 로딩
     if (!report.rawReport) {
       try {
         const content = await getRawReport(report.aiReportId);
@@ -154,7 +159,7 @@ export default function AiReportPage() {
         setError("상세 보고서 로드 실패");
       }
     }
-    setOpenRow(report.aiReportId);
+    // setOpenRow(report.aiReportId);
   };
 
   // 필터링 & 페이징
@@ -207,19 +212,28 @@ export default function AiReportPage() {
 
   return (
     <div className="w-full min-h-screen px-6 py-4 bg-[#f7f7f7]">
-      {/* {error && (
-        <div className="p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold">
+      {error && (
+        <div className="p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold whitespace-pre-line">
           {error}
         </div>
-      )} */}
+      )}
 
       <div className="bg-white p-6 mb-6 rounded-lg shadow flex gap-4">
         <textarea
           ref={queryRef}
-          placeholder="조회하고 싶은 보고서 내용을 입력해 주세요."
+          placeholder="조회하고 싶은 보고서의 기간을 입력해 주세요. (Enter: 조회 / Shift+Enter: 줄바꿈)
+ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서 만들어줘"
           className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
           rows={3}
           disabled={isLoading}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault(); // 줄바꿈 방지
+              if (!isLoading) {
+                handleGenerateReport();
+              }
+            }
+          }}
         />
         <button
           className="px-6 py-3 bg-orange-500 text-white rounded font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed h-[78px] min-w-[100px]"
@@ -306,7 +320,35 @@ export default function AiReportPage() {
             <tbody>
               {paginatedReports.map((r) => (
                 <React.Fragment key={r.aiReportId}>
-                  <tr className="border-b hover:bg-gray-50 transition-colors">
+                  <tr
+                    className={`border-b transition-colors ${
+                      isLoadingReport(r)
+                        ? "cursor-not-allowed"
+                        : "hover:bg-gray-50 cursor-pointer"
+                    }`}
+                    onMouseEnter={() => {
+                      if (
+                        !r.rawReport &&
+                        !prefetchedRef.current.has(r.aiReportId)
+                      ) {
+                        prefetchedRef.current.add(r.aiReportId);
+                        getRawReport(r.aiReportId)
+                          .then((content) => {
+                            setAiReportData((prev) =>
+                              prev.map((item) =>
+                                item.aiReportId === r.aiReportId
+                                  ? { ...item, rawReport: content }
+                                  : item
+                              )
+                            );
+                          })
+                          .catch(() => {
+                            // hover 단계에서는 에러 무시해도 됨
+                          });
+                      }
+                    }}
+                    onClick={() => handleRowClick(r)}
+                  >
                     <td className="px-4 py-3 text-center text-sm">
                       {r.aiReportId > 0 ? r.aiReportId : "-"}
                     </td>
@@ -339,30 +381,21 @@ export default function AiReportPage() {
                   <tr>
                     <td colSpan={6} className="p-0">
                       <div
-                        className={`overflow-hidden transition-all duration-300 ${
-                          openRow === r.aiReportId
-                            ? "max-h-[2000px]"
-                            : "max-h-0"
-                        }`}
+                        className={`transition-all duration-300 ${
+                          openRow === r.aiReportId ? "max-h-[70vh]" : "max-h-0"
+                        } overflow-hidden`}
                       >
-                        <div className="p-6 bg-[#fafafa]">
-                          <AiReportDetail report={r} />
-                          {/* {isLoadingReport(r) ? (
-                            <div className="flex flex-col items-center justify-center py-12 gap-4">
-                              <Loader2
-                                className="animate-spin text-orange-500"
-                                size={48}
-                              />
-                              <p className="text-lg text-gray-600 font-medium">
-                                보고서 생성중...
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                잠시만 기다려주세요
-                              </p>
-                            </div>
-                          ) : (
-                            <ReportContent markdown={r.rawReport} />
-                          )} */}
+                        <div
+                          className="p-6 bg-[#fafafa] overflow-y-auto"
+                          style={{ maxHeight: "70vh" }}
+                        >
+                          <AiReportDetail
+                            report={r}
+                            onDeleted={(id) => {
+                              setAiReportData(prev => prev.filter(item => item.aiReportId !== id));
+                              setOpenRow(null);
+                            }}
+                          />
                         </div>
                       </div>
                     </td>
