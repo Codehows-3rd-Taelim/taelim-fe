@@ -84,28 +84,14 @@ export default function AiReportPage() {
       // 1. SSE 먼저 연결
       eventSourceRef.current = subscribeAiReport(
         conversationId,
-        async (savedReport) => {
+        async () => {
           try {
+            // 그냥 전체 새로고침
             const reports = await getAiReport();
-            const target = reports.find(
-              r => r.conversationId === savedReport.conversationId
-            );
 
-            if (target) {
-              const raw = await getRawReport(target.aiReportId);
-              const completed = { ...target, rawReport: raw };
-
-              setAiReportData(prev => {
-                const filtered = prev.filter(
-                  r => r.conversationId !== conversationId
-                );
-                return [completed, ...filtered];
-              });
-
-              setOpenRow(target.aiReportId);
-            }
+            setAiReportData(reports);
+            setOpenRow(reports[0]?.aiReportId ?? null);
           } finally {
-            // 무조건 실행
             setIsLoading(false);
             eventSourceRef.current?.close();
             eventSourceRef.current = null;
@@ -114,7 +100,7 @@ export default function AiReportPage() {
         (msg) => {
           setError(msg);
           setAiReportData(prev =>
-            prev.filter(r => r.conversationId !== conversationId)
+            prev.filter(r => r.aiReportId > 0)
           );
           setIsLoading(false);
           eventSourceRef.current?.close();
@@ -294,7 +280,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서 만들어줘"
       </div>
 
       {/* 보고서 테이블 */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-hidden w-full">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 sticky top-0">
