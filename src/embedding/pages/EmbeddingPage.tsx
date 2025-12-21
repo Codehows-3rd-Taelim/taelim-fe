@@ -1,6 +1,6 @@
 import { useState } from "react";
 import FileUploadPage from "./FileUploadSection";
-import QAPage from "./TrainedFileList";
+import QAPage from "./QAPage";
 
 export default function EmbeddingPage() {
   const [tab, setTab] = useState<"file" | "qa">("file");

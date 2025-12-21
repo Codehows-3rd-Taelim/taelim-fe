@@ -8,37 +8,26 @@ import {
   type Notification,
 } from "./notificationApi";
 
-/* ===============================
-   AuthProvider (STEP 1)
-================================ */
-export default function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthProvider({children,}: {children: React.ReactNode;}) {
   const token = useAuthStore((state) => state.jwtToken);
 
-  // 토스트 상태
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  // 토스트 메시지
+  const [toastMessage, setToastMessage] = useState<string>("");
 
-  // 현재 표시 중인 알림
+  // 현재 알림
   const currentNotification = useRef<Notification | null>(null);
 
-  // 중복 토스트 방지
+  // 이미 표시한 알림 중복 방지
   const shownNotificationIds = useRef<Set<number>>(new Set());
 
   // SSE ref
   const esRef = useRef<EventSource | null>(null);
 
-  /* ===============================
-     알림 pull & 토스트 표시
-  ================================ */
+  // 알림 
   const pullUndelivered = async () => {
     const list = await fetchUndeliveredNotifications();
     if (!list.length) return;
 
-    // 아직 안 보여준 것 중 첫 번째
     const next = list.find(
       (n) => !shownNotificationIds.current.has(n.notificationId)
     );
@@ -47,28 +36,24 @@ export default function AuthProvider({
     shownNotificationIds.current.add(next.notificationId);
     currentNotification.current = next;
 
+    // 토스트 이벤트 
     setToastMessage(next.message);
-    setToastOpen(true);
 
-    // 5초 후 delivered 처리
-    setTimeout(() => {
-      markNotificationDelivered(next.notificationId);
-    }, 5000);
+    // delivered 처리
+    markNotificationDelivered(next.notificationId);
   };
 
-  /* ===============================
-     SSE 연결
-  ================================ */
+
+  // SSE 연결
   useEffect(() => {
     if (!token) return;
 
     const es = createNotificationEventSource();
     esRef.current = es;
 
-    // SSE는 신호만
     es?.addEventListener("NOTIFICATION", pullUndelivered);
 
-    // 로그인 직후 보정 pull
+    // 로그인 직후 보정
     pullUndelivered();
 
     return () => {
@@ -77,28 +62,29 @@ export default function AuthProvider({
     };
   }, [token]);
 
-  /* ===============================
-     UI
-  ================================ */
+
   return (
     <>
       {children}
 
-      <Snackbar
-        open={toastOpen}
-        autoHideDuration={5000}
-        onClose={() => setToastOpen(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-      >
-        <Alert
-          severity="info"
-          variant="filled"
-          onClose={() => setToastOpen(false)}
-          sx={{ cursor: "pointer" }}
+      {toastMessage && (
+        <Snackbar
+          key={toastMessage}
+          open
+          autoHideDuration={5000}
+          onClose={() => setToastMessage("")}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         >
-          {toastMessage}
-        </Alert>
-      </Snackbar>
+          <Alert
+            severity="info"
+            variant="filled"
+            onClose={() => setToastMessage("")}
+            sx={{ cursor: "pointer" }}
+          >
+            {toastMessage}
+          </Alert>
+        </Snackbar>
+      )}
     </>
   );
 }
