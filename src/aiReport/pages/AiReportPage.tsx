@@ -10,7 +10,7 @@ import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
 import type { AiReport } from "../../type";
 import { getAiReport, getRawReport, createAiReport, subscribeAiReport } from "../api/AiReportApi";
-import AiReportDetail from "../components/AiReportDetail";
+import AiReportDetail from "./AiReportDetail";
 
 type LoadingReport = AiReport & { rawReport: "loading" };
 type ReportWithLoading = AiReport | LoadingReport;
@@ -27,27 +27,115 @@ export default function AiReportPage() {
   const [dateRange, setDateRange] = useState<DateRange<Dayjs>>([null, null]);
   const [aiReportData, setAiReportData] = useState<ReportWithLoading[]>([]);
   const [openRow, setOpenRow] = useState<number | null>(null);
+  // ------------------ localStorage로 openRow 복원 ------------------
+  useEffect(() => {
+    const savedOpenRow = localStorage.getItem("openRow");
+    if (savedOpenRow) {
+      setOpenRow(Number(savedOpenRow));
+    }
+  }, []);
+
+  // ------------------ openRow 변경 시 localStorage 저장 ------------------
+  useEffect(() => {
+    if (openRow !== null) {
+      localStorage.setItem("openRow", String(openRow));
+    } else {
+      localStorage.removeItem("openRow");
+    }
+  }, [openRow]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const eventSourcesRef = useRef<Record<string, EventSource>>({});
   const prefetchedRef = useRef<Set<number>>(new Set());
 
   const [startDate, endDate] = dateRange;
 
-  useEffect(() => {
-    getAiReport()
-      .then(setAiReportData)
-      .catch(() => setError("보고서 목록 로드 실패"));
-  }, []);
+  // ------------------ localStorage 관련 ------------------
+  const savePendingReport = (report: LoadingReport) => {
+    const pending = JSON.parse(localStorage.getItem("pendingReports") || "[]");
+    pending.unshift({
+      aiReportId: report.aiReportId,
+      conversationId: report.conversationId,
+      rawMessage: report.rawMessage,
+      createdAt: report.createdAt,
+    });
+    localStorage.setItem("pendingReports", JSON.stringify(pending));
+  };
 
+  const clearPendingReport = (conversationId: string) => {
+    const pending = JSON.parse(localStorage.getItem("pendingReports") || "[]");
+    const filtered = pending.filter((p: any) => p.conversationId !== conversationId);
+    localStorage.setItem("pendingReports", JSON.stringify(filtered));
+  };
+
+  const restorePendingReports = () => {
+    const pending = JSON.parse(localStorage.getItem("pendingReports") || "[]");
+    if (pending.length === 0) return [];
+    const restored: LoadingReport[] = pending.map((p: any) => ({
+      ...p,
+      rawReport: "loading",
+      startTime: "",
+      endTime: "",
+      userId: -1,
+      name: "생성중...",
+    }));
+    setAiReportData((prev) => [...restored, ...prev]);
+    
+    // 항상 첫번째 임시 보고서를 상세페이지로 열어둠
+    setOpenRow(restored[0]?.aiReportId ?? null);
+
+    return restored;
+  };
+
+  // ------------------ 초기 데이터 로드 ------------------
   useEffect(() => {
+    const restored = restorePendingReports();
+
+    // 복원된 임시 보고서가 있으면 SSE 재연결
+    restored.forEach(report => {
+      if (!isLoadingReport(report)) return;
+      eventSourceRef.current = subscribeAiReport(
+        report.conversationId,
+        async () => {
+          const reports = await getAiReport();
+          setAiReportData(prev => {
+            const filteredPrev = prev.filter(r => !isLoadingReport(r));
+            return [...filteredPrev, ...reports];
+          });
+          setOpenRow(reports[0]?.aiReportId ?? null);
+          clearPendingReport(report.conversationId);
+          eventSourceRef.current?.close();
+          eventSourceRef.current = null;
+        },
+        (msg) => {
+          setAiReportData(prev => prev.filter(r => r.conversationId !== report.conversationId));
+          clearPendingReport(report.conversationId);
+          setError(msg || "보고서 생성 실패");
+          eventSourceRef.current?.close();
+          eventSourceRef.current = null;
+        }
+      );
+    });
+
+    // 서버 보고서 초기 로드
+    getAiReport()
+      .then((reports) => {
+        setAiReportData((prev) => {
+          const filtered = reports.filter(r => !prev.find(p => p.aiReportId === r.aiReportId));
+          return [...prev, ...filtered];
+        });
+      })
+      .catch(() => setError("보고서 목록 로드 실패"));
+
     return () => {
       eventSourceRef.current?.close();
     };
   }, []);
 
+  // ------------------ 보고서 생성 ------------------
   const handleGenerateReport = async () => {
     const query = queryRef.current?.value.trim();
     if (!query) {
@@ -72,31 +160,39 @@ export default function AiReportPage() {
     };
 
     setAiReportData(prev => [tempReport, ...prev]);
+    savePendingReport(tempReport);
     setOpenRow(tempReport.aiReportId);
     setPage(1);
 
     try {
       eventSourceRef.current = subscribeAiReport(
-        conversationId,
-        async () => {
-          try {
-            const reports = await getAiReport();
-            setAiReportData(reports);
-            setOpenRow(reports[0]?.aiReportId ?? null);
-          } finally {
-            setIsLoading(false);
-            eventSourceRef.current?.close();
-            eventSourceRef.current = null;
-          }
-        },
-        (msg) => {
-          setError(msg);
-          setAiReportData(prev => prev.filter(r => r.aiReportId > 0));
+      conversationId,
+      async () => { 
+        // 성공 시
+        try {
+          const reports = await getAiReport();
+          setAiReportData((prev) => {
+            const filteredPrev = prev.filter(r => !isLoadingReport(r));
+            return [...filteredPrev, ...reports];
+          });
+          setOpenRow(reports[0]?.aiReportId ?? null);
+        } finally {
           setIsLoading(false);
+          clearPendingReport(conversationId);
           eventSourceRef.current?.close();
           eventSourceRef.current = null;
         }
-      );
+      },
+      (msg) => {
+        // 실패 시 임시 보고서 제거 후 에러 표시
+        setAiReportData(prev => prev.filter(r => r.conversationId !== conversationId));
+        clearPendingReport(conversationId);
+        setError(msg || "보고서 생성 실패");
+        setIsLoading(false);
+        eventSourceRef.current?.close();
+        eventSourceRef.current = null;
+      }
+    );
 
       await createAiReport(conversationId, query);
       if (queryRef.current) queryRef.current.value = "";
@@ -104,11 +200,13 @@ export default function AiReportPage() {
     } catch (e) {
       setError("보고서 생성 요청 실패");
       setIsLoading(false);
+      clearPendingReport(conversationId);
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     }
   };
 
+  // ------------------ 상세 보고서 열기 ------------------
   const handleRowClick = async (report: ReportWithLoading) => {
     if (openRow === report.aiReportId) {
       setOpenRow(null);
@@ -132,10 +230,10 @@ export default function AiReportPage() {
     }
   };
 
+  // ------------------ 필터 + 페이지네이션 ------------------
   const filteredReports = useMemo(() => {
     const filtered = aiReportData.filter((r) => {
       if (isLoadingReport(r)) return true;
-      
       const matchText = !searchText || r.rawMessage.includes(searchText);
       const matchPeriod =
         startDate && endDate
@@ -143,7 +241,6 @@ export default function AiReportPage() {
           : true;
       return matchText && matchPeriod;
     });
-    
     return filtered.sort((a, b) => {
       if (a.aiReportId < 0) return -1;
       if (b.aiReportId < 0) return 1;
@@ -159,13 +256,14 @@ export default function AiReportPage() {
 
   const totalPages = Math.ceil(filteredReports.length / 20);
 
-  // 각 보고서의 순번을 계산하는 함수
   const getReportNumber = (index: number) => {
     return filteredReports.length - ((page - 1) * 20 + index);
   };
 
+  // ------------------ UI 렌더링 ------------------
   return (
     <div className="w-full min-h-screen px-3 sm:px-6 py-4 bg-[#f7f7f7]">
+      {/* 에러 */}
       {error && (
         <div className="p-3 sm:p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold whitespace-pre-line text-sm">
           <button 
