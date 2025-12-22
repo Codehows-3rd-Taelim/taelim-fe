@@ -35,25 +35,25 @@ export default function StorePage() {
     setError(null);
     setLoading(true);
     try {
-        const [storeList, industryList] = await Promise.all([
-          getStores() as Promise<ApiStore[]>,
-          getIndustry(),
-        ]);
+      const [storeList, industryList] = await Promise.all([
+        getStores() as Promise<ApiStore[]>,
+        getIndustry(),
+      ]);
 
-        const normalizedStoreList = normalizeStores(storeList);
-        // 원본과 편집 가능 데이터를 모두 설정
-        setStores(normalizedStoreList);
-        setEditableStores(normalizedStoreList);
-        setIndustries(industryList);
-        setCurrentPage(1);
+      const normalizedStoreList = normalizeStores(storeList);
+      // 원본과 편집 가능 데이터를 모두 설정
+      setStores(normalizedStoreList);
+      setEditableStores(normalizedStoreList);
+      setIndustries(industryList);
+      setCurrentPage(1);
     } catch (err) {
-        const errorMessage =
+      const errorMessage =
         err instanceof Error
-            ? err.message
-            : "데이터 조회 중 오류가 발생했습니다.";
-        setError(errorMessage);
+          ? err.message
+          : "데이터 조회 중 오류가 발생했습니다.";
+      setError(errorMessage);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }, []);
 
@@ -112,7 +112,7 @@ export default function StorePage() {
       await Promise.all(updatePromises);
 
       // 성공 시 데이터 재조회 및 상태 업데이트
-      await fetchData(); 
+      await fetchData();
       // 토스트 알림 메시지 업데이트
       const msg = `총 ${modifiedStores.length}개의 매장 정보가 성공적으로 업데이트되었습니다.`;
       setUpdateStatus(msg);
@@ -157,10 +157,13 @@ export default function StorePage() {
   // 페이지네이션 로직
   const totalPages = Math.ceil(editableStores.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
-  const displayedStores = editableStores.slice(startIdx, startIdx + itemsPerPage);
+  const displayedStores = editableStores.slice(
+    startIdx,
+    startIdx + itemsPerPage
+  );
 
   return (
-    <div className="w-full min-h-screen px-6 py-4 bg-gray-100">
+    <div className="w-full min-h-screen px-6 py-4  bg-gray-100">
       <div className="flex justify-between items-center mb-5 ml-4">
         <h3 className="text-xl font-bold">매장 관리 목록</h3>
         {/* 저장/취소 버튼 그룹 */}
@@ -194,7 +197,7 @@ export default function StorePage() {
 
       {/* 토스트 알림 영역 */}
       {updateStatus && (
-        <div 
+        <div
           // [변경] 왼쪽 하단 고정: fixed bottom-5 left-5
           // [선택] 위쪽 가운데 고정하려면: fixed top-5 left-1/2 -translate-x-1/2
           className="fixed bottom-5 left-5 z-50 transition-opacity duration-300"
@@ -240,20 +243,22 @@ export default function StorePage() {
                     <tr
                       key={store.storeId}
                       className={`h-11 border-b border-gray-200 transition-colors ${
-                        modified ? "bg-orange-50/70 hover:bg-orange-100/70" : "hover:bg-blue-50/50"
+                        modified
+                          ? "bg-orange-50/70 hover:bg-orange-100/70"
+                          : "hover:bg-blue-50/50"
                       }`}
                     >
                       {/* 매장명 (shopName을 편집 가능하게 하려면 input으로 변경) */}
                       <td className="px-2">
                         <div className="py-1 px-2 w-full text-center font-semibold text-gray-700">
-                            {store.shopName}
+                          {store.shopName}
                         </div>
                       </td>
 
                       {/* Shop ID (shopId를 편집 가능하게 하려면 input으로 변경) */}
                       <td className="px-2">
                         <div className="py-1 px-2 w-full text-center text-gray-700">
-                            {store.shopId}
+                          {store.shopId}
                         </div>
                       </td>
 
@@ -269,7 +274,9 @@ export default function StorePage() {
                             )
                           }
                           className={`border rounded-md p-1 w-60 text-center focus:ring-blue-500 focus:border-blue-500 ${
-                            modified ? "border-orange-500 ring-2 ring-orange-200" : ""
+                            modified
+                              ? "border-orange-500 ring-2 ring-orange-200"
+                              : ""
                           }`}
                         >
                           <option value={0}>-- 미지정 --</option>

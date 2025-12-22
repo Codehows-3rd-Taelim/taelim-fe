@@ -25,17 +25,20 @@ export default function PasswordToggle({
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         onKeyPress={handleKeyPress}
-        className="w-full pr-12 px-4 py-3 border border-gray-300 rounded-md text-gray-700 outline-none 
-                   focus:border-amber-400 focus:ring-2 focus:ring-amber-200 focus:ring-opacity-50 transition"
+        className="w-full px-4 py-3 pr-12 text-gray-700 transition border border-gray-300 rounded-md outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 focus:ring-opacity-50"
         tabIndex={tabIndex}
       />
       <button
         type="button"
         onClick={() => setShowPassword(!showPassword)}
-        className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-gray-500 hover:text-gray-700 bg-transparent border-none outline-none"
+        className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-gray-500 bg-transparent border-none outline-none hover:text-gray-700"
         tabIndex={tabIndex}
       >
-        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+        {showPassword ? (
+          <EyeOff className="w-5 h-5" />
+        ) : (
+          <Eye className="w-5 h-5" />
+        )}
       </button>
     </div>
   );

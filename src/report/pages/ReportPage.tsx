@@ -27,7 +27,7 @@ import type { DateRange } from "@mui/x-date-pickers-pro/models";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
 import CleanReport from "./CleanReport";
-import { getReport } from "../api/ReportApi";
+import { getReportPage } from "../api/ReportApi";
 import type { Report, Robot } from "../../type";
 import { useAuthStore } from "../../store";
 import useOperationManagement from "../../operationManagement/hook/useOperationManagement";
@@ -49,7 +49,7 @@ export default function ReportPage() {
   const [selectedStoreIdInput, setSelectedStoreIdInput] = useState(
     roleLevel === 3 ? 0 : storeId || 0
   );
-  
+
   // 디폴트 날짜 계산
   const getDefaultDateRange = (): DateRange<Dayjs> => [
     dayjs().subtract(7, "day"),
@@ -73,32 +73,41 @@ export default function ReportPage() {
   // 정렬 상태
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-
+  const [totalPages, setTotalPages] = useState(0);
   // 날짜 범위가 변경될 때마다 데이터 로드
   useEffect(() => {
     const loadData = async () => {
       if (!dateRangeInput[0] || !dateRangeInput[1]) return;
 
       try {
-        const targetStoreId = roleLevel === 3 ? undefined : storeId || undefined;
-        const startDate = dateRangeInput[0].format("YYYY-MM-DD 00:00:00");
-        const endDate = dateRangeInput[1].format("YYYY-MM-DD 23:59:59");
-        
-        const data = await getReport(targetStoreId, startDate, endDate);
-        setAiReportData(data);
-        setPage(1);
+        const targetStoreId =
+          roleLevel === 3 ? undefined : storeId || undefined;
+        const startDate = dateRangeInput[0].format("YYYY-MM-DD");
+        const endDate = dateRangeInput[1].format("YYYY-MM-DD");
+
+        const res = await getReportPage({
+          page: page - 1,
+          size: 20,
+          storeId: targetStoreId,
+          startDate,
+          endDate,
+        });
+
+        setAiReportData(res.content);
+        setTotalPages(res.totalPages);
       } catch (err) {
         console.error("보고서 데이터 불러오기 실패", err);
       }
     };
     loadData();
-  }, [dateRangeInput, roleLevel, storeId]);
+  }, [dateRangeInput, roleLevel, storeId, page]);
 
   // Robot 목록 로드
   useEffect(() => {
     const loadRobots = async () => {
       try {
-        const targetStoreId = roleLevel === 3 ? undefined : storeId || undefined;
+        const targetStoreId =
+          roleLevel === 3 ? undefined : storeId || undefined;
         const data = await getRobots(targetStoreId);
         setRobots(data);
       } catch (err) {
@@ -120,14 +129,15 @@ export default function ReportPage() {
     if (hours === 0) {
       return `${totalMinutes}분 ${seconds}초`;
     } else {
-      return `${hours}시 ${minutes}분 ${seconds}초`;
+      return `${hours}시간 ${minutes}분 ${seconds}초`;
     }
   };
 
   // 필터링 로직
   const filteredReports = AiReportData.filter((r) => {
     const matchSn = selectedSn ? String(r.sn) === selectedSn : true;
-    const matchStore = selectedStoreId !== 0 ? r.storeId === selectedStoreId : true;
+    const matchStore =
+      selectedStoreId !== 0 ? r.storeId === selectedStoreId : true;
     return matchSn && matchStore;
   });
 
@@ -148,13 +158,6 @@ export default function ReportPage() {
       return dayjs(b.startTime).unix() - dayjs(a.startTime).unix();
     }
   });
-
-  // 페이지네이션
-  const reportsPerPage = 20;
-  const totalPages = Math.ceil(sortedReports.length / reportsPerPage);
-  const startIndex = (page - 1) * reportsPerPage;
-  const endIndex = startIndex + reportsPerPage;
-  const paginatedReports = sortedReports.slice(startIndex, endIndex);
 
   // 정렬 핸들러
   const handleSort = (key: SortKey) => {
@@ -243,7 +246,8 @@ export default function ReportPage() {
             <MenuItem value="">전체</MenuItem>
             {robots.map((robot) => (
               <MenuItem key={robot.robotId} value={String(robot.sn)}>
-                {robot.sn}{robot.nickname && ` (${robot.nickname})`}
+                {robot.sn}
+                {robot.nickname && ` (${robot.nickname})`}
               </MenuItem>
             ))}
           </Select>
@@ -334,7 +338,7 @@ export default function ReportPage() {
           </TableHead>
 
           <TableBody>
-            {paginatedReports.map((r) => (
+            {sortedReports.map((r) => (
               <TableRow
                 key={r.reportId}
                 onClick={() => handleRowClick(r)}
@@ -353,7 +357,9 @@ export default function ReportPage() {
                 <TableCell align="center">
                   {formatDynamicTime(r.cleanTime)}
                 </TableCell>
-                <TableCell align="center">{r.cleanArea}</TableCell>
+                <TableCell align="center">
+                  {r.cleanArea == null ? "-" : r.cleanArea}
+                </TableCell>
                 <TableCell align="center">
                   {Math.round(r.costBattery * 1.3 * 100) / 10000}
                 </TableCell>

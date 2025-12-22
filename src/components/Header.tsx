@@ -12,6 +12,7 @@ import {
   ChevronUp,
   Menu,
   X,
+  Database,
 } from "lucide-react";
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
 import type { SyncRecordDTO, User as UserType } from "../type";
@@ -58,15 +59,23 @@ export default function Header() {
     }
     return null;
   };
-
+  
   const navItems = [
-    { name: "홈", path: "/", icon: Home },
-    { name: "AI보고서", path: "/ai/report", icon: FileText },
-    { name: "대시보드", path: "/dashboard", icon: BarChart3 },
-    { name: "작업목록 / 보고서", path: "/report", icon: ClipboardList },
-    { name: "운영 관리", path: "/manage", icon: Users },
+    { name: "홈", path: "/", icon: Home, minRoleLevel: 1 },
+    { name: "AI보고서", path: "/ai/report", icon: FileText, minRoleLevel: 1 },
+    { name: "대시보드", path: "/dashboard", icon: BarChart3, minRoleLevel: 1 },
+    { name: "작업목록 / 보고서", path: "/report", icon: ClipboardList, minRoleLevel: 1 },
+    { name: "운영 관리", path: "/manage", icon: Users, minRoleLevel: 1 },
+    { name: "데이터 관리", path: "/data", icon: Database, minRoleLevel: 3 }, // 관리자만
   ];
+  
+  /* roleLevel 기준 필터링 메뉴 생성 */
+  const safeRoleLevel = roleLevel ?? 0;
 
+  const visibleNavItems = navItems.filter(
+    (item) => safeRoleLevel >= item.minRoleLevel
+  );
+  
   useEffect(() => {
     loadLastSync();
   }, []);
@@ -152,7 +161,7 @@ export default function Header() {
 
             {/* 데스크탑 메뉴 */}
             <nav className="flex items-center gap-1">
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
@@ -277,7 +286,7 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className="py-4 border-t md:hidden border-white/20">
             <nav className="flex flex-col gap-2">
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button

@@ -1,5 +1,7 @@
 import axios from "axios";
 import type { AiReport, RawReport } from "../../type";
+import { EventSourcePolyfill } from "event-source-polyfill";
+// import { useAuthStore } from "../../store";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -21,20 +23,19 @@ export const getRawReport = async (reportId: number): Promise<string> => {
  * 1단계 : 보고서 생성 요청 (POST)
  * → conversationId만 받음
  */
-export const createAiReport = async (message: string) => {
+export const createAiReport = async (
+  conversationId: string,
+  message: string
+) => {
   const token = localStorage.getItem("jwtToken");
 
-  const res = await axios.post(
-    `${BASE_URL}/ai/report`,
+  await axios.post(
+    `${BASE_URL}/ai/report?conversationId=${conversationId}`,
     { message },
     {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     }
   );
-
-  return res.data.conversationId as string;
 };
 
 /**
@@ -42,36 +43,27 @@ export const createAiReport = async (message: string) => {
  */
 export const subscribeAiReport = (
   conversationId: string,
-  handlers: {
-    onMessage: (token: string) => void;
-    onSavedReport: (report: AiReport) => void;
-    onDone: () => void;
-    onError: (e: Event) => void;
-  }
+  onSaved: (report: AiReport) => void,
+  onError: (message: string) => void
 ) => {
   const token = localStorage.getItem("jwtToken");
 
-  const es = new EventSource(
-    `${BASE_URL}/ai/report/stream/${conversationId}?token=${token}`
+  const es = new EventSourcePolyfill(
+    `${BASE_URL}/ai/report/stream/${conversationId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
   );
 
-  es.addEventListener("message", (e) => {
-    handlers.onMessage(e.data);
+  es.addEventListener("savedReport", (e: MessageEvent) => {
+    onSaved(JSON.parse(e.data));
   });
 
-  es.addEventListener("savedReport", (e) => {
-    handlers.onSavedReport(JSON.parse(e.data));
+  es.addEventListener("error", () => {
+    onError("AI 보고서 생성 실패");
   });
-
-  es.addEventListener("done", () => {
-    handlers.onDone();
-    es.close();
-  });
-
-  es.onerror = (e) => {
-    handlers.onError(e);
-    es.close();
-  };
 
   return es;
 };

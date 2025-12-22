@@ -5,72 +5,103 @@ import { PrivateRoute } from "./PrivateRoute";
 import OperationManagement from "./operationManagement/pages/OperationManagement";
 import AiReportPage from "./aiReport/pages/AiReportPage";
 import { Container, Box } from "@mui/material";
-import Header from "./components/Header";
 import ReportPage from "./report/pages/ReportPage";
 import AIChat from "./aichat/AIChat";
-import DashboardPage from "./Dashboard/pages/DashboardPage";
+import Footer from "./components/Footer";
+import AuthProvider from "./AuthProvider";
+import Header from "./components/Header";
+import EmbeddingPage from "./embedding/pages/EmbeddingPage";
+import DashboardPage from "./dashboard/pages/DashboardPage";
 
 function App() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
 
   return (
-    <>
-      {!isLoginPage && <Header />}
+    <AuthProvider>
       <Box
-        sx={{
-          pt: isLoginPage ? 0 : "64px", // 헤더 높이만큼 padding-top 추가
-          minHeight: "100vh",
-        }}
+        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
       >
-        <Container maxWidth="xl" sx={{ maxWidth: "1800px !important" }}>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <AIChat />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/ai/report"
-              element={
-                <PrivateRoute>
-                  <AiReportPage />
-                </PrivateRoute>
-              }
-            />
-            {/* <Route path="/dashboard/admin" element={<PrivateRoute><UserDashboardPage /></PrivateRoute>} /> */}
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <DashboardPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/report"
-              element={
-                <PrivateRoute>
-                  <ReportPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/manage"
-              element={
-                <PrivateRoute>
-                  <OperationManagement />
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </Container>
+        {!isLoginPage && <Header />}
+
+        <Box
+          component="main"
+          sx={{
+            pt: isLoginPage ? 0 : "64px",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Container
+            maxWidth={false}
+            sx={{
+              width: "100%",
+              maxWidth: "2400px",
+              px: 3,
+              flex: 1,
+            }}
+          >
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <AIChat />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/ai/report"
+                element={
+                  <PrivateRoute>
+                    <AiReportPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <DashboardPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/report"
+                element={
+                  <PrivateRoute>
+                    <ReportPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/manage"
+                element={
+                  <PrivateRoute>
+                    <OperationManagement />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/data"
+                element={
+                  <PrivateRoute>
+                    <EmbeddingPage />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </Container>
+          {!isLoginPage && (
+            <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
+              <Footer />
+            </Box>
+          )}
+        </Box>
       </Box>
-    </>
+    </AuthProvider>
   );
 }
 

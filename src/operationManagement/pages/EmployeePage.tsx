@@ -1,9 +1,41 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import type { User, Store } from "../../type";
 import { deleteEmployee, updateEmployee } from "../api/EmployeeApi";
 import Pagination from "../../components/Pagination";
+import EmployeeRegistrationModal from "./EmployeeRegistrationModal";
 
-interface EmployeePageProps {
+/* =====================
+   타입 정의
+===================== */
+interface RegistrationForm {
+  id: string;
+  pw: string;
+  pwCheck: string;
+  name: string;
+  phone: string;
+  email: string;
+  storeId: number;
+  role: string;
+}
+
+interface RegistrationProps {
+  form: RegistrationForm;
+  setFormValue: (key: keyof RegistrationForm, value: string | number) => void;
+  isIdChecked: boolean;
+  setIsIdChecked: (v: boolean) => void;
+  handleIdCheck: () => void;
+  isPasswordMismatched: boolean;
+  showPassword: boolean;
+  setShowPassword: (show: boolean) => void;
+  showPasswordCheck: boolean;
+  setShowPasswordCheck: (show: boolean) => void;
+  isRegisterButtonEnabled: boolean;
+  handleRegister: () => void;
+  handlePasswordKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  isMobileLayout: boolean;
+}
+
+interface EmployeePageProps extends RegistrationProps {
   list: User[];
   setList: React.Dispatch<React.SetStateAction<User[]>>;
   allStores: Store[];
@@ -11,248 +43,306 @@ interface EmployeePageProps {
   getStoreName: (storeId: number) => string;
 }
 
-const itemsPerPage = 20;
+const ITEMS_PER_PAGE = 20;
 
-// role 문자열을 숫자 레벨로 변환하는 헬퍼 함수 (정렬에 사용)
+/* =====================
+   유틸
+===================== */
 const getRoleLevel = (role: string): number => {
   switch (role) {
     case "ADMIN":
       return 3;
     case "MANAGER":
-    case "manager": // 혹시 모를 소문자 처리
+    case "manager":
       return 2;
     case "USER":
-    case "user": // 혹시 모를 소문자 처리
+    case "user":
       return 1;
     default:
       return 0;
   }
 };
 
-export default function EmployeePage({ list, setList, allStores, roleLevel, getStoreName }: EmployeePageProps) {
+const getRoleName = (role: string) => {
+  switch (role) {
+    case "ADMIN":
+      return "관리자";
+    case "MANAGER":
+      return "매장 담당자";
+    case "USER":
+      return "직원";
+    default:
+      return role;
+  }
+};
+
+/* =====================
+   컴포넌트
+===================== */
+export default function EmployeePage(props: EmployeePageProps) {
+  const {
+    list,
+    setList,
+    allStores,
+    roleLevel,
+    getStoreName,
+    form,
+    setFormValue,
+    isIdChecked,
+    setIsIdChecked,
+    handleIdCheck,
+    isPasswordMismatched,
+    showPassword,
+    setShowPassword,
+    showPasswordCheck,
+    setShowPasswordCheck,
+    isRegisterButtonEnabled,
+    handleRegister,
+    handlePasswordKeyPress,
+    isMobileLayout,
+  } = props;
+
+  /* =====================
+     상태
+  ===================== */
   const [currentPage, setCurrentPage] = useState(1);
-  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editableList, setEditableList] = useState<User[]>([]);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
-  // 정렬 로직 적용
+  /* =====================
+     정렬된 리스트
+  ===================== */
   const sortedList = useMemo(() => {
-    // 원본 리스트를 복사하여 정렬
-    const listCopy = [...list];
+    const copy = [...list];
+    copy.sort((a, b) => {
+      if (a.storeId !== b.storeId) return a.storeId - b.storeId;
+      const ra = getRoleLevel(a.role);
+      const rb = getRoleLevel(b.role);
+      if (ra !== rb) return rb - ra;
+      return a.userId - b.userId;
+    });
+    return copy;
+  }, [list]);
 
-    listCopy.sort((a, b) => {
-      // 1. 매장별 그룹핑 (storeId 오름차순)
-      if (a.storeId !== b.storeId) {
-        return a.storeId - b.storeId; // storeId 오름차순
-      }
+  /* =====================
+     페이징
+  ===================== */
+  const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+  const displayList = isEditMode ? editableList : sortedList;
+  const displayedList = displayList.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedList.length / ITEMS_PER_PAGE);
 
-      // 2. 같은 매장에서는 권한별 내림차순 (ADMIN > MANAGER > USER)
-      const aRoleLevel = getRoleLevel(a.role);
-      const bRoleLevel = getRoleLevel(b.role);
-      if (aRoleLevel !== bRoleLevel) {
-        return bRoleLevel - aRoleLevel; // 권한 레벨 내림차순
-      }
+  const canEdit = roleLevel >= 2;
 
-      // 3. 같은 권한끼리는 userId 오름차순
-      return a.userId - b.userId; // userId 오름차순
+  const initialForm: RegistrationForm = {
+    id: "",
+    pw: "",
+    pwCheck: "",
+    name: "",
+    phone: "",
+    email: "",
+    storeId: 0,
+    role: "USER",
+  };
+
+  const resetRegisterForm = () => {
+    (Object.keys(initialForm) as (keyof RegistrationForm)[]).forEach((key) => {
+      setFormValue(key, initialForm[key]);
     });
 
-    return listCopy;
-  }, [list]); // list가 변경될 때만 다시 계산
-
-  // list 대신 sortedList를 사용하도록 업데이트
-  useEffect(() => {
-    if (!isEditMode) {
-      // 편집 모드가 아닐 때만 sortedList를 기반으로 editableList 초기화
-      // setEditableList([...sortedList]); // 이 로직은 handleEditMode에서만 처리하는 것을 권장합니다.
-    }
-  }, [isEditMode, sortedList]); // list 의존성 제거
-
-  // 페이지 변경 핸들러
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
+    setIsIdChecked(false);
+    setShowPassword(false);
+    setShowPasswordCheck(false);
   };
 
-  const handleDelete = async (index: number) => {
-    // list 대신 sortedList에서 항목을 찾습니다.
-    if (roleLevel === 1 || deletingUserId !== null) return;
-
-    const userToDelete = sortedList[index]; // 정렬된 리스트에서 인덱스 사용
-    if (!userToDelete || !userToDelete.userId) return;
-
-    const isConfirmed = window.confirm(`[${userToDelete.name}] 직원을 정말로 삭제하시겠습니까?`);
-    
-    if (isConfirmed) {
-      setDeletingUserId(userToDelete.userId);
-      try {
-        await deleteEmployee(userToDelete.userId);
-        alert(`직원 [${userToDelete.name}]이(가) 성공적으로 삭제되었습니다.`);
-        // 삭제 후에는 원본 list를 필터링하여 setList를 업데이트
-        setList(prevList => prevList.filter((item) => item.userId !== userToDelete.userId));
-      } catch (error) {
-        console.error("직원 삭제 실패:", error);
-        alert(error instanceof Error ? error.message : "직원 삭제 중 오류가 발생했습니다.");
-      } finally {
-        setDeletingUserId(null);
-      }
-    }
-  };
-
+  /* =====================
+     핸들러
+  ===================== */
   const handleEditMode = () => {
     setIsEditMode(true);
-    // 수정 모드 진입 시, 정렬된 목록을 기반으로 editableList 초기화
-    setEditableList([...sortedList]); 
-  };
-
-  /**
-   * 수정된 항목이 있는지 확인하는 헬퍼 함수
-   * @param originalList 원본 직원 목록
-   * @param editedList 수정 중인 직원 목록
-   * @returns 변경된 항목의 배열
-   */
-  // 이 함수는 원본 list(정렬되지 않은)와 editableList(정렬된 list의 복사본, 수정 중인 상태)를 비교해야 합니다.
-  const getChangedUsers = (originalList: User[], editedList: User[]) => {
-    return editedList.filter((editUser) => {
-      const original = originalList.find((u) => u.userId === editUser.userId);
-      if (!original) return false;
-      return (
-        original.name !== editUser.name ||
-        original.phone !== editUser.phone ||
-        original.email !== editUser.email ||
-        original.storeId !== editUser.storeId ||
-        original.role !== editUser.role ||
-        original.id !== editUser.id
-      );
-    });
+    setEditableList([...sortedList]);
   };
 
   const handleCancel = () => {
-    if (isEditMode) {
-      // 변경 여부는 원본 props list와 editableList를 비교하여 확인
-      const changedUsers = getChangedUsers(list, editableList); // 💡 props list 사용
-
-      if (changedUsers.length > 0) {
-        const isConfirmed = window.confirm(
-          "저장하지 않은 변경 사항이 있습니다. 정말로 취소하시겠습니까? 변경 사항은 모두 사라집니다."
-        );
-        if (!isConfirmed) {
-          return;
-        }
-      }
-    }
-
     setIsEditMode(false);
     setEditableList([]);
   };
 
+  const handleRegisterWithClose = async () => {
+    try {
+      await handleRegister();
+      resetRegisterForm();
+      setIsRegisterOpen(false);
+    } catch {
+      // 실패 시 유지
+    }
+  };
+  const handleFieldChange = (
+    userId: number,
+    field: keyof User | "pw",
+    value: string | number
+  ) => {
+    setEditableList((prev) =>
+      prev.map((u) => (u.userId === userId ? { ...u, [field]: value } : u))
+    );
+  };
+
   const handleConfirm = async () => {
     try {
-      // 변경된 항목을 list (props, 원본 데이터)와 editableList를 비교하여 확인
-      const changedUsers = getChangedUsers(list, editableList); // 💡 props list 사용
+      type EditableUser = User & { pw?: string };
 
-      if (changedUsers.length === 0 && !editableList.some(user => user.pw && user.pw.length > 0)) {
+      const changed = (editableList as EditableUser[]).filter((u) => {
+        const o = list.find((x) => x.userId === u.userId);
+        if (!o) return false;
+        return (
+          o.name !== u.name ||
+          o.phone !== u.phone ||
+          o.email !== u.email ||
+          o.storeId !== u.storeId ||
+          o.role !== u.role ||
+          o.id !== u.id ||
+          u.pw
+        );
+      });
+
+      if (changed.length === 0) {
         alert("변경된 내용이 없습니다.");
         setIsEditMode(false);
         return;
       }
 
-      const usersToUpdate = editableList.filter(editUser => {
-        const original = list.find(u => u.userId === editUser.userId); // props list 사용
-        if (!original) return false;
-        
-        const isFieldChanged = original.name !== editUser.name ||
-          original.phone !== editUser.phone ||
-          original.email !== editUser.email ||
-          original.storeId !== editUser.storeId ||
-          original.role !== editUser.role ||
-          original.id !== editUser.id;
-
-        const isPwChanged = editUser.pw !== undefined && editUser.pw !== null && editUser.pw.length > 0;
-        
-        return isFieldChanged || isPwChanged;
-      });
-
       await Promise.all(
-        usersToUpdate.map((user) =>
-          updateEmployee(user.userId, {
-            id: user.id,
-            name: user.name,
-            phone: user.phone,
-            email: user.email,
-            storeId: user.storeId,
-            role: user.role,
-            ...(user.pw && user.pw.length > 0 && { pw: user.pw }),
-          })
-        )
+        changed.map((u) => {
+          return updateEmployee(u.userId, {
+            id: u.id,
+            name: u.name,
+            phone: u.phone,
+            email: u.email,
+            storeId: u.storeId,
+            role: u.role,
+            ...(u.pw && { pw: u.pw }),
+          });
+        })
       );
 
-      alert("직원 정보가 성공적으로 수정되었습니다.");
-      
-      const updatedList = editableList.map(user => {
-        // 수정 완료 후 비밀번호 필드 제거 및 User 타입으로 캐스팅
-        const { _pw, ...rest } = user as User & { pw?: string }; 
-        return rest as User;
-      });
+      setList((prev) =>
+        prev.map((o) => changed.find((c) => c.userId === o.userId) || o)
+      );
 
-      setList(updatedList); // 변경사항 적용 (정렬된 상태로 setList 업데이트)
+      alert("직원 정보가 수정되었습니다.");
       setIsEditMode(false);
-    } catch (error) {
-      console.error("직원 수정 실패:", error);
-      alert(error instanceof Error ? error.message : "직원 수정 중 오류가 발생했습니다.");
+    } catch {
+      alert("직원 수정 중 오류가 발생했습니다.");
     }
   };
 
-  const handleFieldChange = (userId: number, field: keyof User, value: string | number) => {
-    setEditableList((prev) =>
-      prev.map((user) => (user.userId === userId ? { ...user, [field]: value } : user))
-    );
+  const handleDelete = async (index: number) => {
+    if (roleLevel === 1) return;
+    const target = sortedList[index];
+    if (!target) return;
+
+    if (!window.confirm(`[${target.name}] 직원을 삭제하시겠습니까?`)) return;
+
+    setDeletingUserId(target.userId);
+    try {
+      await deleteEmployee(target.userId);
+      setList((prev) => prev.filter((u) => u.userId !== target.userId));
+    } finally {
+      setDeletingUserId(null);
+    }
   };
 
-  const startIdx = (currentPage - 1) * itemsPerPage;
-  // 정렬된 리스트를 기본값으로 사용
-  const displayList = isEditMode ? editableList : sortedList; 
-  const displayedList = displayList.slice(startIdx, startIdx + itemsPerPage);
-  const totalPages = Math.ceil(sortedList.length / itemsPerPage); // 정렬된 리스트의 길이로 페이징 계산
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  // 수정 권한: 매장담당자(2) 또는 관리자(3)
-  const canEdit = roleLevel >= 2;
+  const formatPhoneNumber = (value: string) => {
+    const numbersOnly = value.replace(/\D/g, "");
+    let phone = numbersOnly.startsWith("010")
+      ? numbersOnly
+      : "010" + numbersOnly;
+    phone = phone.slice(0, 11);
+    return phone.length === 11
+      ? phone.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")
+      : phone;
+  };
 
-  // roleLevel에 따른 권한명 변환
-  const getRoleName = (role: string) => {
-    switch (role) {
-      case "ADMIN": return "관리자";
-      case "MANAGER": return "매장 담당자";
-      case "USER": return "직원";
-      default: return role;
-    }
-  }
+  const isValidPhone = (phone: string) =>
+    phone.replace(/\D/g, "").length === 11;
 
+  const isSaveButtonEnabled = editableList.every(
+    (u) =>
+      u.name &&
+      u.id &&
+      validateEmail(u.email) &&
+      isValidPhone(u.phone) &&
+      (!u.pw || u.pw.length >= 8)
+  );
+  /* =====================
+     렌더
+  ===================== */
   return (
-    <div className="w-full min-h-screen px-6 py-4 bg-gray-100">
-      {/* 제목 및 버튼 영역 */}
-      <div className="flex justify-between items-center mb-5 ml-4">
-        <h3 className="text-xl font-bold">직원 목록</h3>
-        
-        {canEdit && !isEditMode && (
-          <button
-            onClick={handleEditMode}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-medium"
-          >
-            수정
-          </button>
-        )}
+    <div className="w-full min-h-screen p-6 bg-gray-100 max-w-[1920px] mx-auto">
+      {/* 등록 모달 */}
+      {isRegisterOpen && (
+        <EmployeeRegistrationModal
+          form={form}
+          setFormValue={setFormValue}
+          isIdChecked={isIdChecked}
+          handleIdCheck={handleIdCheck}
+          isPasswordMismatched={isPasswordMismatched}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          showPasswordCheck={showPasswordCheck}
+          setShowPasswordCheck={setShowPasswordCheck}
+          isRegisterButtonEnabled={isRegisterButtonEnabled}
+          handleRegister={handleRegisterWithClose}
+          allStores={allStores}
+          roleLevel={roleLevel}
+          handlePasswordKeyPress={handlePasswordKeyPress}
+          isMobileLayout={isMobileLayout}
+          onClose={() => {
+            setIsRegisterOpen(false);
+          }}
+          onCancelConfirm={() => {
+            resetRegisterForm(); // 👈 입력 초기화
+            setIsRegisterOpen(false);
+          }}
+        />
+      )}
 
+      {/* 헤더 */}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">직원 목록</h3>
+        {canEdit && !isEditMode && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsRegisterOpen(true)}
+              className="bg-orange-500 text-white px-4 py-2 rounded"
+            >
+              직원 등록
+            </button>
+            <button
+              onClick={handleEditMode}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              수정
+            </button>
+          </div>
+        )}
         {canEdit && isEditMode && (
           <div className="flex gap-2">
             <button
               onClick={handleConfirm}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 font-medium"
+              className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400"
+              disabled={!isSaveButtonEnabled}
             >
               확인
             </button>
             <button
               onClick={handleCancel}
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 font-medium"
+              className="bg-gray-500 text-white px-4 py-2 rounded"
             >
               취소
             </button>
@@ -260,157 +350,185 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
         )}
       </div>
 
-      {/* 목록 테이블 */}
+      {/* 테이블 */}
       {sortedList.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
-          조회된 직원 목록이 없습니다.
+          조회된 직원이 없습니다.
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <table className="w-full border-separate border-spacing-y-2">
-              <thead className="sticky top-0 bg-gray-100 shadow-sm z-10">
-                <tr className="h-11 text-center text-gray-600 font-medium">
-                  <th className="py-2">이름</th>
-                  <th className="py-2">아이디</th>
-                  {isEditMode && <th className="py-2">비밀번호</th>}
-                  <th className="py-2">전화번호</th>
-                  <th className="py-2">이메일</th>
-                  <th className="py-2">매장명</th>
-                  <th className="py-2">권한</th>
-                  {!isEditMode && <th className="py-2"></th>}
+          <div className="bg-white rounded-xl shadow overflow-x-auto">
+            <table className="w-full ">
+              <thead className="bg-gray-100">
+                <tr className="h-12 text-center">
+                  <th className="px-4 py-3">이름</th>
+                  <th className="px-4 py-3">ID</th>
+                  {isEditMode && <th className="px-4 py-3">비밀번호</th>}
+                  <th className="px-4 py-3">전화</th>
+                  <th className="px-4 py-3">이메일</th>
+                  <th className="px-4 py-3">매장</th>
+                  <th className="px-4 py-3">권한</th>
+                  {!isEditMode && <th className="px-4 py-3" />}
                 </tr>
               </thead>
-
               <tbody>
-                {displayedList.map((item, index) => (
-                  <tr key={item.userId} className="border-b border-gray-200 h-11 hover:bg-blue-50/50 transition-colors">
-                    
-                    {/* 이름 */}
-                    <td className="text-center px-2">
+                {displayedList.map((u, i) => (
+                  <tr
+                    key={u.userId}
+                    className="text-center border-t hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3">
                       {isEditMode ? (
                         <input
-                          type="text"
-                          value={item.name}
-                          onChange={(e) => handleFieldChange(item.userId, "name", e.target.value)}
-                          className="border rounded-md p-1 w-full text-center focus:ring-blue-500 focus:border-blue-500"
+                          value={u.name}
+                          onChange={(e) =>
+                            handleFieldChange(u.userId, "name", e.target.value)
+                          }
+                          className="w-full border rounded px-2 py-1"
                         />
                       ) : (
-                        item.name
+                        u.name
                       )}
                     </td>
-
-                    {/* 아이디 */}
-                    <td className="text-center px-2">
+                    <td className="px-4 py-3">
                       {isEditMode ? (
                         <input
-                          type="text"
-                          value={item.id}
-                          onChange={(e) => handleFieldChange(item.userId, "id", e.target.value)}
-                          className="border rounded-md p-1 w-full text-center focus:ring-blue-500 focus:border-blue-500"
+                          value={u.id}
+                          onChange={(e) =>
+                            handleFieldChange(u.userId, "id", e.target.value)
+                          }
+                          className="w-full border rounded px-2 py-1"
                         />
                       ) : (
-                        item.id
+                        u.id
                       )}
                     </td>
-
-                    {/* 비밀번호 (수정 모드일 때만) */}
                     {isEditMode && (
-                      <td className="text-center px-2">
-                        <input
-                          type="password"
-                          value={item.pw || ""} 
-                          onChange={(e) => handleFieldChange(item.userId, "pw", e.target.value)}
-                          placeholder="변경 시 입력"
-                          className="border rounded-md p-1 w-full text-center placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-                          autoComplete="new-password"
-                        />
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <input
+                            type="password"
+                            value={u.pw || ""}
+                            onChange={(e) =>
+                              handleFieldChange(u.userId, "pw", e.target.value)
+                            }
+                            className={`w-full border rounded px-2 py-1 ${
+                              u.pw && u.pw.length < 8 ? "border-red-500" : ""
+                            }`}
+                            placeholder="변경 시만 입력"
+                          />
+                          {u.pw && u.pw.length < 8 && (
+                            <span className="text-red-500 text-xs mt-1">
+                              비밀번호는 최소 8자리 이상이어야 합니다.
+                            </span>
+                          )}
+                        </div>
                       </td>
                     )}
-
-                    {/* 전화번호 */}
-                    <td className="text-center px-2">
+                    <td className="px-4 py-3">
                       {isEditMode ? (
-                        <input
-                          type="text"
-                          value={item.phone}
-                          onChange={(e) => handleFieldChange(item.userId, "phone", e.target.value)}
-                          className="border rounded-md p-1 w-full text-center focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        <div className="flex flex-col">
+                          <input
+                            value={u.phone}
+                            onChange={(e) =>
+                              handleFieldChange(
+                                u.userId,
+                                "phone",
+                                formatPhoneNumber(e.target.value)
+                              )
+                            }
+                            className={`w-full border rounded px-2 py-1 ${
+                              !isValidPhone(u.phone) ? "border-red-500" : ""
+                            }`}
+                            placeholder="010-1234-5678"
+                          />
+                          {!isValidPhone(u.phone) && (
+                            <span className="text-red-500 text-xs mt-1">
+                              11자리 전화번호를 입력해주세요.
+                            </span>
+                          )}
+                        </div>
                       ) : (
-                        item.phone
+                        u.phone
                       )}
                     </td>
-
-                    {/* 이메일 */}
-                    <td className="text-center px-2">
+                    <td className="px-4 py-3">
                       {isEditMode ? (
-                        <input
-                          type="email"
-                          value={item.email}
-                          onChange={(e) => handleFieldChange(item.userId, "email", e.target.value)}
-                          className="border rounded-md p-1 w-full text-center focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        <div className="flex flex-col">
+                          <input
+                            value={u.email}
+                            onChange={(e) =>
+                              handleFieldChange(
+                                u.userId,
+                                "email",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full border rounded px-2 py-1 ${
+                              !validateEmail(u.email) ? "border-red-500" : ""
+                            }`}
+                            placeholder="example@domain.com"
+                          />
+                          {!validateEmail(u.email) && (
+                            <span className="text-red-500 text-xs mt-1">
+                              유효한 이메일을 입력해주세요.
+                            </span>
+                          )}
+                        </div>
                       ) : (
-                        item.email
+                        u.email
                       )}
                     </td>
-
-                    {/* 매장명 */}
-                    <td className="text-center px-2">
+                    <td className="px-4 py-3">
                       {isEditMode ? (
                         <select
-                          value={item.storeId}
-                          onChange={(e) => handleFieldChange(item.userId, "storeId", Number(e.target.value))}
-                          className="border rounded-md p-1 w-full text-center focus:ring-blue-500 focus:border-blue-500"
+                          value={u.storeId}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              u.userId,
+                              "storeId",
+                              Number(e.target.value)
+                            )
+                          }
+                          className="w-full border rounded px-2 py-1"
                         >
-                          {allStores.map((store) => (
-                            <option key={store.storeId} value={store.storeId}>
-                              {store.shopName}
+                          {allStores.map((s) => (
+                            <option key={s.storeId} value={s.storeId}>
+                              {s.shopName}
                             </option>
                           ))}
                         </select>
                       ) : (
-                        getStoreName(item.storeId)
+                        getStoreName(u.storeId)
                       )}
                     </td>
-
-                    {/* 권한 */}
-                    <td className="text-center px-2">
+                    <td className="px-4 py-3">
                       {isEditMode ? (
                         <select
-                          value={item.role}
-                          onChange={(e) => handleFieldChange(item.userId, "role", e.target.value)}
-                          className="border rounded-md p-1 w-full text-center focus:ring-blue-500 focus:border-blue-500"
+                          value={u.role}
+                          onChange={(e) =>
+                            handleFieldChange(u.userId, "role", e.target.value)
+                          }
+                          className="w-full border rounded px-2 py-1"
                         >
                           <option value="USER">직원</option>
                           <option value="MANAGER">매장 담당자</option>
-                          {roleLevel === 3 && <option value="ADMIN">관리자</option>}
+                          {roleLevel === 3 && (
+                            <option value="ADMIN">관리자</option>
+                          )}
                         </select>
                       ) : (
-                        getRoleName(item.role)
+                        getRoleName(u.role)
                       )}
                     </td>
-
-                    {/* 삭제 버튼 (수정 모드가 아닐 때만) */}
                     {!isEditMode && roleLevel !== 1 && (
-                      <td className="text-center px-2">
+                      <td className="px-4 py-3">
                         <button
-                          onClick={() => handleDelete(startIdx + index)} 
-                          disabled={deletingUserId === item.userId}
-                          className={`
-                            bg-red-500
-                            text-white 
-                            border-0 
-                            px-3.5 
-                            py-1.5 
-                            rounded 
-                            font-medium 
-                            text-sm
-                            ${deletingUserId === item.userId ? 'cursor-not-allowed bg-red-400' : 'hover:bg-red-600 cursor-pointer'}
-                          `}
+                          onClick={() => handleDelete(startIdx + i)}
+                          disabled={deletingUserId === u.userId}
+                          className="bg-red-500 text-white px-4 py-1.5 rounded hover:bg-red-600 disabled:bg-gray-400"
                         >
-                          {deletingUserId === item.userId ? "삭제 중..." : "삭제"}
+                          삭제
                         </button>
                       </td>
                     )}
@@ -420,13 +538,12 @@ export default function EmployeePage({ list, setList, allStores, roleLevel, getS
             </table>
           </div>
 
-          {/* 페이징 */}
           <div className="mt-5 flex justify-center">
-            <Pagination 
-              page={currentPage} 
-              totalPages={totalPages} 
-              onPageChange={handlePageChange}
-              maxButtons={5} 
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxButtons={5}
             />
           </div>
         </>
