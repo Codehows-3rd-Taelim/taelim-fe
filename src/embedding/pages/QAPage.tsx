@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getQuestionsAll,
   getQuestionsResolved,
@@ -24,26 +24,24 @@ export default function QAPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   
+  const fetchQuestions = useCallback(async () => {
+  setLoading(true);
 
-  const fetchQuestions = async () => {
-    setLoading(true);
+  const data =
+    filter === "ALL"
+      ? await getQuestionsAll()
+      : filter === "RESOLVED"
+      ? await getQuestionsResolved()
+      : await getQuestionsUnresolved();
 
-    const data =
-      filter === "ALL"
-        ? await getQuestionsAll()
-        : filter === "RESOLVED"
-        ? await getQuestionsResolved()
-        : await getQuestionsUnresolved();
-
-    setQuestions(data);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchQuestions();
-    setOpenQuestionId(null);
+      setQuestions(data);
+      setLoading(false);
   }, [filter]);
 
+    useEffect(() => {
+      fetchQuestions();
+      setOpenQuestionId(null);
+  }, [fetchQuestions]);
 
 
   useEffect(() => {
@@ -126,7 +124,7 @@ export default function QAPage() {
                       [q.questionId]: e.target.value,
                     }))
                   }
-                  className="w-full border rounded px-3 py-2 mb-2 min-h-[80px]"
+                  className="w-full border rounded px-3 py-2 mb-2 min-h-20"
                 />
 
                 <button

@@ -1,17 +1,9 @@
-// src/aichat/AIChat.tsx
 import { useEffect, useRef, useState } from "react";
-import {
-  loadChatHistory,
-  loadConversation,
-  sendChatStream,
-  createNewChat,
-} from "./api/aiChatApi";
-
+import {loadChatHistory,loadConversation,sendChatStream,} from "./api/aiChatApi";
 import ChatSidebar from "./ChatSidebar";
 import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import type { AiChatDTO, Message } from "../type";
-import { fetchUndeliveredNotifications } from "../notificationApi";
 
 export default function AIChat() {
   const [chatList, setChatList] = useState<AiChatDTO[]>([]);
@@ -22,10 +14,25 @@ export default function AIChat() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
+  // 채팅 목록 로드
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
+  // 채팅 선택
+  const select = async (id: string) => {
+    setCurrentId(id);
+    const data = await loadConversation(id);
+    setMessages(data);
+  };
+
+  // 새 채팅
+  const newChat = () => {
+    setCurrentId(null);
+    setMessages([]);
+  };
+
+  // 메시지 전송
   const send = async (overrideText?: string) => {
     const message = overrideText ?? input;
     if (!message.trim()) return;
@@ -33,8 +40,8 @@ export default function AIChat() {
 
     const effectiveId = currentId ?? crypto.randomUUID();
 
-    // USER 메시지
-    setMessages(prev => [
+    // USER 메시지 추가
+    setMessages((prev) => [
       ...prev,
       {
         id: crypto.randomUUID(),
@@ -47,18 +54,16 @@ export default function AIChat() {
     setIsTyping(true);
 
     const tempAiMessageId = `temp-ai-${crypto.randomUUID()}`;
-    let streamEnded = false; 
 
     try {
       const res = await sendChatStream(message, effectiveId);
-
       if (!currentId) setCurrentId(effectiveId);
 
       const reader = res.body!.getReader();
       const decoder = new TextDecoder("utf-8");
 
-      // 임시 AI 메시지
-      setMessages(prev => [
+      // temp AI 메시지 생성
+      setMessages((prev) => [
         ...prev,
         {
           id: tempAiMessageId,
@@ -67,69 +72,57 @@ export default function AIChat() {
         },
       ]);
 
+      let buffer = "";
+
       while (true) {
         const { value, done } = await reader.read();
-        if (done) {
-          streamEnded = true;
-          break;
-        }
+        if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
 
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
-          const token = line.replace("data:", "").trim();
-          if (!token) continue;
 
-          setMessages(prev =>
-            prev.map(m =>
+          let token = line.slice(5);
+          if (token.startsWith(" ")) token = token.slice(1);
+
+          setMessages((prev) =>
+            prev.map((m) =>
               m.id === tempAiMessageId
                 ? { ...m, rawMessage: m.rawMessage + token }
                 : m
             )
           );
-
-        
-          requestAnimationFrame(() => {
-            scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-          });
         }
-      }
-    } catch (e) {
-      console.error(e);
 
-      setMessages(prev =>
-        prev.filter(m => m.id !== tempAiMessageId)
-      );
-    } finally {
-      setIsTyping(false);
-
-      // 사이드바 갱신
-      loadChatHistory().then(setChatList);
-
-      // 스트림 완전 종료 이후 토스트
-      if (streamEnded) {
         requestAnimationFrame(() => {
-          setTimeout(() => {
-            fetchUndeliveredNotifications();
-          }, 50);
+          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
         });
       }
+
+      // 스트리밍 종료 → temp-ai 제거 + 확정 메시지 추가
+      setMessages((prev) => {
+        const temp = prev.find((m) => m.id === tempAiMessageId);
+        if (!temp) return prev;
+
+        return [
+          ...prev.filter((m) => m.id !== tempAiMessageId),
+          {
+            id: crypto.randomUUID(),
+            rawMessage: temp.rawMessage,
+            senderType: "AI",
+          },
+        ];
+      });
+    } catch (e) {
+      console.error(e);
+      setMessages((prev) => prev.filter((m) => m.id !== tempAiMessageId));
+    } finally {
+      setIsTyping(false);
+      loadChatHistory().then(setChatList);
     }
-  };
-
-  const selectConversation = async (id: string) => {
-    const data = await loadConversation(id);
-    setMessages(data);
-    setCurrentId(id);
-  };
-
-  const newChat = async () => {
-    const { conversationId } = await createNewChat();
-    setMessages([]);
-    setCurrentId(conversationId);
-    loadChatHistory().then(setChatList);
   };
 
   return (
@@ -137,7 +130,7 @@ export default function AIChat() {
       <ChatSidebar
         chatList={chatList}
         currentId={currentId}
-        select={selectConversation}
+        select={select}
         newChat={newChat}
       />
 

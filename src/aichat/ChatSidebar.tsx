@@ -7,12 +7,7 @@ interface Props {
   newChat: () => void;
 }
 
-export default function ChatSidebar({
-  chatList,
-  currentId,
-  select,
-  newChat,
-}: Props) {
+export default function ChatSidebar({chatList,currentId,select, newChat,}: Props) {
   return (
     <aside
       id="sidebar"
@@ -53,4 +48,4 @@ export default function ChatSidebar({
       </div>
     </aside>
   );
-}
+} 
