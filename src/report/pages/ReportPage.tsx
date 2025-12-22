@@ -27,11 +27,11 @@ import type { DateRange } from "@mui/x-date-pickers-pro/models";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
 import CleanReport from "./CleanReport";
-import { getReportPage } from "../api/ReportApi";
 import type { Report, Robot } from "../../type";
 import { useAuthStore } from "../../store";
 import useOperationManagement from "../../operationManagement/hook/useOperationManagement";
 import { getRobots } from "../../robot/api/RobotApi";
+import { getReports } from "../api/ReportApi";
 
 type SortKey = "sn" | "storeName" | "mapName";
 type SortOrder = "asc" | "desc";
@@ -50,15 +50,10 @@ export default function ReportPage() {
     roleLevel === 3 ? 0 : storeId || 0
   );
 
-  // 디폴트 날짜 계산
-  const getDefaultDateRange = (): DateRange<Dayjs> => [
-    dayjs().subtract(7, "day"),
-    dayjs(),
-  ];
-
-  const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>(
-    getDefaultDateRange()
-  );
+  const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([
+    null,
+    null,
+  ]);
 
   // 실제 검색에 사용되는 State
   const [selectedSn, setSelectedSn] = useState("");
@@ -77,30 +72,49 @@ export default function ReportPage() {
   // 날짜 범위가 변경될 때마다 데이터 로드
   useEffect(() => {
     const loadData = async () => {
-      if (!dateRangeInput[0] || !dateRangeInput[1]) return;
+      const start = dateRangeInput[0] ?? dayjs().subtract(10, "year");
+      const end = dateRangeInput[1] ?? dayjs();
 
       try {
         const targetStoreId =
           roleLevel === 3 ? undefined : storeId || undefined;
-        const startDate = dateRangeInput[0].format("YYYY-MM-DD");
-        const endDate = dateRangeInput[1].format("YYYY-MM-DD");
 
-        const res = await getReportPage({
+        const res = await getReports({
           page: page - 1,
           size: 20,
           storeId: targetStoreId,
-          startDate,
-          endDate,
+          filterStoreId: selectedStoreId === 0 ? undefined : selectedStoreId,
+          sn: selectedSn || undefined,
+          startDate: start.format("YYYY-MM-DD"),
+          endDate: end.format("YYYY-MM-DD"),
+          sortKey: sortKey || undefined,
+          sortOrder,
         });
 
-        setAiReportData(res.content);
-        setTotalPages(res.totalPages);
+        if ("content" in res) {
+          setAiReportData(res.content);
+          setTotalPages(res.totalPages ?? 0);
+        } else {
+          // 페이징 없는 응답 (혹시 쓸 경우 대비)
+          setAiReportData(res);
+          setTotalPages(1);
+        }
       } catch (err) {
         console.error("보고서 데이터 불러오기 실패", err);
       }
     };
+
     loadData();
-  }, [dateRangeInput, roleLevel, storeId, page]);
+  }, [
+    dateRangeInput,
+    roleLevel,
+    storeId,
+    page,
+    selectedSn,
+    selectedStoreId,
+    sortKey,
+    sortOrder,
+  ]);
 
   // Robot 목록 로드
   useEffect(() => {
@@ -117,6 +131,16 @@ export default function ReportPage() {
     loadRobots();
   }, [roleLevel, storeId]);
 
+  useEffect(() => {
+    if (!selectedSnInput) return;
+
+    const robot = robots.find((r) => String(r.sn) === selectedSnInput);
+
+    if (robot && roleLevel === 3) {
+      setTimeout(() => setSelectedStoreIdInput(robot.storeId), 0);
+    }
+  }, [selectedSnInput, robots, roleLevel]);
+
   const formatDynamicTime = (cleanTimeSeconds: number) => {
     const totalSeconds = Math.floor(cleanTimeSeconds);
     if (totalSeconds === 0) return "-";
@@ -132,32 +156,6 @@ export default function ReportPage() {
       return `${hours}시간 ${minutes}분 ${seconds}초`;
     }
   };
-
-  // 필터링 로직
-  const filteredReports = AiReportData.filter((r) => {
-    const matchSn = selectedSn ? String(r.sn) === selectedSn : true;
-    const matchStore =
-      selectedStoreId !== 0 ? r.storeId === selectedStoreId : true;
-    return matchSn && matchStore;
-  });
-
-  // 정렬 로직
-  const sortedReports = [...filteredReports].sort((a, b) => {
-    if (sortKey === "sn") {
-      const compare = String(a.sn).localeCompare(String(b.sn));
-      return sortOrder === "asc" ? compare : -compare;
-    } else if (sortKey === "storeName") {
-      const nameA = getStoreName(a.storeId);
-      const nameB = getStoreName(b.storeId);
-      const compare = nameA.localeCompare(nameB);
-      return sortOrder === "asc" ? compare : -compare;
-    } else if (sortKey === "mapName") {
-      const compare = a.mapName.localeCompare(b.mapName, "ko");
-      return sortOrder === "asc" ? compare : -compare;
-    } else {
-      return dayjs(b.startTime).unix() - dayjs(a.startTime).unix();
-    }
-  });
 
   // 정렬 핸들러
   const handleSort = (key: SortKey) => {
@@ -188,10 +186,10 @@ export default function ReportPage() {
 
   // 초기화 버튼 핸들러
   const handleReset = () => {
-    const defaultDate = getDefaultDateRange();
-    setDateRangeInput(defaultDate);
+    setDateRangeInput([null, null]);
     setSelectedSnInput("");
     setSelectedSn("");
+
     const defaultStoreId = roleLevel === 3 ? 0 : storeId || 0;
     setSelectedStoreIdInput(defaultStoreId);
     setSelectedStoreId(defaultStoreId);
@@ -209,6 +207,12 @@ export default function ReportPage() {
     setModalOpen(false);
     setSelectedReport(null);
   };
+
+  // 선택된 매장 기준으로 SN 필터링
+  const filteredRobots =
+    selectedStoreIdInput === 0
+      ? robots
+      : robots.filter((r) => r.storeId === selectedStoreIdInput);
 
   return (
     <Box
@@ -234,30 +238,15 @@ export default function ReportPage() {
         </Box>
 
         <Box display="flex" alignItems="center" gap={2}>
-          {/* SN 필터 */}
-          <span>SN (별명)</span>
-          <Select
-            value={selectedSnInput}
-            onChange={(e) => setSelectedSnInput(e.target.value)}
-            displayEmpty
-            size="small"
-            sx={{ width: 200, backgroundColor: "white" }}
-          >
-            <MenuItem value="">전체</MenuItem>
-            {robots.map((robot) => (
-              <MenuItem key={robot.robotId} value={String(robot.sn)}>
-                {robot.sn}
-                {robot.nickname && ` (${robot.nickname})`}
-              </MenuItem>
-            ))}
-          </Select>
-
           {/* 매장 필터 */}
           <span>매장명</span>
           {roleLevel === 3 ? (
             <Select
               value={selectedStoreIdInput}
-              onChange={(e) => setSelectedStoreIdInput(Number(e.target.value))}
+              onChange={(e) => {
+                setSelectedStoreIdInput(Number(e.target.value));
+                setSelectedSnInput("");
+              }}
               displayEmpty
               size="small"
               sx={{ width: 200, backgroundColor: "white" }}
@@ -277,6 +266,24 @@ export default function ReportPage() {
               sx={{ width: 200, backgroundColor: "#f0f0f0" }}
             />
           )}
+
+          {/* SN 필터 */}
+          <span>SN (별명)</span>
+          <Select
+            value={selectedSnInput}
+            onChange={(e) => setSelectedSnInput(e.target.value)}
+            displayEmpty
+            size="small"
+            sx={{ width: 200, backgroundColor: "white" }}
+          >
+            <MenuItem value="">전체</MenuItem>
+            {filteredRobots.map((robot) => (
+              <MenuItem key={robot.robotId} value={String(robot.sn)}>
+                {robot.sn}
+                {robot.nickname && ` (${robot.nickname})`}
+              </MenuItem>
+            ))}
+          </Select>
 
           {/* 검색 버튼 */}
           <IconButton onClick={handleSearch}>
@@ -338,7 +345,7 @@ export default function ReportPage() {
           </TableHead>
 
           <TableBody>
-            {sortedReports.map((r) => (
+            {AiReportData.map((r) => (
               <TableRow
                 key={r.reportId}
                 onClick={() => handleRowClick(r)}
@@ -371,11 +378,13 @@ export default function ReportPage() {
       </TableContainer>
 
       {/* 페이지네이션 */}
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        onPageChange={(newPage) => setPage(newPage)}
-      />
+      {AiReportData.length > 0 && totalPages > 1 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(newPage) => setPage(newPage)}
+        />
+      )}
 
       {/* 청소 보고서 모달 */}
       <CleanReport

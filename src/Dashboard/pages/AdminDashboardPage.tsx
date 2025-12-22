@@ -48,15 +48,13 @@ export default function AdminDashboardPage() {
     const start = range[0].startOf("day").format("YYYY-MM-DD 00:00:00");
     const end = range[1].endOf("day").format("YYYY-MM-DD 23:59:59");
 
-    // 관리자: storeId 없이 전체 조회
-    fetchReports(undefined, start, end);
-  }, [range]);
+    fetchReports({ startDate: start, endDate: end });
+  }, [range, fetchStores, fetchRobots, fetchReports]);
 
   const data = useDashboardAdmin(stores, robots, reports, industries);
 
   return (
     <div className="max-w-[1500px] mx-auto p-6 space-y-6">
-
       {/* 헤더 + 날짜 선택 (사용자 대시보드 UI와 동일한 레이아웃) */}
       <div className="flex justify-between items-center">
         <h3 className="text-3xl font-bold">관리자 대시보드</h3>
@@ -68,7 +66,7 @@ export default function AdminDashboardPage() {
       {/* KPI */}
       <AdminKpiSection data={data} />
 
-       {/* <div className="bg-white p-6 rounded-xl shadow">
+      {/* <div className="bg-white p-6 rounded-xl shadow">
         <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업시간</h2>
         <AdminRobotTopChart data={data.robotTopTime} />
       </div>

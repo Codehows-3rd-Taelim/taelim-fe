@@ -26,7 +26,7 @@ export default function UserDashboardPage() {
 
   // ReportPage와 동일한 DateRange 타입 사용
   const [range, setRange] = useState<DateRange<Dayjs>>([
-    dayjs().subtract(7, "day"),
+    dayjs().subtract(7, "year"),
     dayjs(),
   ]);
 
@@ -44,9 +44,9 @@ export default function UserDashboardPage() {
     const start = range[0].startOf("day").format("YYYY-MM-DD 00:00:00");
     const end = range[1].endOf("day").format("YYYY-MM-DD 23:59:59");
 
-    fetchReports(storeId, start, end);
+    fetchReports({ storeId, startDate: start, endDate: end });
     fetchRobots(storeId);
-  }, [storeId, range]);
+  }, [storeId, range, fetchReports, fetchRobots]);
 
   if (!data) return <div className="p-6">데이터 로딩 중...</div>;
 
