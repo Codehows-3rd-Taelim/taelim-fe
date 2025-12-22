@@ -15,6 +15,8 @@ export type Industry = {
     industryName: string;
 }
 
+
+
 export type User = {
     userId: number;
     id: string;
@@ -284,6 +286,7 @@ export type PaginationResponse<T> = {
   size: number;
   totalPages: number;
   totalElements: number;
+  
 };
 
 
