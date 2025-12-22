@@ -51,7 +51,7 @@ export default function UserDashboardPage() {
   if (!data) return <div className="p-6">데이터 로딩 중...</div>;
 
   return (
-    <div className="min-w-[1200px] max-w-[1400px] mx-auto p-6 space-y-6">
+    <div className="w-full max-w-screen-xl mx-auto px-4 lg:px-6 space-y-6">
       {/* 상단 헤더 */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{storeName} 대시보드</h2>

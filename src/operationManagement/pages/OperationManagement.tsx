@@ -24,7 +24,7 @@ export default function OperationManagement() {
     // useEffect에서 리디렉션을 처리하므로, 여기서는 잠깐의 대기 메시지를 보여줍니다.
     // 또는 null을 반환하여 아무것도 렌더링하지 않아도 됩니다.
     return (
-      <div className="p-8 text-center text-red-500">
+      <div className="p-3 text-center text-red-500">
         인증되지 않았습니다. 로그인 화면으로 이동합니다.
       </div>
     );
@@ -32,10 +32,8 @@ export default function OperationManagement() {
 
   // 인증 완료 후 정상 렌더링
   return (
-    <div className="w-screen min-h-screen px-30">
-      <div>
-        <OperationDesktopLayout {...props} />
-      </div>
+    <div className="flex flex-col flex-1 min-h-0">
+      <OperationDesktopLayout {...props} />
     </div>
   );
 }

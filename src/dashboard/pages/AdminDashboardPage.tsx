@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
   const data = useDashboardAdmin(stores, robots, reports, industries);
 
   return (
-    <div className="max-w-[1500px] mx-auto p-6 space-y-6">
+    <div className="w-full p-6 space-y-6">
       {/* 헤더 + 날짜 선택 (사용자 대시보드 UI와 동일한 레이아웃) */}
       <div className="flex justify-between items-center">
         <h3 className="text-3xl font-bold">관리자 대시보드</h3>

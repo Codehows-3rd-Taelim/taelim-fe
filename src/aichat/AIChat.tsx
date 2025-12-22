@@ -81,9 +81,7 @@ export default function AIChat() {
           const token = line.slice(5).trim();
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === tempAiId
-                ? { ...m, rawMessage: m.rawMessage + token }
-                : m
+              m.id === tempAiId ? { ...m, rawMessage: m.rawMessage + token } : m
             )
           );
         }
@@ -98,7 +96,11 @@ export default function AIChat() {
         if (!temp) return prev;
         return [
           ...prev.filter((m) => m.id !== tempAiId),
-          { id: crypto.randomUUID(), rawMessage: temp.rawMessage, senderType: "AI" },
+          {
+            id: crypto.randomUUID(),
+            rawMessage: temp.rawMessage,
+            senderType: "AI",
+          },
         ];
       });
     } catch (e) {
@@ -110,7 +112,7 @@ export default function AIChat() {
   };
 
   return (
-    <div className="relative h-[calc(100vh-64px)] bg-white">
+    <div className="relative flex-1 bg-white overflow-hidden">
       {/* 데스크탑: 항상 사이드바 */}
       <div className="hidden md:block">
         <ChatSidebar
@@ -121,7 +123,6 @@ export default function AIChat() {
         />
       </div>
 
-      {/* 모바일: 열렸을 때만 사이드바*/}
       {isSidebarOpen && (
         <div className="md:hidden">
           <ChatSidebar
@@ -134,14 +135,11 @@ export default function AIChat() {
         </div>
       )}
 
-      {/* 메인 영역: 사이드바 폭만큼 패딩 (데스크탑) */}
-      <main className="h-full md:pl-80 relative">
-        {/* 모바일: 열기 버튼  */}
+      <main className="flex-1 md:pl-80 relative overflow-hidden">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden absolute top-4 left-4 z-200 p-2 bg-white rounded shadow"
-            aria-label="사이드바 열기"
+            className="md:hidden absolute top-4 left-4 z-20 p-2 bg-white rounded shadow"
           >
             <ChevronRight size={20} />
           </button>

@@ -2,6 +2,10 @@ import EmployeePage from "./EmployeePage";
 import StorePage from "./StorePage";
 import useOperationManagement from "../hook/useOperationManagement";
 
+// EmployeePage.tsx도 다음과 같이 수정하세요:
+// 최상위 div를 다음으로 변경:
+// <div className="w-full h-full flex flex-col px-6 py-4 bg-gray-100 overflow-y-auto">
+
 export default function OperationDesktopLayout(
   props: ReturnType<typeof useOperationManagement>
 ) {
@@ -29,11 +33,11 @@ export default function OperationDesktopLayout(
   } = props;
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full flex flex-col">
       {/* 관리자(roleLevel === 3)만 탭 표시 */}
       {roleLevel === 3 && (
         <>
-          <div className="flex border-b-2 border-gray-200 bg-white px-4 sm:px-6">
+          <div className="flex border-b-2 border-gray-400 bg-white px-4 pt-6 sm:px-6 flex-shrink-0">
             <button
               onClick={() => setActiveTab("employee")}
               className={`px-4 py-3 font-bold transition-colors text-sm sm:text-base ${
@@ -55,9 +59,9 @@ export default function OperationDesktopLayout(
               매장 관리
             </button>
           </div>
-          
+
           {/* 탭 콘텐츠 */}
-          <div className="bg-white">
+          <div className="w-full flex-1 min-h-0 flex flex-col">
             {activeTab === "employee" ? (
               <EmployeePage
                 list={list}
@@ -89,7 +93,7 @@ export default function OperationDesktopLayout(
 
       {/* 일반 직원(roleLevel !== 3)은 직원 페이지만 표시 */}
       {roleLevel !== 3 && (
-        <div className="bg-white">
+        <div className="flex-1 min-h-0">
           <EmployeePage
             list={list}
             setList={setList}
