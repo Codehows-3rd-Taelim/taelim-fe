@@ -285,3 +285,19 @@ export type PaginationResponse<T> = {
   totalPages: number;
   totalElements: number;
 };
+
+
+export type Question = {
+  questionId: number;
+  userQuestionText: string;
+  normalizedText: string;
+  resolved: boolean;
+  createdAt: string;     
+}
+
+export type Answer = {
+  questionId: number;
+  answerText: string;
+}
+
+

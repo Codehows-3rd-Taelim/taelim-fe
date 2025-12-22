@@ -6,19 +6,13 @@ export default function Footer() {
     <Box
       component="footer"
       sx={{
-        width: "100vw",
-        position: "relative",
-        left: "50%",
-        right: "50%",
-        marginLeft: "-50vw",
-        marginRight: "-50vw",
+        width: "100%",
         bgcolor: "#f5f5f5",
         py: 3,
         px: 3,
-        zIndex: 20,
       }}
     >
-      <Box sx={{ maxWidth: "1200px", mx: "auto" }}>
+      <Box sx={{ maxWidth: "100%", mx: "auto" }}>
         <Box
           sx={{
             display: "flex",

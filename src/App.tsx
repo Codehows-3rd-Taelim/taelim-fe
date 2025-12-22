@@ -7,10 +7,11 @@ import AiReportPage from "./aiReport/pages/AiReportPage";
 import { Container, Box } from "@mui/material";
 import ReportPage from "./report/pages/ReportPage";
 import AIChat from "./aichat/AIChat";
-import DashboardPage from "./Dashboard/pages/DashboardPage";
 import Footer from "./components/Footer";
 import AuthProvider from "./AuthProvider";
 import Header from "./components/Header";
+import EmbeddingPage from "./embedding/pages/EmbeddingPage";
+import DashboardPage from "./dashboard/pages/DashboardPage";
 
 function App() {
   const location = useLocation();
@@ -83,15 +84,22 @@ function App() {
                   </PrivateRoute>
                 }
               />
+              <Route
+                path="/data"
+                element={
+                  <PrivateRoute>
+                    <EmbeddingPage />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </Container>
+          {!isLoginPage && (
+            <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
+              <Footer />
+            </Box>
+          )}
         </Box>
-
-        {!isLoginPage && (
-          <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
-            <Footer />
-          </Box>
-        )}
       </Box>
     </AuthProvider>
   );
