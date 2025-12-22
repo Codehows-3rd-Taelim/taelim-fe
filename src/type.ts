@@ -93,18 +93,18 @@ export type SenderType = 'USER' | 'AI';
 
 /* ======= ai report ======= */
 export type AiReport = {
-    aiReportId: number;
-    conversationId: string;
-    startTime: string;
-    endTime: string;
-    createdAt: string;
-    rawMessage: string;
-    rawReport: string;
-    userId: number;
-    name: string;
-  }
+  aiReportId: number;
+  conversationId: string;
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+  rawMessage: string;
+  rawReport: string;
+  userId: number;
+  name: string;
+}
   
-  export type RawReport = {
+export type RawReport = {
     rawReport: string;
 }
 
@@ -141,26 +141,6 @@ export interface Message {
   senderType: SenderType;
 }
 
-// /* ======= SSE 이벤트 타입 ======= */
-// // ai report 완료 이벤트
-// export type AiReportCompletedEvent = {
-//   message: string;
-//   reportId: number;
-// };
-
-// // AI 보고서 에러 이벤트
-// export type AiReportErrorEvent = {
-//   message: string;
-//   code?: string;
-// };
-
-// export type EventHandlers = {
-//   onToken?: (token: string) => void;
-//   onSavedReport?: (report: AiReport) => void;
-//   onCompleted?: (event: AiReportCompletedEvent) => void;
-//   onError?: (event: AiReportErrorEvent) => void;
-// };
-
 /*  ======= 날짜 ======= */
 import { Dayjs } from "dayjs";
 
@@ -180,7 +160,6 @@ export interface PaginationProps {
   onPageChange: (newPage: number) => void;
   maxButtons?: number;
 }
-
 
 /* 동기화 정보 DTO */
 export interface SyncRecordDTO {
@@ -309,3 +288,19 @@ export type PaginationResponse<T> = {
   totalElements: number;
   
 };
+
+
+export type Question = {
+  questionId: number;
+  userQuestionText: string;
+  normalizedText: string;
+  resolved: boolean;
+  createdAt: string;     
+}
+
+export type Answer = {
+  questionId: number;
+  answerText: string;
+}
+
+

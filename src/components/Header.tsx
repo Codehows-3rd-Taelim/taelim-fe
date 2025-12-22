@@ -187,8 +187,8 @@ export default function Header() {
 
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
           <div className="z-10 flex items-center gap-2 md:gap-4">
-            {/*  동기화 시간 표시 */}
-            <div className="text-white text-[10px] md:text-sm mr-2 whitespace-nowrap">
+            {/*  동기화 시간 표시 (데스크탑만) */}
+            <div className="hidden md:block text-white text-sm mr-2 whitespace-nowrap">
               {formatSyncTime()}
             </div>
 

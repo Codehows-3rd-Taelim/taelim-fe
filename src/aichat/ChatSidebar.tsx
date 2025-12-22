@@ -1,10 +1,12 @@
 import type { AiChatDTO } from "../type";
+import { ChevronLeft } from "lucide-react";
 
 interface Props {
   chatList: AiChatDTO[];
   currentId: string | null;
   select: (id: string) => void;
   newChat: () => void;
+  onClose?: () => void; // 모바일 닫기
 }
 
 export default function ChatSidebar({
@@ -12,29 +14,39 @@ export default function ChatSidebar({
   currentId,
   select,
   newChat,
+  onClose,
 }: Props) {
   return (
-    <aside
-      id="sidebar"
-      className="w-80 bg-[#fffaf3] border-r px-2 py-4 overflow-y-auto fixed top-16 left-0 h-[calc(100vh-64px)] z-10"
-      style={{ maxHeight: "calc(100vh - 64px)" }}
-    >
-      {/* 🔹 새 채팅 버튼 */}
-      <button
-        onClick={newChat}
-        className="flex items-center gap-1 ml-[15px] text-3xl font-bold mb-3 pt-2 tracking-tight hover:bg-orange-200 rounded px-2 py-1 transition"
-      >
-        <span className="text-2xl">📄</span>
-        <span>새 채팅</span>
-      </button>
+    <aside className="fixed top-16 left-0 w-80 h-[calc(100vh-64px)] bg-[#fffaf3] border-r px-3 py-5 overflow-y-auto z-50">
+      {/* 상단: 새 채팅 + 닫기 */}
+      <div className="flex items-center justify-between pr-1">
+        <button
+          onClick={newChat}
+          className="flex items-center gap-2 hover:bg-orange-200 px-2 py-1 rounded"
+        >
+          <span className="text-[24px] font-bold">📄 새 채팅</span>
+        </button>
 
-      {/* 🔹 내 채팅 제목 */}
-      <h2 className="flex items-center gap-1 ml-[22px] mt-[45px] text-[24px] font-semibold text-gray-500 tracking-tight">
-        <span>내 채팅</span>
-      </h2>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden p-2 rounded hover:bg-orange-200"
+            aria-label="사이드바 닫기"
+          >
+            <ChevronLeft size={22} />
+          </button>
+        )}
+      </div>
 
-      {/* 🔹 채팅 목록 */}
-      <div className="flex flex-col gap-1 mt-1">
+      {/* 내 채팅 타이틀 */}
+      <div className="mt-10 mb-4">
+        <h2 className="ml-2 text-[30px] font-bold text-gray-700 tracking-wide">
+          내 채팅
+        </h2>
+      </div>
+
+      {/* 채팅 목록 */}
+      <div className="flex flex-col gap-1">
         {chatList.map((c) => (
           <button
             key={c.conversationId}
@@ -42,7 +54,7 @@ export default function ChatSidebar({
             className={`p-2 rounded text-left hover:bg-orange-200 transition ${
               currentId === c.conversationId
                 ? "bg-orange-400 text-white font-semibold"
-                : ""
+                : "text-gray-800"
             }`}
           >
             {c.rawMessage.length > 10
