@@ -90,7 +90,6 @@ axios.interceptors.response.use(
     const auth = useAuthStore.getState();
 
     if (response && (response.status === 401 || response.status === 403)) {
-      alert("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
       auth.logout();
     }
 

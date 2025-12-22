@@ -1,401 +1,438 @@
-import React, {
-  useEffect,
-  useState,
-  useMemo,
-  useRef,
-  useCallback,
-} from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ko";
 import isBetween from "dayjs/plugin/isBetween";
 dayjs.extend(isBetween);
 
-import {
-  Box,
-  TextField,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Collapse,
-  CircularProgress,
-} from "@mui/material";
-
-import SearchIcon from "@mui/icons-material/Search";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-
+import { ChevronDown, ChevronUp, Search, Loader2, X } from "lucide-react";
 import type { DateRange } from "@mui/x-date-pickers-pro";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
-
 import type { AiReport } from "../../type";
-import ReportContent from "../components/ReportContent";
 import { getAiReport, getRawReport, createAiReport, subscribeAiReport } from "../api/AiReportApi";
+import AiReportDetail from "../components/AiReportDetail";
 
-interface StreamingReport extends AiReport {
-  streamingRawReport?: string;
+type LoadingReport = AiReport & { rawReport: "loading" };
+type ReportWithLoading = AiReport | LoadingReport;
+
+function isLoadingReport(report: ReportWithLoading): report is LoadingReport {
+  return report.rawReport === "loading";
 }
 
 export default function AiReportPage() {
-  const [query, setQuery] = useState("");
+  const queryRef = useRef<HTMLTextAreaElement>(null);
   const [searchTextInput, setSearchTextInput] = useState("");
-  const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([
-    null,
-    null,
-  ]);
+  const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([null, null]);
   const [searchText, setSearchText] = useState("");
   const [dateRange, setDateRange] = useState<DateRange<Dayjs>>([null, null]);
-  const [aiReportData, setAiReportData] = useState<StreamingReport[]>([]);
+  const [aiReportData, setAiReportData] = useState<ReportWithLoading[]>([]);
   const [openRow, setOpenRow] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const streamingBufferRef = useRef<string>("");
-  const streamingUpdateTimerRef = useRef<number | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const prefetchedRef = useRef<Set<number>>(new Set());
 
   const [startDate, endDate] = dateRange;
 
   useEffect(() => {
-    async function loadReports() {
-      try {
-        const data = await getAiReport();
-        setAiReportData(data);
-      } catch (e) {
-        console.error("보고서 목록 로드 오류:", e);
-        setError("보고서 목록을 불러오는 데 실패했습니다.");
-      }
-    }
-    loadReports();
+    getAiReport()
+      .then(setAiReportData)
+      .catch(() => setError("보고서 목록 로드 실패"));
   }, []);
 
-  const updateStreamingReport = useCallback(() => {
-    if (streamingBufferRef.current) {
-      setAiReportData((prevReports) => {
-        const streamingReport = prevReports.find((r) => r.aiReportId === -1);
-        if (!streamingReport) return prevReports;
-
-        return prevReports.map((r) =>
-          r.aiReportId === -1
-            ? { ...r, streamingRawReport: streamingBufferRef.current }
-            : r
-        );
-      });
-    }
+  useEffect(() => {
+    return () => {
+      eventSourceRef.current?.close();
+    };
   }, []);
 
   const handleGenerateReport = async () => {
-    if (!query.trim()) return;
+    const query = queryRef.current?.value.trim();
+    if (!query) {
+      setError("질문 내용을 입력해주세요.");
+      return;
+    }
 
-    setError(null);
+    const conversationId = `report-${crypto.randomUUID()}`;
     setIsLoading(true);
-    streamingBufferRef.current = "";
+    setError(null);
 
-    // 🔹 임시 스트리밍 보고서 먼저 추가
-    setAiReportData((prev) => [
-      {
-        aiReportId: -1,
-        conversationId: 0,
-        startTime: dayjs().toISOString(),
-        endTime: dayjs().toISOString(),
-        createdAt: dayjs().toISOString(),
-        rawMessage: query,
-        rawReport: "",
-        userId: 0,
-        name: "나",
-        streamingRawReport: "",
-      },
-      ...prev,
-    ]);
-    setOpenRow(-1);
+    const tempReport: LoadingReport = {
+      aiReportId: -Date.now(),
+      conversationId,
+      rawMessage: query,
+      rawReport: "loading",
+      startTime: "",
+      endTime: "",
+      createdAt: new Date().toISOString(),
+      userId: -1,
+      name: "생성중...",
+    };
+
+    setAiReportData(prev => [tempReport, ...prev]);
+    setOpenRow(tempReport.aiReportId);
+    setPage(1);
 
     try {
-      // 1단계: 보고서 생성 요청 (POST)
-      const conversationId = await createAiReport(query);
-
-      // 2단계: SSE 구독
-      subscribeAiReport(conversationId, {
-        onMessage: (token: string) => {
-          streamingBufferRef.current += token;
-
-          if (streamingUpdateTimerRef.current) {
-            clearTimeout(streamingUpdateTimerRef.current);
+      eventSourceRef.current = subscribeAiReport(
+        conversationId,
+        async () => {
+          try {
+            const reports = await getAiReport();
+            setAiReportData(reports);
+            setOpenRow(reports[0]?.aiReportId ?? null);
+          } finally {
+            setIsLoading(false);
+            eventSourceRef.current?.close();
+            eventSourceRef.current = null;
           }
-
-          streamingUpdateTimerRef.current = window.setTimeout(() => {
-            updateStreamingReport();
-          }, 100);
         },
-
-        onSavedReport: (savedReport: AiReport) => {
-          if (streamingUpdateTimerRef.current) {
-            clearTimeout(streamingUpdateTimerRef.current);
-          }
-
-          setAiReportData((prevReports) => [
-            {
-              ...savedReport,
-              rawReport:
-                savedReport.rawReport || streamingBufferRef.current,
-            },
-            ...prevReports.filter((r) => r.aiReportId !== -1),
-          ]);
-
-          streamingBufferRef.current = "";
-          setOpenRow(savedReport.aiReportId);
-        },
-
-        onDone: () => {
+        (msg) => {
+          setError(msg);
+          setAiReportData(prev => prev.filter(r => r.aiReportId > 0));
           setIsLoading(false);
-          setQuery("");
-          setPage(1);
+          eventSourceRef.current?.close();
+          eventSourceRef.current = null;
+        }
+      );
 
-          setAiReportData((prevReports) =>
-            prevReports.filter((r) => r.aiReportId !== -1)
-          );
-        },
+      await createAiReport(conversationId, query);
+      if (queryRef.current) queryRef.current.value = "";
 
-        onError: (e) => {
-          console.error("SSE 오류:", e);
-          setError("보고서 생성 중 오류가 발생했습니다.");
-          setIsLoading(false);
-
-          setAiReportData((prevReports) =>
-            prevReports.filter((r) => r.aiReportId !== -1)
-          );
-        },
-      });
-    } catch (err) {
-      console.error("보고서 생성 시작 실패:", err);
-      setError("보고서 생성 요청에 실패했습니다.");
+    } catch (e) {
+      setError("보고서 생성 요청 실패");
       setIsLoading(false);
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
     }
   };
 
-  const handleRowClick = async (report: AiReport | StreamingReport) => {
-    const reportId = report.aiReportId;
-
-    if (openRow === reportId) {
+  const handleRowClick = async (report: ReportWithLoading) => {
+    if (openRow === report.aiReportId) {
       setOpenRow(null);
       return;
     }
+    if (isLoadingReport(report)) return;
 
-    if (reportId === -1) {
-      setOpenRow(reportId);
-      return;
-    }
+    setOpenRow(report.aiReportId);
 
     if (!report.rawReport) {
-      setOpenRow(reportId);
-
       try {
-        const contentData: string = await getRawReport(reportId);
-        setAiReportData((prevData) =>
-          prevData.map((r) =>
-            r.aiReportId === reportId ? { ...r, rawReport: contentData } : r
+        const content = await getRawReport(report.aiReportId);
+        setAiReportData((prev) =>
+          prev.map((r) =>
+            r.aiReportId === report.aiReportId ? { ...r, rawReport: content } : r
           )
         );
-      } catch (error) {
-        console.error("상세 보고서 조회 오류:", error);
-        setOpenRow(null);
-        setError("상세 보고서를 불러오는 데 실패했습니다.");
-        return;
+      } catch {
+        setError("상세 보고서 로드 실패");
       }
     }
-
-    setOpenRow(reportId);
   };
 
-  // 🔥 핵심 최적화 3: 필터링과 정렬을 useMemo로 메모이제이션
   const filteredReports = useMemo(() => {
     const filtered = aiReportData.filter((r) => {
-      if (r.aiReportId === -1) return true;
-
-      const matchText = searchText === "" || r.rawMessage.includes(searchText);
+      if (isLoadingReport(r)) return true;
+      
+      const matchText = !searchText || r.rawMessage.includes(searchText);
       const matchPeriod =
         startDate && endDate
           ? dayjs(r.createdAt).isBetween(startDate, endDate, null, "[]")
           : true;
-
       return matchText && matchPeriod;
     });
-
-    // 정렬
-    filtered.sort((a, b) => {
-      if (a.aiReportId === -1) return -1;
-      if (b.aiReportId === -1) return 1;
+    
+    return filtered.sort((a, b) => {
+      if (a.aiReportId < 0) return -1;
+      if (b.aiReportId < 0) return 1;
       return dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
     });
-
-    return filtered;
   }, [aiReportData, searchText, startDate, endDate]);
 
-  // 🔥 핵심 최적화 4: 페이지네이션도 useMemo로
   const paginatedReports = useMemo(() => {
-    const reportsPerPage = 20;
-    const startIndex = (page - 1) * reportsPerPage;
-    return filteredReports.slice(startIndex, startIndex + reportsPerPage);
+    const perPage = 20;
+    const start = (page - 1) * perPage;
+    return filteredReports.slice(start, start + perPage);
   }, [filteredReports, page]);
 
   const totalPages = Math.ceil(filteredReports.length / 20);
 
+  // 각 보고서의 순번을 계산하는 함수
+  const getReportNumber = (index: number) => {
+    return filteredReports.length - ((page - 1) * 20 + index);
+  };
+
   return (
-    <Box
-      sx={{
-        width: "100%",
-        minHeight: "100vh",
-        px: 6,
-        py: 4,
-        bgcolor: "#f7f7f7",
-      }}
-    >
+    <div className="w-full min-h-screen px-3 sm:px-6 py-4 bg-[#f7f7f7]">
       {error && (
-        <Paper sx={{ p: 2, mb: 2, bgcolor: "error.light", color: "white" }}>
-          <Box fontWeight="bold">오류: {error}</Box>
-        </Paper>
+        <div className="p-3 sm:p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold whitespace-pre-line text-sm">
+          <button 
+            onClick={() => setError(null)}
+            className="float-right"
+          >
+            <X size={18} />
+          </button>
+          {error}
+        </div>
       )}
 
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <TextField
-            placeholder={`조회하고 싶은 보고서 내용을 입력해 주세요.\n원하는 기간 등을 입력하면 더욱 자세한 보고서가 조회됩니다.`}
-            multiline
-            sx={{ width: "100%" }}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+      {/* 보고서 생성 입력창 */}
+      <div className="bg-white p-4 sm:p-6 mb-4 sm:mb-6 rounded-lg shadow">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <textarea
+            ref={queryRef}
+            placeholder="조회하고 싶은 보고서의 기간을 입력해 주세요.
+ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
+            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm sm:text-base"
+            rows={3}
             disabled={isLoading}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (!isLoading) {
+                  handleGenerateReport();
+                }
+              }
+            }}
           />
-          <Button
-            variant="contained"
-            color="warning"
-            sx={{ p: 3, height: 78 }}
+          <button
+            className="px-6 py-3 bg-orange-500 text-white rounded font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed sm:h-[78px] sm:min-w-[100px]"
             onClick={handleGenerateReport}
-            disabled={isLoading || !query.trim()}
+            disabled={isLoading}
           >
-            {isLoading ? "생성 중…" : "조회"}
-          </Button>
-        </Box>
-      </Paper>
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="animate-spin" size={20} />
+                <span>생성 중</span>
+              </div>
+            ) : (
+              "조회"
+            )}
+          </button>
+        </div>
+      </div>
 
-      <Box display="flex" alignItems="center" gap={2} sx={{ ml: 4 }}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <span>생성일자</span>
-          <DateRangePicker
-            value={dateRangeInput}
-            onChange={setDateRangeInput}
-            size="small"
-          />
-        </Box>
+      {/* 필터 - 모바일/데스크톱 분기 */}
+      <div className="mb-4">
+        {/* 모바일: 토글 버튼 */}
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="lg:hidden w-full flex items-center justify-between p-3 bg-white rounded-lg shadow mb-2"
+        >
+          <span className="font-medium">필터</span>
+          {showFilters ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </button>
 
-        <Box display="flex" alignItems="center" gap={2}>
-          <span>내용</span>
-          <TextField
-            value={searchTextInput}
-            onChange={(e) => setSearchTextInput(e.target.value)}
-            sx={{ width: 500, bgcolor: "white" }}
-            size="small"
-          />
-          <IconButton
-            onClick={() => {
-              setSearchText(searchTextInput);
-              setDateRange(dateRangeInput);
-              setPage(1);
-            }}
-          >
-            <SearchIcon />
-          </IconButton>
-          <Button
-            sx={{ color: "black", borderColor: "black" }}
-            variant="outlined"
-            onClick={() => {
-              setSearchText("");
-              setDateRange([null, null]);
-              setSearchTextInput("");
-              setDateRangeInput([null, null]);
-              setPage(1);
-            }}
-          >
-            초기화
-          </Button>
-        </Box>
-      </Box>
+        {/* 필터 내용 */}
+        <div className={`${showFilters ? 'block' : 'hidden'} lg:flex lg:items-center gap-4 bg-white lg:bg-transparent p-4 lg:p-0 rounded-lg lg:rounded-none shadow lg:shadow-none`}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 lg:mb-0">
+            <span className="text-sm font-medium">생성일자</span>
+            <DateRangePicker
+              value={dateRangeInput}
+              onChange={setDateRangeInput}
+            />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 lg:mb-0">
+            <span className="text-sm font-medium">내용</span>
+            <input
+              type="text"
+              value={searchTextInput}
+              onChange={(e) => setSearchTextInput(e.target.value)}
+              className="w-full sm:w-[300px] lg:w-[500px] px-3 py-2 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-      <TableContainer component={Paper} sx={{ borderRadius: 3, mt: 3 }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell align="center">no</TableCell>
-              <TableCell align="center">질문 내용</TableCell>
-              <TableCell align="center">보고서 기간</TableCell>
-              <TableCell align="center">생성일자</TableCell>
-              <TableCell align="center">작성자</TableCell>
-              <TableCell align="center"></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedReports.map((r) => (
-              <React.Fragment key={r.aiReportId}>
-                <TableRow>
-                  <TableCell align="center">
-                    {r.aiReportId === -1 ? (
-                      <CircularProgress size={16} color="warning" />
-                    ) : (
-                      r.aiReportId
-                    )}
-                  </TableCell>
-                  <TableCell>{r.rawMessage}</TableCell>
-                  <TableCell align="center">
-                    {dayjs(r.startTime).format("YYYY-MM-DD")} ~{" "}
-                    {dayjs(r.endTime).format("YYYY-MM-DD")}
-                  </TableCell>
-                  <TableCell align="center">
-                    {dayjs(r.createdAt).format("YYYY-MM-DD")}
-                  </TableCell>
-                  <TableCell align="center">{r.name}</TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={() => handleRowClick(r)}
-                      disabled={r.aiReportId === -1 && !r.streamingRawReport}
-                    >
-                      {openRow === r.aiReportId ? (
-                        <KeyboardArrowUpIcon />
-                      ) : (
-                        <KeyboardArrowDownIcon />
-                      )}
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setSearchText(searchTextInput);
+                setDateRange(dateRangeInput);
+                setPage(1);
+                setShowFilters(false);
+              }}
+              className="flex-1 sm:flex-none p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              <Search size={20} className="mx-auto" />
+            </button>
+            <button
+              onClick={() => {
+                setSearchText("");
+                setDateRange([null, null]);
+                setSearchTextInput("");
+                setDateRangeInput([null, null]);
+                setPage(1);
+                setShowFilters(false);
+              }}
+              className="flex-1 sm:flex-none px-4 py-2 border border-black text-black rounded hover:bg-gray-50 transition-colors text-sm"
+            >
+              초기화
+            </button>
+          </div>
+        </div>
+      </div>
 
-                <TableRow>
-                  <TableCell colSpan={6} sx={{ p: 0 }}>
-                    <Collapse in={openRow === r.aiReportId}>
-                      <Box sx={{ p: 3, bgcolor: "#fafafa" }}>
-                        <ReportContent
-                          markdown={
-                            r.streamingRawReport || r.rawReport || "로딩 중..."
-                          }
-                        />
-                      </Box>
-                    </Collapse>
-                  </TableCell>
-                </TableRow>
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* 보고서 리스트 */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* 데스크톱: 테이블 */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 sticky top-0">
+              <tr>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">no</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">질문 내용</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">보고서 기간</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">생성일자</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">작성자</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedReports.map((r, index) => (
+                <React.Fragment key={r.aiReportId}>
+                  <tr
+                    className={`border-b transition-colors ${
+                      isLoadingReport(r)
+                        ? "cursor-not-allowed"
+                        : "hover:bg-gray-50 cursor-pointer"
+                    }`}
+                    onMouseEnter={() => {
+                      if (!r.rawReport && !prefetchedRef.current.has(r.aiReportId)) {
+                        prefetchedRef.current.add(r.aiReportId);
+                        getRawReport(r.aiReportId)
+                          .then((content) => {
+                            setAiReportData((prev) =>
+                              prev.map((item) =>
+                                item.aiReportId === r.aiReportId
+                                  ? { ...item, rawReport: content }
+                                  : item
+                              )
+                            );
+                          })
+                          .catch(() => {});
+                      }
+                    }}
+                    onClick={() => handleRowClick(r)}
+                  >
+                    <td className="px-4 py-3 text-center text-sm">
+                      {isLoadingReport(r) ? "-" : getReportNumber(index)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">{r.rawMessage}</td>
+                    <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
+                      {r.startTime ? dayjs(r.startTime).format("YYYY-MM-DD") : "-"} ~ {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
+                      {dayjs(r.createdAt).format("YYYY-MM-DD HH:mm")}
+                    </td>
+                    <td className="px-4 py-3 text-center text-sm">{r.name}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRowClick(r);
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors disabled:cursor-not-allowed"
+                        disabled={isLoadingReport(r)}
+                      >
+                        {openRow === r.aiReportId ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={6} className="p-0">
+                      <div
+                        className={`transition-all duration-300 ${
+                          openRow === r.aiReportId ? "max-h-[70vh]" : "max-h-0"
+                        } overflow-hidden`}
+                      >
+                        <div className="p-6 bg-[#fafafa] overflow-y-auto" style={{ maxHeight: "70vh" }}>
+                          <AiReportDetail
+                            report={r}
+                            onDeleted={(id) => {
+                              setAiReportData(prev => prev.filter(item => item.aiReportId !== id));
+                              setOpenRow(null);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        onPageChange={(newPage) => setPage(newPage)}
-      />
-    </Box>
+        {/* 모바일: 카드 리스트 */}
+        <div className="lg:hidden">
+          {paginatedReports.map((r, index) => (
+            <div key={r.aiReportId} className="border-b last:border-b-0">
+              <div
+                className={`p-4 ${
+                  isLoadingReport(r) ? "cursor-not-allowed bg-gray-50" : "cursor-pointer active:bg-gray-50"
+                }`}
+                onClick={() => handleRowClick(r)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 mb-1">
+                      #{isLoadingReport(r) ? "-" : getReportNumber(index)}
+                    </div>
+                    <div className="font-medium text-sm mb-2">{r.rawMessage}</div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRowClick(r);
+                    }}
+                    className="ml-2 p-1 hover:bg-gray-200 rounded transition-colors disabled:cursor-not-allowed"
+                    disabled={isLoadingReport(r)}
+                  >
+                    {openRow === r.aiReportId ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
+                </div>
+                
+                <div className="space-y-1 text-xs text-gray-600">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">보고서 기간:</span>
+                    <span>
+                      {r.startTime ? dayjs(r.startTime).format("YY-MM-DD") : "-"} ~ {r.endTime ? dayjs(r.endTime).format("YY-MM-DD") : "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">생성일자:</span>
+                    <span>{dayjs(r.createdAt).format("YY-MM-DD HH:mm")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">작성자:</span>
+                    <span>{r.name}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`transition-all duration-300 ${
+                  openRow === r.aiReportId ? "max-h-[70vh]" : "max-h-0"
+                } overflow-hidden`}
+              >
+                <div className="p-4 bg-[#fafafa] overflow-y-auto" style={{ maxHeight: "70vh" }}>
+                  <AiReportDetail
+                    report={r}
+                    onDeleted={(id) => {
+                      setAiReportData(prev => prev.filter(item => item.aiReportId !== id));
+                      setOpenRow(null);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+    </div>
   );
 }

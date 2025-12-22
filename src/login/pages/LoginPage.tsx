@@ -5,6 +5,7 @@ import { getAuthToken } from "../api/LoginApi";
 import { useNavigate } from "react-router-dom";
 import { XCircle, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "../../store";
+import axios from "axios";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -54,9 +55,14 @@ export default function LoginPage() {
       });
 
       navigate("/", { replace: true });
-    } catch (error) {
-      if (error instanceof Error) {
-        setLoginError(error.message);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const message =
+          typeof error.response?.data === "string"
+            ? error.response.data
+            : "아이디 또는 비밀번호가 잘못 되었습니다. 아이디와 비밀번호를 정확히 입력해 주세요..";
+
+        setLoginError(message);
       } else {
         setLoginError("로그인 중 알 수 없는 오류가 발생했습니다.");
       }
@@ -104,7 +110,7 @@ export default function LoginPage() {
             {loginError && (
               <div className="flex items-center p-3 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50">
                 <XCircle className="flex-shrink-0 w-5 h-5 mr-2" />
-                <span>{loginError}</span>
+                <span className="whitespace-pre-line">{loginError}</span>
               </div>
             )}
 

@@ -1,5 +1,7 @@
 import axios from "axios";
 import type { AiReport, RawReport } from "../../type";
+import { EventSourcePolyfill } from "event-source-polyfill";
+// import { useAuthStore } from "../../store";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -17,24 +19,34 @@ export const getRawReport = async (reportId: number): Promise<string> => {
   return response.data.rawReport;
 };
 
+// ai report 삭제
+export const deleteAiReport = async (reportId: number) => {
+  const token = localStorage.getItem("jwtToken");
+
+  await axios.delete(`${BASE_URL}/ai/report/${reportId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 /**
  * 1단계 : 보고서 생성 요청 (POST)
  * → conversationId만 받음
  */
-export const createAiReport = async (message: string) => {
+export const createAiReport = async (
+  conversationId: string,
+  message: string
+) => {
   const token = localStorage.getItem("jwtToken");
 
-  const res = await axios.post(
-    `${BASE_URL}/ai/report`,
+  await axios.post(
+    `${BASE_URL}/ai/report?conversationId=${conversationId}`,
     { message },
     {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     }
   );
-
-  return res.data.conversationId as string;
 };
 
 /**
@@ -42,36 +54,36 @@ export const createAiReport = async (message: string) => {
  */
 export const subscribeAiReport = (
   conversationId: string,
-  handlers: {
-    onMessage: (token: string) => void;
-    onSavedReport: (report: AiReport) => void;
-    onDone: () => void;
-    onError: (e: Event) => void;
-  }
+  onSaved: (report: AiReport) => void,
+  onError: (message: string) => void
 ) => {
   const token = localStorage.getItem("jwtToken");
 
-  const es = new EventSource(
-    `${BASE_URL}/ai/report/stream/${conversationId}?token=${token}`
+  const es = new EventSourcePolyfill(
+    `${BASE_URL}/ai/report/stream/${conversationId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      // polyfill 타임아웃을 서버 heartbeat보다 크게
+      heartbeatTimeout: 120_000,
+    }
   );
 
-  es.addEventListener("message", (e) => {
-    handlers.onMessage(e.data);
+  // heartbeat를 "activity"로 인식시키기
+  es.addEventListener("heartbeat", () => {
+    console.debug("ai report heartbeat");
   });
 
-  es.addEventListener("savedReport", (e) => {
-    handlers.onSavedReport(JSON.parse(e.data));
+  es.addEventListener("savedReport", (e: MessageEvent) => {
+    onSaved(JSON.parse(e.data));
+    console.log("savedReport 수신 받았음~~~")
   });
 
-  es.addEventListener("done", () => {
-    handlers.onDone();
-    es.close();
+  es.addEventListener("fail", (e: MessageEvent) => {
+    onError("보고서 생성 요청 실패했습니다.\n매장명, 조회기간(년월/년월일)을 알맞게 입력 후 다시 시도해주세요.");
+    console.log("sAI 보고서 생성 실패")
   });
-
-  es.onerror = (e) => {
-    handlers.onError(e);
-    es.close();
-  };
 
   return es;
 };

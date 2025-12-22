@@ -62,37 +62,39 @@ export default function useOperationManagement() {
 
 
     // 2.공통 데이터 로딩
-    useEffect(() => {
-        // 인증되지 않았으면 데이터 로딩을 시도하지 않음
-        if (!jwtToken) return;
+  useEffect(() => {
+    if (!jwtToken) return;
 
-        const loadData = async () => {
-            const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
+    const loadData = async () => {
+        const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
+        const page = 1;  // 첫 페이지
+        const size = 100; // 원하는 사이즈
 
-            // 매장
-            try {
-                const stores = await getStores(storeIdToFetch);
-                setAllStores(stores);
-            } catch (err) {
-                console.error("매장 목록 로드 실패", err);
-                setAllStores([]);
-            } finally {
-                setLoadingStores(false);
-            }
+        try {
+            const response = await getStores(page, size); //  page, size 인자 필수
+            setAllStores(response.content); // PaginationDTO.content 사용
+        } catch (err) {
+            console.error("매장 목록 로드 실패", err);
+            setAllStores([]);
+        } finally {
+            setLoadingStores(false);
+        }
 
-            // 직원
-            try {
-                const users = await getUsers(storeIdToFetch);
-                setList(users);
-            } catch (err) {
-                console.error("직원 목록 로드 실패", err);
-                setList([]);
-            } finally {
-                setLoadingUsers(false);
-            }
-        };
-        loadData();
-    }, [roleLevel, userStoreId, jwtToken]); // jwtToken이 변경되면 다시 로드
+        // 직원 목록
+        try {
+            const users = await getUsers(storeIdToFetch);
+            setList(users);
+        } catch (err) {
+            console.error("직원 목록 로드 실패", err);
+            setList([]);
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
+
+    loadData();
+}, [roleLevel, userStoreId, jwtToken]);
+
 
     const currentStoreName = useMemo(() => {
         // 1. 매장 로딩이 완료되었는지 확인
@@ -149,7 +151,7 @@ export default function useOperationManagement() {
     const handleRegister = async () => {
         if (!isRegisterButtonEnabled) {
             alert("입력값을 확인해주세요.");
-            return;
+            throw new Error("입력값 검증 실패"); // 에러를 던져서 모달이 닫히지 않도록
         }
 
         const { pwCheck: _pwCheck, ...payload } = form;
@@ -163,9 +165,11 @@ export default function useOperationManagement() {
             const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
             const updated = await getUsers(storeIdToFetch);
             setList(updated);
+            // 성공 시 에러를 던지지 않음
         } catch (err) {
             console.error(err);
             alert("직원 등록 실패");
+            throw err; // 에러를 다시 던져서 모달이 닫히지 않도록
         }
     };
 
@@ -209,6 +213,7 @@ export default function useOperationManagement() {
 
         // 함수
         setFormValue,
+        setIsIdChecked,
         handleIdCheck,
         handleRegister,
         handleLogout,

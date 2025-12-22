@@ -31,15 +31,22 @@ export async function loadConversation(id: string) {
   return res.json();
 }
 
-// 메시지 전송 → 새 conversationId(첫 메시지면) 또는 기존 id 반환 
-export async function sendMessage(message: string, conversationId: string | null) {
+// AI 채팅 요청 
+export async function sendChatStream(
+  message: string,
+  conversationId: string
+): Promise<Response> {
   const res = await fetch(`${BASE_URL}/agent/chat`, {
     method: "POST",
     headers: authHeader(),
     body: JSON.stringify({ message, conversationId }),
   });
 
-  return res.text();
+  if (!res.ok || !res.body) {
+    throw new Error("AI 응답 실패");
+  }
+
+  return res;
 }
 
 // 새 대화 생성 
@@ -53,11 +60,12 @@ export async function createNewChat() {
   return res.json(); // { conversationId }
 }
 
-export function createEventSource(conversationId: string) {
+export function createNotificationEventSource() {
   const token = useAuthStore.getState().jwtToken;
+  if (!token) return null;
 
   return new EventSourcePolyfill(
-    `${BASE_URL}/agent/stream/${conversationId}`,
+    `${BASE_URL}/events/notifications`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -65,3 +73,5 @@ export function createEventSource(conversationId: string) {
     }
   );
 }
+
+

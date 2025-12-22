@@ -15,6 +15,8 @@ export type Industry = {
     industryName: string;
 }
 
+
+
 export type User = {
     userId: number;
     id: string;
@@ -29,6 +31,7 @@ export type User = {
 // ApiFormUser는 User 타입에서 userId만 제외한 형태
 export type ApiFormUser= Omit<User, "userId">;
 
+/* ======= 인증 / 로그인 ======= */
 export type LoginRequest = {
     id: string;
     pw: string;
@@ -41,6 +44,7 @@ export type LoginResponse = {
     userId: number;
 };
 
+/* ======= 로봇 ======= */
 export type Robot = {
     robotId: number;
     sn: string;
@@ -52,8 +56,10 @@ export type Robot = {
     battery: number;
     online: true | false;
     storeId: number;
+    isCharging: number;
 }
 
+/* ======= 리포트 ======= */
 export type Report = {
     reportId: number;
     status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -72,60 +78,37 @@ export type Report = {
     sn:number;
 }
 
+/* ======= ai chat ======= */
 export type AiChat = {
-    aiChatId: number;
-    conversationId: number;
-    senderType: "USER" | "AI";
-    rawMessage: string;
-    createdAt: string;
-    messageIndex: number;
-    userId: number;
+  aiChatId: number;
+  conversationId: string;
+  senderType: "USER" | "AI";
+  rawMessage: string;
+  createdAt: string;
+  messageIndex: number;
+  userId: number;
 }
-
-
-export type AiReport = {
-    aiReportId: number;
-    conversationId: number;
-    startTime: string;
-    endTime: string;
-    createdAt: string;
-    rawMessage: string;
-    rawReport: string;
-    userId: number;
-    name: string;
-}
-
-export type RawReport = {
-rawReport: string;
-}
-
-export type EventHandlers = {
-  onToken?: (token: string) => void;
-  onSavedReport?: (report: AiReport) => void;
-  onDone?: () => void;
-  onError?: (error: Event | null) => void;
-};
-
-import { Dayjs } from "dayjs";
-
-// 컴포넌트에 전달될 props 타입 정의
-export interface DateRangePickerProps {
-  value: [Dayjs | null, Dayjs | null]; // 선택된 시작일과 종료일
-  onChange: (range: [Dayjs | null, Dayjs | null]) => void; // 날짜 범위 변경 시 호출되는 함수
-  label?: string; // 기본 표시 라벨 (날짜 선택 전 표시)
-  fullWidth?: boolean; // 추가 옵션: 전체 너비 사용 여부
-  size?: "small" | "medium"; // 추가 옵션: 크기 설정
-};
-
-export interface PaginationProps {
- page: number; // 현재 페이지 번호
-  totalPages: number; // 전체 페이지 수
-  onPageChange: (page: number) => void; // 페이지 변경 시 호출되는 함수
-  maxButtons?: number; // 한 화면에 보여줄 최대 버튼 수 (기본값 5)
-};
 
 export type SenderType = 'USER' | 'AI';
 
+/* ======= ai report ======= */
+export type AiReport = {
+  aiReportId: number;
+  conversationId: string;
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+  rawMessage: string;
+  rawReport: string;
+  userId: number;
+  name: string;
+}
+  
+export type RawReport = {
+    rawReport: string;
+}
+
+/* ======= chat ui 전용 ======= */
 export interface AiChatDTO {
   aiChatId: number;
   conversationId: string;
@@ -153,17 +136,38 @@ export interface ChatMessage {
 
 // SSE나 유저가 즉석에서 생성한 임시 메시지 
 export interface Message {
+  id: string;
   rawMessage: string;
   senderType: SenderType;
 }
 
-// 동기화 정보 DTO
+/*  ======= 날짜 ======= */
+import { Dayjs } from "dayjs";
+
+// 컴포넌트에 전달될 props 타입 정의
+export interface DateRangePickerProps {
+  value: [Dayjs | null, Dayjs | null]; // 선택된 시작일과 종료일
+  onChange: (range: [Dayjs | null, Dayjs | null]) => void; // 날짜 범위 변경 시 호출되는 함수
+  label?: string; // 기본 표시 라벨 (날짜 선택 전 표시)
+  fullWidth?: boolean; // 추가 옵션: 전체 너비 사용 여부
+  size?: "small" | "medium"; // 추가 옵션: 크기 설정
+};
+
+/* ======= 페이징 ======= */
+export interface PaginationProps {
+  page: number;
+  totalPages: number;
+  onPageChange: (newPage: number) => void;
+  maxButtons?: number;
+}
+
+/* 동기화 정보 DTO */
 export interface SyncRecordDTO {
   lastSyncTime: string | null;
   globalSyncTime: string | null;
 }
 
-
+/* 대시보드 타입 */
 // 로봇 상태 데이터 타입 (도넛/파이 차트용)
 export interface RobotStatus {
     working: number;
@@ -275,3 +279,28 @@ export type IndustryStoreCount = {
   industryName: string;
   storeCount: number;
 };
+
+export type PaginationResponse<T> = {
+  content: T[];
+  page: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
+  
+};
+
+
+export type Question = {
+  questionId: number;
+  userQuestionText: string;
+  normalizedText: string;
+  resolved: boolean;
+  createdAt: string;     
+}
+
+export type Answer = {
+  questionId: number;
+  answerText: string;
+}
+
+
