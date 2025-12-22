@@ -19,6 +19,17 @@ export const getRawReport = async (reportId: number): Promise<string> => {
   return response.data.rawReport;
 };
 
+// ai report 삭제
+export const deleteAiReport = async (reportId: number) => {
+  const token = localStorage.getItem("jwtToken");
+
+  await axios.delete(`${BASE_URL}/ai/report/${reportId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 /**
  * 1단계 : 보고서 생성 요청 (POST)
  * → conversationId만 받음
@@ -54,15 +65,24 @@ export const subscribeAiReport = (
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      // polyfill 타임아웃을 서버 heartbeat보다 크게
+      heartbeatTimeout: 120_000,
     }
   );
 
-  es.addEventListener("savedReport", (e: MessageEvent) => {
-    onSaved(JSON.parse(e.data));
+  // heartbeat를 "activity"로 인식시키기
+  es.addEventListener("heartbeat", () => {
+    console.debug("ai report heartbeat");
   });
 
-  es.addEventListener("error", () => {
-    onError("AI 보고서 생성 실패");
+  es.addEventListener("savedReport", (e: MessageEvent) => {
+    onSaved(JSON.parse(e.data));
+    console.log("savedReport 수신 받았음~~~")
+  });
+
+  es.addEventListener("fail", (e: MessageEvent) => {
+    onError("보고서 생성 요청 실패했습니다.\n매장명, 조회기간(년월/년월일)을 알맞게 입력 후 다시 시도해주세요.");
+    console.log("sAI 보고서 생성 실패")
   });
 
   return es;

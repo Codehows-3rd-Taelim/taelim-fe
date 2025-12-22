@@ -9,7 +9,7 @@ export default function OperationManagement() {
   const { user, loadingStores, loadingUsers } = props;
   const navigate = useNavigate();
 
-  // 🚀 인증 확인 및 리디렉션 로직
+  // 인증 확인 및 리디렉션 로직
   useEffect(() => {
     // 1. 로딩이 완료된 후에만 (토큰이 없어서 데이터 로딩이 스킵되었을 수도 있음)
     // 2. user 객체가 null인 경우 (즉, JWT 토큰이 없는 경우)
