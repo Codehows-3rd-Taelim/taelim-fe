@@ -11,6 +11,7 @@ import Pagination from "../../components/Pagination";
 import type { AiReport } from "../../type";
 import { getAiReport, getRawReport, createAiReport, subscribeAiReport } from "../api/AiReportApi";
 import AiReportDetail from "../components/AiReportDetail";
+import { fetchUndeliveredNotifications } from "../../notificationApi";
 
 type LoadingReport = AiReport & { rawReport: "loading" };
 type ReportWithLoading = AiReport | LoadingReport;
@@ -85,6 +86,12 @@ export default function AiReportPage() {
             setOpenRow(reports[0]?.aiReportId ?? null);
           } finally {
             setIsLoading(false);
+
+            // 보고서 생성 완료 후 알림 pull 
+            setTimeout(() => {
+              fetchUndeliveredNotifications();
+            }, 300);
+
             eventSourceRef.current?.close();
             eventSourceRef.current = null;
           }

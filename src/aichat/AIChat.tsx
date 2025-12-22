@@ -110,7 +110,7 @@ export default function AIChat() {
   };
 
   return (
-    <div className="relative h-[calc(100vh-64px)] bg-white">
+    <div className="relative h-full bg-white min-h-0">
       {/* 데스크탑: 항상 사이드바 */}
       <div className="hidden md:block">
         <ChatSidebar
