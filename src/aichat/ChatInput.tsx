@@ -7,7 +7,12 @@ interface Props {
   size?: "large" | "small";
 }
 
-export default function ChatInput({ input, setInput, send, size = "small" }: Props) {
+export default function ChatInput({
+  input,
+  setInput,
+  send,
+  size = "small",
+}: Props) {
   const [isComposing, setIsComposing] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -24,7 +29,7 @@ export default function ChatInput({ input, setInput, send, size = "small" }: Pro
   const padding = size === "large" ? "p-5" : "p-6";
 
   return (
-    <div className="relative w-[900px] bg-white border border-gray-300 rounded-2xl shadow-md mx-auto mb-5">
+    <div className="relative w-full max-w-full md:max-w-[900px] bg-white border border-gray-300 rounded-2xl shadow-md mx-auto mb-5">
       <div className={padding}>
         <textarea
           value={input}

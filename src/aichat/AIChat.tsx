@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import {loadChatHistory,loadConversation,sendChatStream,} from "./api/aiChatApi";
+import {
+  loadChatHistory,
+  loadConversation,
+  sendChatStream,
+} from "./api/aiChatApi";
 import ChatSidebar from "./ChatSidebar";
 import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
+import { ChevronRight } from "lucide-react";
 import type { AiChatDTO, Message } from "../type";
 
 export default function AIChat() {
@@ -11,49 +16,43 @@ export default function AIChat() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // 채팅 목록 로드
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
-  // 채팅 선택
   const select = async (id: string) => {
     setCurrentId(id);
     const data = await loadConversation(id);
     setMessages(data);
+    setIsSidebarOpen(false); // 모바일: 선택 후 닫기
   };
 
-  // 새 채팅
   const newChat = () => {
     setCurrentId(null);
     setMessages([]);
+    setIsSidebarOpen(false);
   };
 
-  // 메시지 전송
   const send = async (overrideText?: string) => {
     const message = overrideText ?? input;
-    if (!message.trim()) return;
-    if (isTyping) return;
+    if (!message.trim() || isTyping) return;
 
     const effectiveId = currentId ?? crypto.randomUUID();
 
-    // USER 메시지 추가
+    // USER
     setMessages((prev) => [
       ...prev,
-      {
-        id: crypto.randomUUID(),
-        rawMessage: message,
-        senderType: "USER",
-      },
+      { id: crypto.randomUUID(), rawMessage: message, senderType: "USER" },
     ]);
 
     setInput("");
     setIsTyping(true);
 
-    const tempAiMessageId = `temp-ai-${crypto.randomUUID()}`;
+    const tempAiId = `temp-ai-${crypto.randomUUID()}`;
 
     try {
       const res = await sendChatStream(message, effectiveId);
@@ -62,14 +61,9 @@ export default function AIChat() {
       const reader = res.body!.getReader();
       const decoder = new TextDecoder("utf-8");
 
-      // temp AI 메시지 생성
       setMessages((prev) => [
         ...prev,
-        {
-          id: tempAiMessageId,
-          rawMessage: "",
-          senderType: "AI",
-        },
+        { id: tempAiId, rawMessage: "", senderType: "AI" },
       ]);
 
       let buffer = "";
@@ -84,41 +78,31 @@ export default function AIChat() {
 
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
-
-          let token = line.slice(5);
-          if (token.startsWith(" ")) token = token.slice(1);
-
+          const token = line.slice(5).trim();
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === tempAiMessageId
+              m.id === tempAiId
                 ? { ...m, rawMessage: m.rawMessage + token }
                 : m
             )
           );
         }
 
-        requestAnimationFrame(() => {
-          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-        });
+        requestAnimationFrame(() =>
+          scrollRef.current?.scrollIntoView({ behavior: "smooth" })
+        );
       }
 
-      // 스트리밍 종료 → temp-ai 제거 + 확정 메시지 추가
       setMessages((prev) => {
-        const temp = prev.find((m) => m.id === tempAiMessageId);
+        const temp = prev.find((m) => m.id === tempAiId);
         if (!temp) return prev;
-
         return [
-          ...prev.filter((m) => m.id !== tempAiMessageId),
-          {
-            id: crypto.randomUUID(),
-            rawMessage: temp.rawMessage,
-            senderType: "AI",
-          },
+          ...prev.filter((m) => m.id !== tempAiId),
+          { id: crypto.randomUUID(), rawMessage: temp.rawMessage, senderType: "AI" },
         ];
       });
     } catch (e) {
       console.error(e);
-      setMessages((prev) => prev.filter((m) => m.id !== tempAiMessageId));
     } finally {
       setIsTyping(false);
       loadChatHistory().then(setChatList);
@@ -126,15 +110,43 @@ export default function AIChat() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-white">
-      <ChatSidebar
-        chatList={chatList}
-        currentId={currentId}
-        select={select}
-        newChat={newChat}
-      />
+    <div className="relative h-[calc(100vh-64px)] bg-white">
+      {/* 데스크탑: 항상 사이드바 */}
+      <div className="hidden md:block">
+        <ChatSidebar
+          chatList={chatList}
+          currentId={currentId}
+          select={select}
+          newChat={newChat}
+        />
+      </div>
 
-      <div className="flex-1 bg-white ml-80">
+      {/* 모바일: 열렸을 때만 사이드바*/}
+      {isSidebarOpen && (
+        <div className="md:hidden">
+          <ChatSidebar
+            chatList={chatList}
+            currentId={currentId}
+            select={select}
+            newChat={newChat}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+        </div>
+      )}
+
+      {/* 메인 영역: 사이드바 폭만큼 패딩 (데스크탑) */}
+      <main className="h-full md:pl-80 relative">
+        {/* 모바일: 열기 버튼  */}
+        {!isSidebarOpen && (
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="md:hidden absolute top-4 left-4 z-200 p-2 bg-white rounded shadow"
+            aria-label="사이드바 열기"
+          >
+            <ChevronRight size={20} />
+          </button>
+        )}
+
         {messages.length === 0 ? (
           <EmptyState input={input} setInput={setInput} send={send} />
         ) : (
@@ -147,7 +159,7 @@ export default function AIChat() {
             isTyping={isTyping}
           />
         )}
-      </div>
+      </main>
     </div>
   );
 }
