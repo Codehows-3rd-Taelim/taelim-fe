@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+// src/aichat/AIChat.tsx
+import { useEffect, useState } from "react";
 import {
   loadChatHistory,
   loadConversation,
@@ -9,6 +10,7 @@ import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import { ChevronRight } from "lucide-react";
 import type { AiChatDTO, Message } from "../type";
+import { fetchUndeliveredNotifications } from "../notificationApi";
 
 export default function AIChat() {
   const [chatList, setChatList] = useState<AiChatDTO[]>([]);
@@ -18,17 +20,14 @@ export default function AIChat() {
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     loadChatHistory().then(setChatList).catch(console.error);
   }, []);
 
   const select = async (id: string) => {
     setCurrentId(id);
-    const data = await loadConversation(id);
-    setMessages(data);
-    setIsSidebarOpen(false); // 모바일: 선택 후 닫기
+    setMessages(await loadConversation(id));
+    setIsSidebarOpen(false);
   };
 
   const newChat = () => {
@@ -43,7 +42,6 @@ export default function AIChat() {
 
     const effectiveId = currentId ?? crypto.randomUUID();
 
-    // USER
     setMessages((prev) => [
       ...prev,
       { id: crypto.randomUUID(), rawMessage: message, senderType: "USER" },
@@ -79,16 +77,13 @@ export default function AIChat() {
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
           const token = line.slice(5).trim();
+
           setMessages((prev) =>
             prev.map((m) =>
               m.id === tempAiId ? { ...m, rawMessage: m.rawMessage + token } : m
             )
           );
         }
-
-        requestAnimationFrame(() =>
-          scrollRef.current?.scrollIntoView({ behavior: "smooth" })
-        );
       }
 
       setMessages((prev) => {
@@ -103,17 +98,18 @@ export default function AIChat() {
           },
         ];
       });
-    } catch (e) {
-      console.error(e);
     } finally {
       setIsTyping(false);
       loadChatHistory().then(setChatList);
+      // 완료 후 알림 pull 
+      setTimeout(() => {
+        fetchUndeliveredNotifications();
+      }, 300);
     }
   };
 
   return (
-    <div className="relative flex-1 bg-white overflow-hidden">
-      {/* 데스크탑: 항상 사이드바 */}
+    <div className="relative h-full bg-white min-h-0">
       <div className="hidden md:block">
         <ChatSidebar
           chatList={chatList}
@@ -135,7 +131,7 @@ export default function AIChat() {
         </div>
       )}
 
-      <main className="flex-1 md:pl-80 relative overflow-hidden">
+      <main className="h-full md:pl-80 relative">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -153,7 +149,6 @@ export default function AIChat() {
             input={input}
             setInput={setInput}
             send={send}
-            scrollRef={scrollRef}
             isTyping={isTyping}
           />
         )}

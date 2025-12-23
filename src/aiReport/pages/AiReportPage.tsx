@@ -279,8 +279,7 @@ export default function AiReportPage() {
 
   // ------------------ UI 렌더링 ------------------
   return (
-    <div className="w-full min-h-screen px-3 sm:px-6 py-4 bg-[#f7f7f7]">
-      {/* 에러 */}
+    <div className="w-full flex-1 px-3 sm:px-6 py-4 bg-[#f7f7f7]">
       {error && (
         <div className="p-3 sm:p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold whitespace-pre-line text-sm">
           <button onClick={() => setError(null)} className="float-right">
