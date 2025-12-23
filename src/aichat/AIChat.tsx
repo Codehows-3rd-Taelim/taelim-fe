@@ -101,7 +101,7 @@ export default function AIChat() {
     } finally {
       setIsTyping(false);
       loadChatHistory().then(setChatList);
-      // 완료 후 알림 pull 
+      // 완료 후 알림 pull
       setTimeout(() => {
         fetchUndeliveredNotifications();
       }, 300);
@@ -109,7 +109,7 @@ export default function AIChat() {
   };
 
   return (
-    <div className="relative h-full bg-white min-h-0">
+    <div className="relative h-full min-h-0 bg-white">
       <div className="hidden md:block">
         <ChatSidebar
           chatList={chatList}
@@ -131,11 +131,11 @@ export default function AIChat() {
         </div>
       )}
 
-      <main className="h-full md:pl-80 relative">
+      <main className="relative flex items-center justify-center h-full overflow-auto md:pl-80">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden absolute top-4 left-4 z-20 p-2 bg-white rounded shadow"
+            className="absolute z-20 p-2 bg-white rounded shadow md:hidden top-4 left-4"
           >
             <ChevronRight size={20} />
           </button>
