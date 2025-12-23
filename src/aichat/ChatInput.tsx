@@ -1,3 +1,4 @@
+// src/aichat/ChatInput.tsx
 import { useState } from "react";
 
 interface Props {
