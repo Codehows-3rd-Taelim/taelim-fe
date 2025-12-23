@@ -23,33 +23,30 @@ export default function QAPage() {
 
   const [toast, setToast] = useState<string | null>(null);
 
-  
   const fetchQuestions = useCallback(async () => {
-  setLoading(true);
+    setLoading(true);
 
-  const data =
-    filter === "ALL"
-      ? await getQuestionsAll()
-      : filter === "RESOLVED"
-      ? await getQuestionsResolved()
-      : await getQuestionsUnresolved();
+    const data =
+      filter === "ALL"
+        ? await getQuestionsAll()
+        : filter === "RESOLVED"
+        ? await getQuestionsResolved()
+        : await getQuestionsUnresolved();
 
-      setQuestions(data);
-      setLoading(false);
+    setQuestions(data);
+    setLoading(false);
   }, [filter]);
 
-    useEffect(() => {
-      fetchQuestions();
-      setOpenQuestionId(null);
+  useEffect(() => {
+    fetchQuestions();
+    setOpenQuestionId(null);
   }, [fetchQuestions]);
-
 
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 2000);
     return () => clearTimeout(timer);
   }, [toast]);
-
 
   const toggleQuestion = async (q: Question) => {
     if (openQuestionId === q.questionId) {
@@ -72,10 +69,8 @@ export default function QAPage() {
     return <div className="p-6">로딩중...</div>;
   }
 
-
-
   return (
-    <div className="bg-white rounded-2xl shadow p-6 relative">
+    <div className="flex flex-col h-full bg-gray-100">
       <h2 className="font-bold text-lg mb-4">질문 관리</h2>
 
       {/* 필터 */}
@@ -134,15 +129,9 @@ export default function QAPage() {
                       setSubmitting(true);
 
                       if (q.resolved) {
-                        await updateAnswer(
-                          q.questionId,
-                          answers[q.questionId]
-                        );
+                        await updateAnswer(q.questionId, answers[q.questionId]);
                       } else {
-                        await createAnswer(
-                          q.questionId,
-                          answers[q.questionId]
-                        );
+                        await createAnswer(q.questionId, answers[q.questionId]);
                       }
 
                       await fetchQuestions();
@@ -158,11 +147,7 @@ export default function QAPage() {
                   }}
                   className="bg-orange-500 text-white px-4 py-1 rounded disabled:opacity-50"
                 >
-                  {submitting
-                    ? "저장중..."
-                    : q.resolved
-                    ? "수정"
-                    : "등록"}
+                  {submitting ? "저장중..." : q.resolved ? "수정" : "등록"}
                 </button>
               </div>
             )}

@@ -77,7 +77,7 @@ export default function FileUploadPage() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow p-6">
+    <div className="flex flex-col h-full bg-gray-100">
       <h2 className="font-bold text-lg mb-4">파일 업로드</h2>
 
       {/* 업로드 박스 */}
