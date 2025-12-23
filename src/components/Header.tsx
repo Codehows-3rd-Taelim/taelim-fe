@@ -59,23 +59,28 @@ export default function Header() {
     }
     return null;
   };
-  
+
   const navItems = [
     { name: "홈", path: "/", icon: Home, minRoleLevel: 1 },
     { name: "AI보고서", path: "/ai/report", icon: FileText, minRoleLevel: 1 },
     { name: "대시보드", path: "/dashboard", icon: BarChart3, minRoleLevel: 1 },
-    { name: "작업목록 / 보고서", path: "/report", icon: ClipboardList, minRoleLevel: 1 },
+    {
+      name: "작업목록 / 보고서",
+      path: "/report",
+      icon: ClipboardList,
+      minRoleLevel: 1,
+    },
     { name: "운영 관리", path: "/manage", icon: Users, minRoleLevel: 1 },
     { name: "데이터 관리", path: "/data", icon: Database, minRoleLevel: 3 }, // 관리자만
   ];
-  
+
   /* roleLevel 기준 필터링 메뉴 생성 */
   const safeRoleLevel = roleLevel ?? 0;
 
   const visibleNavItems = navItems.filter(
     (item) => safeRoleLevel >= item.minRoleLevel
   );
-  
+
   useEffect(() => {
     loadLastSync();
   }, []);
@@ -140,7 +145,7 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 shadow-lg bg-linear-to-r from-orange-400 to-orange-500">
       <div className="px-4 md:px-6">
-        <div className="relative flex items-center justify-between h-16">
+        <div className="relative flex items-center justify-between h-16 ">
           {/* 모바일: 햄버거 메뉴 (맨 왼쪽) */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

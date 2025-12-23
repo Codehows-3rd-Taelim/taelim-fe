@@ -51,7 +51,7 @@ export default function UserDashboardPage() {
   if (!data) return <div className="p-6">데이터 로딩 중...</div>;
 
   return (
-    <div className="w-full max-w-screen-xl mx-auto px-4 lg:px-6 space-y-6">
+    <div className="w-full max-w-screen-xl mx-auto px-4 lg:px-6 space-y-6 bg-gray-100">
       {/* 상단 헤더 */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{storeName} 대시보드</h2>
@@ -65,12 +65,12 @@ export default function UserDashboardPage() {
 
       {/* 그래프 & 테이블 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="col-span-1 bg-white p-4 rounded-xl shadow min-w-[350px]">
+        <div className="col-span-1 bg-white p-4 rounded-xl shadow-lg min-w-[350px]">
           <h3 className="font-semibold mb-4">로봇 상태 현황</h3>
           <RobotDonutChart data={data.robotStatus} />
         </div>
 
-        <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow">
+        <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow-lg">
           <h3 className="font-semibold mb-4">작업 성과</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <PerformanceCards
@@ -83,7 +83,7 @@ export default function UserDashboardPage() {
       </div>
 
       {/* 로봇 목록 */}
-      <div className="bg-white p-4 rounded-xl shadow overflow-x-auto">
+      <div className="bg-white p-4 rounded-xl shadow-lg overflow-x-auto">
         <h3 className="font-semibold mb-4 text-xl">
           로봇 목록 ({robots?.length ?? 0}대)
         </h3>
@@ -92,22 +92,22 @@ export default function UserDashboardPage() {
 
       {/* 하단 차트 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white p-4 rounded-xl shadow">
+        <div className="bg-white p-4 rounded-xl shadow-lg">
           <h4 className="font-semibold mb-3">구역별 청소 횟수</h4>
           <AreaCleanCountChart data={data.areaCleanCount} />
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow">
+        <div className="bg-white p-4 rounded-xl shadow-lg">
           <h4 className="font-semibold mb-3">일별 로봇 가동 시간 (h)</h4>
           <DailyCleanTimeChart data={data.dailyOperationTime} />
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow">
+        <div className="bg-white p-4 rounded-xl shadow-lg">
           <h4 className="font-semibold mb-3">일별 작업 상태</h4>
           <TaskStatusChart data={data.dailyTaskStatus} />
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow">
+        <div className="bg-white p-4 rounded-xl shadow-lg">
           <h4 className="font-semibold mb-3">완료율</h4>
           <CompletionRateChart data={data.dailyCompletionRate} />
         </div>
