@@ -184,6 +184,10 @@ export default function AiReportPage() {
           clearPendingReport(conversationId);
           eventSourceRef.current?.close();
           eventSourceRef.current = null;
+          // 보고서 생성 완료 후 알림 pull 
+          setTimeout(() => {
+            fetchUndeliveredNotifications();
+          }, 300);
         }
       },
       (msg) => {

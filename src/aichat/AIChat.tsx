@@ -10,6 +10,7 @@ import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import { ChevronRight } from "lucide-react";
 import type { AiChatDTO, Message } from "../type";
+import { fetchUndeliveredNotifications } from "../notificationApi";
 
 export default function AIChat() {
   const [chatList, setChatList] = useState<AiChatDTO[]>([]);
@@ -100,6 +101,10 @@ export default function AIChat() {
     } finally {
       setIsTyping(false);
       loadChatHistory().then(setChatList);
+      // 완료 후 알림 pull 
+      setTimeout(() => {
+        fetchUndeliveredNotifications();
+      }, 300);
     }
   };
 
