@@ -20,7 +20,11 @@ function App() {
   return (
     <AuthProvider>
       <Box
-        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh", // minHeight에서 height로 변경
+        }}
       >
         {!isLoginPage && <Header />}
 
@@ -29,17 +33,21 @@ function App() {
           sx={{
             pt: isLoginPage ? 0 : "64px",
             flex: 1,
+            minHeight: 0, // 추가
             display: "flex",
             flexDirection: "column",
           }}
         >
           <Container
+            disableGutters
             maxWidth={false}
             sx={{
               width: "100%",
-              maxWidth: "2400px",
-              px: 3,
-              flex: 1,
+              height: "100%", // flex: 1 대신 height: 100% 사용
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              // backgroundColor: "#f3f4f6",
             }}
           >
             <Routes>
@@ -93,12 +101,12 @@ function App() {
                 }
               />
             </Routes>
+            {!isLoginPage && (
+              <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
+                <Footer />
+              </Box>
+            )}
           </Container>
-          {!isLoginPage && (
-            <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
-              <Footer />
-            </Box>
-          )}
         </Box>
       </Box>
     </AuthProvider>

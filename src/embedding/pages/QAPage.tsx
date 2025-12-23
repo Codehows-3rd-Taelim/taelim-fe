@@ -23,33 +23,30 @@ export default function QAPage() {
 
   const [toast, setToast] = useState<string | null>(null);
 
-  
   const fetchQuestions = useCallback(async () => {
-  setLoading(true);
+    setLoading(true);
 
-  const data =
-    filter === "ALL"
-      ? await getQuestionsAll()
-      : filter === "RESOLVED"
-      ? await getQuestionsResolved()
-      : await getQuestionsUnresolved();
+    const data =
+      filter === "ALL"
+        ? await getQuestionsAll()
+        : filter === "RESOLVED"
+        ? await getQuestionsResolved()
+        : await getQuestionsUnresolved();
 
-      setQuestions(data);
-      setLoading(false);
+    setQuestions(data);
+    setLoading(false);
   }, [filter]);
 
-    useEffect(() => {
-      fetchQuestions();
-      setOpenQuestionId(null);
+  useEffect(() => {
+    fetchQuestions();
+    setOpenQuestionId(null);
   }, [fetchQuestions]);
-
 
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 2000);
     return () => clearTimeout(timer);
   }, [toast]);
-
 
   const toggleQuestion = async (q: Question) => {
     if (openQuestionId === q.questionId) {
@@ -72,14 +69,12 @@ export default function QAPage() {
     return <div className="p-6">로딩중...</div>;
   }
 
-
-
   return (
-    <div className="bg-white rounded-2xl shadow p-6 relative">
-      <h2 className="font-bold text-lg mb-4">질문 관리</h2>
+    <div className="flex flex-col h-full bg-gray-100">
+      <h2 className="font-bold text-lg mb-5 ml-10 mt-5">질문 관리</h2>
 
       {/* 필터 */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-0.5 ml-10">
         {[
           { key: "ALL", label: "전체" },
           { key: "UNRESOLVED", label: "미응답" },
@@ -100,7 +95,7 @@ export default function QAPage() {
       </div>
 
       {/* 질문 리스트 */}
-      <div className="bg-gray-100 rounded-xl p-4 space-y-3">
+      <div className="bg-gray-100 rounded-xl p-4 space-y-3 ml-5 mr-5">
         {questions.map((q) => (
           <div key={q.questionId} className="bg-white rounded-lg">
             <button
@@ -112,7 +107,7 @@ export default function QAPage() {
             </button>
 
             {openQuestionId === q.questionId && (
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-4 ml-1 mt-1 mr-1">
                 <textarea
                   placeholder={
                     q.resolved ? "답변을 수정하세요" : "답변을 입력하세요"
@@ -134,15 +129,9 @@ export default function QAPage() {
                       setSubmitting(true);
 
                       if (q.resolved) {
-                        await updateAnswer(
-                          q.questionId,
-                          answers[q.questionId]
-                        );
+                        await updateAnswer(q.questionId, answers[q.questionId]);
                       } else {
-                        await createAnswer(
-                          q.questionId,
-                          answers[q.questionId]
-                        );
+                        await createAnswer(q.questionId, answers[q.questionId]);
                       }
 
                       await fetchQuestions();
@@ -158,11 +147,7 @@ export default function QAPage() {
                   }}
                   className="bg-orange-500 text-white px-4 py-1 rounded disabled:opacity-50"
                 >
-                  {submitting
-                    ? "저장중..."
-                    : q.resolved
-                    ? "수정"
-                    : "등록"}
+                  {submitting ? "저장중..." : q.resolved ? "수정" : "등록"}
                 </button>
               </div>
             )}

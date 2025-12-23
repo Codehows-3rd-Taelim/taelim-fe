@@ -42,11 +42,11 @@ export default function CleanReport({
   };
 
   const formatBatteryConsumption = (costBattery: number) => {
-    return `${Math.round(costBattery * 1.3 * 100) / 10000} %`;
+    return `${Math.round(costBattery * 1.3 * 100) / 10000} kwh`;
   };
 
   const formatWaterConsumption = (costWater: number) => {
-    return `${costWater} ℓ`;
+    return `${costWater} ㎖`;
   };
 
   return (

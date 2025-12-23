@@ -59,23 +59,28 @@ export default function Header() {
     }
     return null;
   };
-  
+
   const navItems = [
     { name: "홈", path: "/", icon: Home, minRoleLevel: 1 },
     { name: "AI보고서", path: "/ai/report", icon: FileText, minRoleLevel: 1 },
     { name: "대시보드", path: "/dashboard", icon: BarChart3, minRoleLevel: 1 },
-    { name: "작업목록 / 보고서", path: "/report", icon: ClipboardList, minRoleLevel: 1 },
+    {
+      name: "작업목록 / 보고서",
+      path: "/report",
+      icon: ClipboardList,
+      minRoleLevel: 1,
+    },
     { name: "운영 관리", path: "/manage", icon: Users, minRoleLevel: 1 },
     { name: "데이터 관리", path: "/data", icon: Database, minRoleLevel: 3 }, // 관리자만
   ];
-  
+
   /* roleLevel 기준 필터링 메뉴 생성 */
   const safeRoleLevel = roleLevel ?? 0;
 
   const visibleNavItems = navItems.filter(
     (item) => safeRoleLevel >= item.minRoleLevel
   );
-  
+
   useEffect(() => {
     loadLastSync();
   }, []);
@@ -140,36 +145,56 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 shadow-lg bg-linear-to-r from-orange-400 to-orange-500">
       <div className="px-4 md:px-6">
-        <div className="relative flex items-center justify-between h-16">
+        <div className="relative flex items-center justify-between h-16 ">
           {/* 모바일: 햄버거 메뉴 (맨 왼쪽) */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="z-10 p-2 text-white md:hidden"
+            className="z-10 p-2 text-white lg:hidden"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          {/* 데스크탑: 로고 + 메뉴 */}
-          <div className="items-center hidden gap-8 md:flex">
+          {/* 태블릿/데스크탑: 로고 */}
+          <div className="items-center hidden lg:flex">
             {/* 로고 */}
             <div
-              className="text-xl font-bold tracking-wide text-white cursor-pointer"
+              className="text-xl font-bold tracking-wide text-white cursor-pointer whitespace-nowrap"
               onClick={() => navigate("/")}
             >
               Inufleet
             </div>
+          </div>
 
-            {/* 데스크탑 메뉴 */}
-            <nav className="flex items-center gap-1">
+          {/* 중앙: 메뉴 아이콘들 (lg 이상) */}
+          <div className="items-center justify-center flex-1 hidden lg:flex">
+            {/* 메뉴 - 아이콘만 (lg ~ 2xl 미만) */}
+            <nav className="flex items-center justify-center flex-1 gap-4 xl:gap-6 2xl:hidden">
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.name}
                     onClick={() => handleNavClick(item.path)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg hover:bg-white/10"
+                    className="flex items-center justify-center p-3 text-white transition-colors rounded-lg hover:bg-white/10"
+                    title={item.name}
                   >
-                    <Icon size={18} />
+                    <Icon size={20} className="flex-shrink-0" />
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* 메뉴 - 아이콘 + 텍스트 (2xl 이상, 1500px 이상) */}
+            <nav className="items-center justify-center flex-1 hidden gap-1 2xl:flex">
+              {visibleNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => handleNavClick(item.path)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg hover:bg-white/10 whitespace-nowrap"
+                  >
+                    <Icon size={18} className="flex-shrink-0" />
                     <span>{item.name}</span>
                   </button>
                 );
@@ -179,16 +204,16 @@ export default function Header() {
 
           {/* 모바일: 로고 (중앙) */}
           <div
-            className="absolute text-lg font-bold tracking-wide text-white transform -translate-x-1/2 cursor-pointer left-1/2 md:hidden"
+            className="absolute text-lg font-bold tracking-wide text-white transform -translate-x-1/2 cursor-pointer left-1/2 lg:hidden whitespace-nowrap"
             onClick={() => navigate("/")}
           >
             Inufleet
           </div>
 
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
-          <div className="z-10 flex items-center gap-2 md:gap-4">
-            {/*  동기화 시간 표시 (데스크탑만) */}
-            <div className="hidden md:block text-white text-sm mr-2 whitespace-nowrap">
+          <div className="z-10 flex items-center gap-2 lg:gap-4">
+            {/*  동기화 시간 표시 (lg 이상) */}
+            <div className="hidden text-xs xl:text-sm text-white lg:block whitespace-nowrap">
               {formatSyncTime()}
             </div>
 
@@ -198,8 +223,8 @@ export default function Header() {
               disabled={isSyncing}
               className={`
               flex items-center justify-center
-              px-3 md:px-6 py-1.5 md:py-2
-              text-white text-xs md:text-sm font-semibold rounded-lg shadow-md transition-colors
+              px-3 lg:px-6 py-1.5 lg:py-2
+              text-white text-xs lg:text-sm font-semibold rounded-lg shadow-md transition-colors whitespace-nowrap
               ${
                 isSyncing
                   ? "bg-gray-400 cursor-not-allowed"
@@ -207,7 +232,7 @@ export default function Header() {
               }
             `}
             >
-              <div className="w-10 md:w-[50px] flex justify-center">
+              <div className="w-10 lg:w-[50px] flex justify-center">
                 {isSyncing ? (
                   <svg
                     className="w-4 h-4 text-white animate-spin"
@@ -239,20 +264,20 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 text-white rounded-lg hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 text-white rounded-lg hover:bg-white/10 transition-colors"
               >
-                <User size={24} className="md:w-7 md:h-7" />
+                <User size={24} className="lg:w-7 lg:h-7 flex-shrink-0" />
                 <div className="flex-col items-start hidden sm:flex">
-                  <span className="text-sm font-medium leading-tight">
+                  <span className="text-sm font-medium leading-tight whitespace-nowrap">
                     {getUserDisplayText()}
                   </span>
                   {getUserSubText() && (
-                    <span className="text-xs leading-tight opacity-90">
+                    <span className="text-xs leading-tight opacity-90 whitespace-nowrap">
                       {getUserSubText()}님
                     </span>
                   )}
                 </div>
-                <div className="hidden sm:block">
+                <div className="hidden sm:block flex-shrink-0">
                   {isUserMenuOpen ? (
                     <ChevronUp size={18} />
                   ) : (
@@ -271,7 +296,7 @@ export default function Header() {
                   <div className="absolute right-0 z-20 w-full mt-2 overflow-hidden bg-orange-400 rounded-lg shadow-lg">
                     <button
                       onClick={handleLogoutClick}
-                      className="w-full px-4 py-3 font-medium text-center text-white transition-colors hover:bg-white/10"
+                      className="w-full px-4 py-3 font-medium text-center text-white transition-colors hover:bg-white/10 whitespace-nowrap"
                     >
                       로그아웃
                     </button>
@@ -284,7 +309,7 @@ export default function Header() {
 
         {/* 모바일 메뉴 */}
         {isMobileMenuOpen && (
-          <div className="py-4 border-t md:hidden border-white/20">
+          <div className="py-4 border-t lg:hidden border-white/20">
             <nav className="flex flex-col gap-2">
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
@@ -294,8 +319,8 @@ export default function Header() {
                     onClick={() => handleNavClick(item.path)}
                     className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-white transition-colors rounded-lg hover:bg-white/10"
                   >
-                    <Icon size={18} />
-                    <span>{item.name}</span>
+                    <Icon size={18} className="flex-shrink-0" />
+                    <span className="whitespace-nowrap">{item.name}</span>
                   </button>
                 );
               })}

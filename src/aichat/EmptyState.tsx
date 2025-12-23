@@ -16,15 +16,14 @@ export default function EmptyState({ input, setInput, send }: Props) {
   ];
 
   return (
-    <div className="flex flex-col items-center bg-white min-h-full pt-56 px-4">
+    <div className="flex flex-col items-center px-4 bg-white">
       <h1 className="text-[22px] font-semibold mb-8 text-center">
         안녕하세요. 무엇을 도와드릴까요?
       </h1>
 
       <ChatInput input={input} setInput={setInput} send={send} size="large" />
 
-   
-      <div className="-mt-4 w-full max-w-full md:max-w-[900px] rounded-2xl border shadow-sm bg-white py-4 px-6 space-y-3">
+      <div className="mt-4 w-full max-w-full md:max-w-[900px] rounded-xl shadow-xl bg-white py-4 px-6 space-y-3">
         {suggestions.map((s, i) => (
           <button
             key={i}

@@ -2,6 +2,10 @@ import EmployeePage from "./EmployeePage";
 import StorePage from "./StorePage";
 import useOperationManagement from "../hook/useOperationManagement";
 
+// EmployeePage.tsx도 다음과 같이 수정하세요:
+// 최상위 div를 다음으로 변경:
+// <div className="flex flex-col w-full h-full px-6 py-4 overflow-y-auto bg-gray-100">
+
 export default function OperationDesktopLayout(
   props: ReturnType<typeof useOperationManagement>
 ) {
@@ -29,11 +33,11 @@ export default function OperationDesktopLayout(
   } = props;
 
   return (
-    <div className="w-full">
+    <div className="flex flex-col w-full h-full">
       {/* 관리자(roleLevel === 3)만 탭 표시 */}
       {roleLevel === 3 && (
         <>
-          <div className="flex border-b-2 border-gray-200 bg-white px-4 sm:px-6">
+          <div className="flex flex-shrink-0 px-4 pt-6 bg-white border-b-2 border-gray-400 sm:px-6">
             <button
               onClick={() => setActiveTab("employee")}
               className={`px-4 py-3 font-bold transition-colors text-sm sm:text-base ${
@@ -41,6 +45,7 @@ export default function OperationDesktopLayout(
                   ? "bg-orange-500 text-white border-b-4 border-orange-600"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
+              style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
             >
               직원 관리
             </button>
@@ -51,13 +56,14 @@ export default function OperationDesktopLayout(
                   ? "bg-orange-500 text-white border-b-4 border-orange-600"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
+              style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
             >
               매장 관리
             </button>
           </div>
-          
+
           {/* 탭 콘텐츠 */}
-          <div className="bg-white">
+          <div className="flex flex-col flex-1 w-full min-h-0">
             {activeTab === "employee" ? (
               <EmployeePage
                 list={list}
@@ -89,7 +95,7 @@ export default function OperationDesktopLayout(
 
       {/* 일반 직원(roleLevel !== 3)은 직원 페이지만 표시 */}
       {roleLevel !== 3 && (
-        <div className="bg-white">
+        <div className="flex-1 min-h-0">
           <EmployeePage
             list={list}
             setList={setList}
