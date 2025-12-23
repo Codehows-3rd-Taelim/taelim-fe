@@ -114,10 +114,10 @@ export default function AiReportDetail({ report, onDeleted }: AiReportDetailProp
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <Loader2 className="animate-spin text-orange-500" size={48} />
         <p className="text-lg font-medium text-gray-700">
-          보고서 생성 중입니다
+          보고서 생성 중입니다. 잠시만 기다려 주세요.
         </p>
         <p className="text-sm text-gray-500">
-          잠시만 기다려 주세요
+          최대 5분 정도 소요될 수 있습니다.
         </p>
       </div>
     );

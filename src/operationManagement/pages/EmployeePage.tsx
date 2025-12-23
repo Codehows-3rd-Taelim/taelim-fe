@@ -283,7 +283,7 @@ export default function EmployeePage(props: EmployeePageProps) {
      렌더
   ===================== */
   return (
-    <div className="w-full min-h-screen p-6 bg-gray-100 max-w-[1920px] mx-auto">
+    <div className="w-full h-full flex flex-col px-6 py-4 bg-gray-100 overflow-y-auto">
       {/* 등록 모달 */}
       {isRegisterOpen && (
         <EmployeeRegistrationModal
