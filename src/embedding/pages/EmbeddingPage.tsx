@@ -6,7 +6,7 @@ export default function EmbeddingPage() {
   const [tab, setTab] = useState<"file" | "qa">("file");
 
   return (
-    <div className="max-w-7xl mx-auto mt-6 p-6">
+    <div className="w-full mt-4 p-4">
       {/* 상단 탭 */}
       <div>
         <button

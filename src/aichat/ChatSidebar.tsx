@@ -17,8 +17,8 @@ export default function ChatSidebar({
   onClose,
 }: Props) {
   return (
-    <aside className="fixed top-16 left-0 w-80 h-[calc(100vh-64px)] bg-[#fffaf3] border-r px-3 py-5 overflow-y-auto z-50">
-      {/* 상단: 새 채팅 + 닫기 */}
+    <aside className="absolute inset-y-0 left-0 w-80 bg-[#fffaf3] border-r px-3 py-5 overflow-y-auto z-20">
+      {/* 상단 */}
       <div className="flex items-center justify-between pr-1">
         <button
           onClick={newChat}
@@ -31,27 +31,22 @@ export default function ChatSidebar({
           <button
             onClick={onClose}
             className="md:hidden p-2 rounded hover:bg-orange-200"
-            aria-label="사이드바 닫기"
           >
             <ChevronLeft size={22} />
           </button>
         )}
       </div>
 
-      {/* 내 채팅 타이틀 */}
       <div className="mt-10 mb-4">
-        <h2 className="ml-2 text-[30px] font-bold text-gray-700 tracking-wide">
-          내 채팅
-        </h2>
+        <h2 className="ml-2 text-[30px] font-bold text-gray-700">내 채팅</h2>
       </div>
 
-      {/* 채팅 목록 */}
       <div className="flex flex-col gap-1">
         {chatList.map((c) => (
           <button
             key={c.conversationId}
             onClick={() => select(c.conversationId)}
-            className={`p-2 rounded text-left hover:bg-orange-200 transition ${
+            className={`p-2 rounded text-left hover:bg-orange-200 ${
               currentId === c.conversationId
                 ? "bg-orange-400 text-white font-semibold"
                 : "text-gray-800"

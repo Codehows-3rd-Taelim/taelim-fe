@@ -218,10 +218,12 @@ export default function ReportPage() {
     <Box
       sx={{
         width: "100%",
-        minHeight: "100vh",
+        flex: 1,
         px: 6,
-        py: 4,
+        py: 6,
         bgcolor: "#f7f7f7",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {/* 검색 UI */}
@@ -306,7 +308,7 @@ export default function ReportPage() {
         component={Paper}
         sx={{
           borderRadius: 3,
-          maxHeight: 790,
+          maxHeight: "auto",
           overflowY: "auto",
           mt: 3,
         }}
@@ -378,7 +380,7 @@ export default function ReportPage() {
       </TableContainer>
 
       {/* 페이지네이션 */}
-      {AiReportData.length > 0 && totalPages > 1 && (
+      {AiReportData.length > 0 && (
         <Pagination
           page={page}
           totalPages={totalPages}

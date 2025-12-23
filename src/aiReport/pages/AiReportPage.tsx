@@ -22,7 +22,10 @@ function isLoadingReport(report: ReportWithLoading): report is LoadingReport {
 export default function AiReportPage() {
   const queryRef = useRef<HTMLTextAreaElement>(null);
   const [searchTextInput, setSearchTextInput] = useState("");
-  const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([null, null]);
+  const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([
+    null,
+    null,
+  ]);
   const [searchText, setSearchText] = useState("");
   const [dateRange, setDateRange] = useState<DateRange<Dayjs>>([null, null]);
   const [aiReportData, setAiReportData] = useState<ReportWithLoading[]>([]);
@@ -48,7 +51,6 @@ export default function AiReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const eventSourcesRef = useRef<Record<string, EventSource>>({});
   const prefetchedRef = useRef<Set<number>>(new Set());
 
   const [startDate, endDate] = dateRange;
@@ -196,7 +198,6 @@ export default function AiReportPage() {
 
       await createAiReport(conversationId, query);
       if (queryRef.current) queryRef.current.value = "";
-
     } catch (e) {
       setError("보고서 생성 요청 실패");
       setIsLoading(false);
@@ -221,7 +222,9 @@ export default function AiReportPage() {
         const content = await getRawReport(report.aiReportId);
         setAiReportData((prev) =>
           prev.map((r) =>
-            r.aiReportId === report.aiReportId ? { ...r, rawReport: content } : r
+            r.aiReportId === report.aiReportId
+              ? { ...r, rawReport: content }
+              : r
           )
         );
       } catch {
@@ -241,6 +244,7 @@ export default function AiReportPage() {
           : true;
       return matchText && matchPeriod;
     });
+
     return filtered.sort((a, b) => {
       if (a.aiReportId < 0) return -1;
       if (b.aiReportId < 0) return 1;
@@ -262,14 +266,10 @@ export default function AiReportPage() {
 
   // ------------------ UI 렌더링 ------------------
   return (
-    <div className="w-full min-h-screen px-3 sm:px-6 py-4 bg-[#f7f7f7]">
-      {/* 에러 */}
+    <div className="w-full flex-1 px-3 sm:px-6 py-4 bg-[#f7f7f7]">
       {error && (
         <div className="p-3 sm:p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold whitespace-pre-line text-sm">
-          <button 
-            onClick={() => setError(null)}
-            className="float-right"
-          >
+          <button onClick={() => setError(null)} className="float-right">
             <X size={18} />
           </button>
           {error}
@@ -324,7 +324,11 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
         </button>
 
         {/* 필터 내용 */}
-        <div className={`${showFilters ? 'block' : 'hidden'} lg:flex lg:items-center gap-4 bg-white lg:bg-transparent p-4 lg:p-0 rounded-lg lg:rounded-none shadow lg:shadow-none`}>
+        <div
+          className={`${
+            showFilters ? "block" : "hidden"
+          } lg:flex lg:items-center gap-4 bg-white lg:bg-transparent p-4 lg:p-0 rounded-lg lg:rounded-none shadow lg:shadow-none`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 lg:mb-0">
             <span className="text-sm font-medium">생성일자</span>
             <DateRangePicker
@@ -332,7 +336,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
               onChange={setDateRangeInput}
             />
           </div>
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 lg:mb-0">
             <span className="text-sm font-medium">내용</span>
             <input
@@ -379,11 +383,21 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
           <table className="w-full">
             <thead className="bg-gray-50 sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">no</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">질문 내용</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">보고서 기간</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">생성일자</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">작성자</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  no
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  질문 내용
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  보고서 기간
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  생성일자
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">
+                  작성자
+                </th>
                 <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b"></th>
               </tr>
             </thead>
@@ -397,7 +411,10 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                         : "hover:bg-gray-50 cursor-pointer"
                     }`}
                     onMouseEnter={() => {
-                      if (!r.rawReport && !prefetchedRef.current.has(r.aiReportId)) {
+                      if (
+                        !r.rawReport &&
+                        !prefetchedRef.current.has(r.aiReportId)
+                      ) {
                         prefetchedRef.current.add(r.aiReportId);
                         getRawReport(r.aiReportId)
                           .then((content) => {
@@ -419,7 +436,11 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                     </td>
                     <td className="px-4 py-3 text-sm">{r.rawMessage}</td>
                     <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
-                      {r.startTime ? dayjs(r.startTime).format("YYYY-MM-DD") : "-"} ~ {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
+                      {r.startTime
+                        ? dayjs(r.startTime).format("YYYY-MM-DD")
+                        : "-"}{" "}
+                      ~{" "}
+                      {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
                     </td>
                     <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                       {dayjs(r.createdAt).format("YYYY-MM-DD HH:mm")}
@@ -434,7 +455,11 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                         className="p-1 hover:bg-gray-200 rounded transition-colors disabled:cursor-not-allowed"
                         disabled={isLoadingReport(r)}
                       >
-                        {openRow === r.aiReportId ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        {openRow === r.aiReportId ? (
+                          <ChevronUp size={20} />
+                        ) : (
+                          <ChevronDown size={20} />
+                        )}
                       </button>
                     </td>
                   </tr>
@@ -445,11 +470,16 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                           openRow === r.aiReportId ? "max-h-[70vh]" : "max-h-0"
                         } overflow-hidden`}
                       >
-                        <div className="p-6 bg-[#fafafa] overflow-y-auto" style={{ maxHeight: "70vh" }}>
+                        <div
+                          className="p-6 bg-[#fafafa] overflow-y-auto"
+                          style={{ maxHeight: "70vh" }}
+                        >
                           <AiReportDetail
                             report={r}
                             onDeleted={(id) => {
-                              setAiReportData(prev => prev.filter(item => item.aiReportId !== id));
+                              setAiReportData((prev) =>
+                                prev.filter((item) => item.aiReportId !== id)
+                              );
                               setOpenRow(null);
                             }}
                           />
@@ -469,7 +499,9 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
             <div key={r.aiReportId} className="border-b last:border-b-0">
               <div
                 className={`p-4 ${
-                  isLoadingReport(r) ? "cursor-not-allowed bg-gray-50" : "cursor-pointer active:bg-gray-50"
+                  isLoadingReport(r)
+                    ? "cursor-not-allowed bg-gray-50"
+                    : "cursor-pointer active:bg-gray-50"
                 }`}
                 onClick={() => handleRowClick(r)}
               >
@@ -478,7 +510,9 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                     <div className="text-xs text-gray-500 mb-1">
                       #{isLoadingReport(r) ? "-" : getReportNumber(index)}
                     </div>
-                    <div className="font-medium text-sm mb-2">{r.rawMessage}</div>
+                    <div className="font-medium text-sm mb-2">
+                      {r.rawMessage}
+                    </div>
                   </div>
                   <button
                     onClick={(e) => {
@@ -488,15 +522,22 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                     className="ml-2 p-1 hover:bg-gray-200 rounded transition-colors disabled:cursor-not-allowed"
                     disabled={isLoadingReport(r)}
                   >
-                    {openRow === r.aiReportId ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    {openRow === r.aiReportId ? (
+                      <ChevronUp size={18} />
+                    ) : (
+                      <ChevronDown size={18} />
+                    )}
                   </button>
                 </div>
-                
+
                 <div className="space-y-1 text-xs text-gray-600">
                   <div className="flex justify-between">
                     <span className="text-gray-500">보고서 기간:</span>
                     <span>
-                      {r.startTime ? dayjs(r.startTime).format("YY-MM-DD") : "-"} ~ {r.endTime ? dayjs(r.endTime).format("YY-MM-DD") : "-"}
+                      {r.startTime
+                        ? dayjs(r.startTime).format("YY-MM-DD")
+                        : "-"}{" "}
+                      ~ {r.endTime ? dayjs(r.endTime).format("YY-MM-DD") : "-"}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -515,11 +556,16 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                   openRow === r.aiReportId ? "max-h-[70vh]" : "max-h-0"
                 } overflow-hidden`}
               >
-                <div className="p-4 bg-[#fafafa] overflow-y-auto" style={{ maxHeight: "70vh" }}>
+                <div
+                  className="p-4 bg-[#fafafa] overflow-y-auto"
+                  style={{ maxHeight: "70vh" }}
+                >
                   <AiReportDetail
                     report={r}
                     onDeleted={(id) => {
-                      setAiReportData(prev => prev.filter(item => item.aiReportId !== id));
+                      setAiReportData((prev) =>
+                        prev.filter((item) => item.aiReportId !== id)
+                      );
                       setOpenRow(null);
                     }}
                   />
