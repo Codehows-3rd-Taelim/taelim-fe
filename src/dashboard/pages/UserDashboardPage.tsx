@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../../store";
 import { useDataStore } from "../../dataStore";
-import useDashboard from "../hooks/useDashboard";
 import DateRangePicker from "../../components/DateRangePicker";
 import dayjs, { Dayjs } from "dayjs";
 import type { DateRange } from "@mui/x-date-pickers-pro/models";
@@ -14,6 +13,7 @@ import AreaCleanCountChart from "../components/user/AreaCleanCountChart";
 import DailyCleanTimeChart from "../components/user/DailyCleanTimeChart";
 import TaskStatusChart from "../components/user/TaskStatusChart";
 import CompletionRateChart from "../components/user/CompletionRateChart";
+import useDashboard from "../hooks/useDashboard";
 
 export default function UserDashboardPage() {
   const storeId = useAuthStore((s) => s.storeId ?? undefined);
@@ -26,7 +26,7 @@ export default function UserDashboardPage() {
 
   // ReportPage와 동일한 DateRange 타입 사용
   const [range, setRange] = useState<DateRange<Dayjs>>([
-    dayjs().subtract(7, "year"),
+    dayjs().subtract(7, "day"),
     dayjs(),
   ]);
 
@@ -41,8 +41,8 @@ export default function UserDashboardPage() {
   useEffect(() => {
     if (!storeId || !range[0] || !range[1]) return;
 
-    const start = range[0].startOf("day").format("YYYY-MM-DD 00:00:00");
-    const end = range[1].endOf("day").format("YYYY-MM-DD 23:59:59");
+    const start = range[0].startOf("day").format("YYYY-MM-DD");
+    const end = range[1].endOf("day").format("YYYY-MM-DD");
 
     fetchReports({ storeId, startDate: start, endDate: end });
     fetchRobots(storeId);
