@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
   const data = useDashboardAdmin(stores, robots, reports, industries);
 
   return (
-    <div className="w-full p-6 space-y-6">
+    <div className="w-full p-6 space-y-6 bg-gray-100">
       {/* 헤더 + 날짜 선택 (사용자 대시보드 UI와 동일한 레이아웃) */}
       <div className="flex justify-between items-center">
         <h3 className="text-3xl font-bold">관리자 대시보드</h3>
@@ -82,24 +82,24 @@ export default function AdminDashboardPage() {
       </div> */}
 
       {/* 매장 테이블 */}
-      <div className="bg-white p-6 rounded-xl shadow">
+      <div className="bg-white p-6 rounded-xl shadow-xl">
         <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
         <AdminStoreTable stores={data.storeSummaries} />
       </div>
 
       {/* 차트 3종 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
+        <div className="bg-white p-6 rounded-xl shadow-xl">
           <h2 className="text-lg font-semibold mb-4">산업별 일별 가동 시간</h2>
           <AdminIndustryTimeChart data={data.industryOperationTime} />
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow">
+        <div className="bg-white p-6 rounded-xl shadow-xl">
           <h2 className="text-lg font-semibold mb-4">매장별 총 청소 시간</h2>
           <AdminStoreCleanTimeChart data={data.storeCleanTime} />
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow lg:col-span-2">
+        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2">
           <h2 className="text-lg font-semibold mb-4">매장별 총 청소 면적</h2>
           <AdminStoreCleanAreaChart data={data.storeCleanArea} />
         </div>

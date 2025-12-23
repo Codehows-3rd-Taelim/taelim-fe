@@ -56,7 +56,6 @@ export default function AiReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const eventSourcesRef = useRef<Record<string, EventSource>>({});
   const prefetchedRef = useRef<Set<number>>(new Set());
 
   const [startDate, endDate] = dateRange;
