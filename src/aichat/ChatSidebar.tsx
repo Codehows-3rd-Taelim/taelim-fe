@@ -1,5 +1,5 @@
 import type { AiChatDTO } from "../type";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, FileText } from "lucide-react";
 
 interface Props {
   chatList: AiChatDTO[];
@@ -20,12 +20,16 @@ export default function ChatSidebar({
     <aside className="absolute inset-y-0 left-0 w-80 bg-[#fffaf3] border-r px-3 py-5 overflow-y-auto z-20">
       {/* 상단 */}
       <div className="flex items-center justify-between pr-1">
-        <button
-          onClick={newChat}
-          className="flex items-center gap-2 hover:bg-orange-200 px-2 py-1 rounded"
-        >
-          <span className="text-[24px] font-bold">📄 새 채팅</span>
+       <button
+        onClick={newChat}
+        className="flex items-center px-4 py-2 rounded-lg hover:bg-orange-200"
+      >
+        <FileText size={22} className="mr-2" />
+          <span className="text-[22px] font-bold leading-none">
+            새 채팅
+          </span>
         </button>
+
 
         {onClose && (
           <button
