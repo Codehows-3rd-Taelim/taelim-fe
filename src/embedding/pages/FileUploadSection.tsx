@@ -78,10 +78,10 @@ export default function FileUploadPage() {
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
-      <h2 className="font-bold text-lg mb-4">파일 업로드</h2>
+      <h2 className="font-bold text-lg mb-2 ml-10 mt-5 mb-5">파일 업로드</h2>
 
       {/* 업로드 박스 */}
-      <div className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300">
+      <div className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300 mr-10 ml-10">
         <input
           ref={inputRef}
           type="file"
@@ -143,8 +143,8 @@ export default function FileUploadPage() {
       </div>
 
       {/* 학습된 파일 */}
-      <h3 className="font-bold mt-8 mb-3">학습된 파일</h3>
-      <div className="bg-gray-100 rounded-xl p-4 space-y-3">
+      <h2 className="font-bold mt-8 mb-2 ml-10">학습된 파일</h2>
+      <div className="bg-gray-100 rounded-xl p-4 space-y-3 mr-5 ml-5">
         {uploadedFiles.map((name) => (
           <div
             key={name}

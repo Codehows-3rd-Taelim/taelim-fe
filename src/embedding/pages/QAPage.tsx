@@ -71,10 +71,10 @@ export default function QAPage() {
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
-      <h2 className="font-bold text-lg mb-4">질문 관리</h2>
+      <h2 className="font-bold text-lg mb-5 ml-10 mt-5">질문 관리</h2>
 
       {/* 필터 */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-0.5 ml-10">
         {[
           { key: "ALL", label: "전체" },
           { key: "UNRESOLVED", label: "미응답" },
@@ -95,7 +95,7 @@ export default function QAPage() {
       </div>
 
       {/* 질문 리스트 */}
-      <div className="bg-gray-100 rounded-xl p-4 space-y-3">
+      <div className="bg-gray-100 rounded-xl p-4 space-y-3 ml-5 mr-5">
         {questions.map((q) => (
           <div key={q.questionId} className="bg-white rounded-lg">
             <button
@@ -107,7 +107,7 @@ export default function QAPage() {
             </button>
 
             {openQuestionId === q.questionId && (
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-4 ml-1 mt-1 mr-1">
                 <textarea
                   placeholder={
                     q.resolved ? "답변을 수정하세요" : "답변을 입력하세요"
