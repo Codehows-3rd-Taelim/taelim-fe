@@ -126,7 +126,8 @@ export default function StorePage() {
   );
 
   return (
-    <div className="w-full min-h-screen px-6 py-4 bg-gray-100">
+    <div className="w-full h-full flex flex-col px-6 py-4 bg-gray-100">
+      {/* <div className="w-full min-h-screen px-6 py-4 bg-gray-100"> */}
       <div className="flex justify-between items-center mb-5 ml-4">
         <h3 className="text-xl font-bold">매장 관리 목록</h3>
         <div className="space-x-2">

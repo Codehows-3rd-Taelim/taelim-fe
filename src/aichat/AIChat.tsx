@@ -79,9 +79,7 @@ export default function AIChat() {
 
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === tempAiId
-                ? { ...m, rawMessage: m.rawMessage + token }
-                : m
+              m.id === tempAiId ? { ...m, rawMessage: m.rawMessage + token } : m
             )
           );
         }

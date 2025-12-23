@@ -4,7 +4,7 @@ import UserDashboardPage from "./UserDashboardPage";
 
 // 로딩 상태를 표시할 컴포넌트
 const LoadingScreen = () => (
-  <div className="flex items-center justify-center min-h-screen">
+  <div className="flex items-center justify-center min-h-flex">
     <div className="text-lg text-gray-500">대시보드 로딩 중...</div>
   </div>
 );
