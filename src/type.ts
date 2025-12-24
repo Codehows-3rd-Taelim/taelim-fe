@@ -4,18 +4,16 @@ export type Store = {
     shopName: string;
     delYn?: string;
     industryId?: number;
-    industry?: {
-        industryId: number;
-        industryName: string;
-    };
+    // industry?: {
+    //     industryId: number;
+    //     industryName: string;
+    // };
 }
 
 export type Industry = {
     industryId: number;
     industryName: string;
 }
-
-
 
 export type User = {
     userId: number;
@@ -61,21 +59,23 @@ export type Robot = {
 
 /* ======= 리포트 ======= */
 export type Report = {
-    reportId: number;
-    status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-    startTime: string;
-    endTime: string;
-    cleanTime: number;
-    taskArea: number;
-    cleanArea: number;
-    mode: 1 | 2;
-    costBattery: number;
-    costWater: number;
-    mapName: string;
-    mapUrl: string;
-    storeId: number;
-    robotId: number;
-    sn:number;
+  puduReportId: number;
+  reportId: number;
+  status: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  startTime: string;
+  endTime: string;
+  cleanTime: number;
+  taskArea: number;
+  cleanArea: number;
+  mode: 1 | 2;
+  costBattery: number;
+  costWater: number;
+  mapName: string;
+  mapUrl: string;
+  storeId: number;
+  robotId: number;
+  sn:number;
+  remark: string;
 }
 
 /* ======= ai chat ======= */

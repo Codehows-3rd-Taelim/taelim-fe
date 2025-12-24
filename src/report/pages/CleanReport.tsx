@@ -1,27 +1,54 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   Box,
   IconButton,
   Button,
+  Input,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
 import type { Report } from "../../type";
 import { handlePrint } from "../../components/Print";
+import { Pencil, Save, X } from "lucide-react";
+
+import { updateReportRemark } from "../api/ReportApi";
 
 interface CleanReportProps {
   open: boolean;
   onClose: () => void;
   report: Report | null;
+  onUpdateRemark?: (remark: string) => void;
 }
 
 export default function CleanReport({
   open,
   onClose,
   report,
+  onUpdateRemark,
 }: CleanReportProps) {
+  const [isEditingRemark, setIsEditingRemark] = useState(false);
+  const [remark, setRemark] = useState("");
+  const [originalRemark, setOriginalRemark] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (report) {
+      const initialRemark = report.remark ?? "";
+      setRemark(initialRemark);
+      setOriginalRemark(initialRemark);
+      setIsEditingRemark(false);
+    }
+  }, [report]);
+
+  const isRemarkChanged = remark !== originalRemark;
+
+  const cancelEditRemark = () => {
+    setRemark(originalRemark);
+    setIsEditingRemark(false);
+  };
+
   const printRef = useRef<HTMLDivElement>(null);
 
   if (!report) return null;
@@ -49,10 +76,29 @@ export default function CleanReport({
     return `${costWater} ㎖`;
   };
 
+  const rollbackRemark = () => {
+    setRemark(originalRemark);
+    setIsEditingRemark(false);
+  };
+
+  const handleClose = () => {
+    if (isEditingRemark && isRemarkChanged) {
+      const confirmClose = window.confirm(
+        "수정 중인 내용이 저장되지 않았습니다.\n정말 닫으시겠습니까?"
+      );
+
+      if (!confirmClose) return;
+
+      rollbackRemark(); // 롤백
+    }
+
+    onClose();
+  };
+
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="sm"
       PaperProps={{
         sx: {
@@ -91,7 +137,7 @@ export default function CleanReport({
             프린트
           </Button>
         </Box>
-        <IconButton onClick={onClose}>
+        <IconButton onClick={handleClose}>
           <CloseIcon />
         </IconButton>
       </Box>
@@ -231,6 +277,99 @@ export default function CleanReport({
               <Box sx={{ flex: 1, color: "#666", fontSize: "16px" }}>물 소비량</Box>
               <Box sx={{ flex: 1, fontWeight: "500", fontSize: "16px" }}>
                 {formatWaterConsumption(report.costWater)}
+              </Box>
+            </Box>
+
+            {/* 특이사항 */}
+            <Box
+              sx={{
+                display: "flex",
+                bgcolor: "#f5f5f5",
+                borderRadius: 2,
+                p: 2.5,
+                alignItems: "center",
+              }}
+            >
+              <Box
+                sx={{
+                  flex: 1,
+                  color: "#666",
+                  fontSize: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                특이사항
+                {/* 보기 모드 */}
+                {!isEditingRemark && (
+                  <IconButton
+                    size="small"
+                    onClick={() => setIsEditingRemark(true)}
+                  >
+                    <Pencil size={18} />
+                  </IconButton>
+                )}
+                {/* 수정 모드 */}
+                {isEditingRemark && (
+                  <>
+                    {/* 저장 */}
+                    <IconButton
+                      size="small"
+                      disabled={saving || !isRemarkChanged}
+                      onClick={async () => {
+                        if (!isRemarkChanged) return;
+
+                        try {
+                          setSaving(true);
+                          const res = await updateReportRemark(report.puduReportId, remark);
+                          setOriginalRemark(remark);
+                          onUpdateRemark?.(res.data.remark);
+                          setIsEditingRemark(false);
+                        } catch {
+                          alert("특이사항 저장 실패");
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                    >
+                      <Save size={18} />
+                    </IconButton>
+                    {/* 취소 */}
+                    <IconButton
+                      size="small"
+                      disabled={saving}
+                      onClick={cancelEditRemark}
+                    >
+                      <X size={18} />
+                    </IconButton>
+                  </>
+                )}
+              </Box>
+
+              <Box sx={{ flex: 2 }}>
+                {!isEditingRemark && (
+                  <Box
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: "16px",
+                      whiteSpace: "pre-wrap",
+                      textAlign: "center",
+                      color: remark ? "inherit" : "#999",
+                    }}
+                  >
+                    {remark || "특이사항이 없습니다."}
+                  </Box>
+                )}
+
+                {isEditingRemark && (
+                  <Input
+                    fullWidth
+                    value={remark}
+                    onChange={(e) => setRemark(e.target.value)}
+                    placeholder="특이사항을 입력하세요"
+                  />
+                )}
               </Box>
             </Box>
           </Box>

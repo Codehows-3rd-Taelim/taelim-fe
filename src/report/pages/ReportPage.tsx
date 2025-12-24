@@ -61,7 +61,7 @@ export default function ReportPage() {
     roleLevel === 3 ? 0 : storeId || 0
   );
 
-  const [AiReportData, setAiReportData] = useState<Report[]>([]);
+  const [ReportData, setReportData] = useState<Report[]>([]);
   const [robots, setRobots] = useState<Robot[]>([]);
   const [page, setPage] = useState(1);
 
@@ -92,11 +92,11 @@ export default function ReportPage() {
         });
 
         if ("content" in res) {
-          setAiReportData(res.content);
+          setReportData(res.content);
           setTotalPages(res.totalPages ?? 0);
         } else {
           // 페이징 없는 응답 (혹시 쓸 경우 대비)
-          setAiReportData(res);
+          setReportData(res);
           setTotalPages(1);
         }
       } catch (err) {
@@ -347,7 +347,7 @@ export default function ReportPage() {
           </TableHead>
 
           <TableBody>
-            {AiReportData.map((r) => (
+            {ReportData.map((r) => (
               <TableRow
                 key={r.reportId}
                 onClick={() => handleRowClick(r)}
@@ -380,7 +380,7 @@ export default function ReportPage() {
       </TableContainer>
 
       {/* 페이지네이션 */}
-      {AiReportData.length > 0 && (
+      {ReportData.length > 0 && (
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -393,6 +393,21 @@ export default function ReportPage() {
         open={modalOpen}
         onClose={handleModalClose}
         report={selectedReport}
+        onUpdateRemark={(newRemark) => {
+          // 선택된 report 갱신
+          setSelectedReport(prev =>
+            prev ? { ...prev, remark: newRemark } : prev
+          );
+
+          // 테이블 데이터 갱신
+          setReportData(prev =>
+            prev.map(r =>
+              r.puduReportId === selectedReport?.puduReportId
+                ? { ...r, remark: newRemark }
+                : r
+            )
+          );
+        }}
       />
     </Box>
   );
