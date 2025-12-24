@@ -22,7 +22,7 @@ export type User = {
     name: string;
     phone: string;
     email: string;
-    role: "MANAGER" | "USER"; // 권한부여에서 "ADMIN"사용안함 + 권한은 토큰을 통해서 확인 하므로 "ADMIN"제외
+    role: "MANAGER" | "USER" | "ADMIN";
     storeId: number;
 }
 
