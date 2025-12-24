@@ -1,27 +1,32 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import getFileIcon from "../components/getFileIcon";
+import type { EmbedFile } from "../../type";
+import { getEmbedFiles, postEmbedFile } from "../api/FileUploadApi";
+import axios from "axios";
 
 export default function FileUploadPage() {
-  const [pendingFiles, setPendingFiles] = useState<string[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([
-    "회사 배경 및 설명.csv",
-    "CC1 사용법 가이드.pdf",
-    "MT1 사용법 가이드.pdf",
-    "회사 배경 및 설명.csv",
-    "CC1 사용법 가이드.pdf",
-    "MT1 사용법 가이드.pdf",
-  ]);
+  const [uploadedFiles, setUploadedFiles] = useState<EmbedFile[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    getEmbedFiles()
+      .then((files) => setUploadedFiles(Array.isArray(files) ? files : []))
+      .catch(() => alert("파일 목록 불러오기 실패"));
+  }, []);
+
   //파일 중복 방지
-  const isDuplicate = (name: string) => {
-    return pendingFiles.includes(name) || uploadedFiles.includes(name);
+  const isDuplicate = (filename: string) => {
+    return (
+      pendingFiles.some((f) => f.name === filename) ||
+      uploadedFiles.some((f) => f.originalName === filename)
+    );
   };
 
   const removePendingFile = (name: string) => {
-    setPendingFiles((prev) => prev.filter((f) => f !== name));
+    setPendingFiles((prev) => prev.filter((f) => f.name !== name));
   };
 
   const isAllowedFile = (filename: string) => {
@@ -49,16 +54,16 @@ export default function FileUploadPage() {
       alert("이미 추가된 파일은 제외되었습니다.");
     }
 
-    setPendingFiles((prev) => [...prev, ...allowed.map((f) => f.name)]);
+    setPendingFiles((prev) => [...prev, ...allowed]);
   };
 
   /* 드래그 앤 드롭 */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    const droppedFiles = Array.from(e.dataTransfer.files)
-      .filter((f) => isAllowedFile(f.name) && !isDuplicate(f.name))
-      .map((f) => f.name);
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(
+      (f) => isAllowedFile(f.name) && !isDuplicate(f.name)
+    );
 
     if (droppedFiles.length === 0) {
       alert("이미 추가된 파일이거나 허용되지 않은 파일입니다.");
@@ -68,14 +73,30 @@ export default function FileUploadPage() {
     setPendingFiles((prev) => [...prev, ...droppedFiles]);
   };
 
-  /* 등록 버튼 */
-  const handleRegister = () => {
+  // 등록 버튼
+  const handleRegister = async () => {
     if (pendingFiles.length === 0) return;
 
-    setUploadedFiles((prev) => [...prev, ...pendingFiles]);
-    setPendingFiles([]);
-  };
+    try {
+      const newFiles: EmbedFile[] = [];
+      for (const file of pendingFiles) {
+        const saved = await postEmbedFile(file);
+        newFiles.push(saved);
+      }
 
+      // 배열 합치기
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      setPendingFiles([]);
+    } catch (e: unknown) {
+      if (axios.isAxiosError(e)) {
+        alert(e.response?.data || e.message);
+      } else if (e instanceof Error) {
+        alert(e.message);
+      } else {
+        alert("업로드 중 알 수 없는 오류 발생");
+      }
+    }
+  };
   return (
     <div className="flex flex-col h-full bg-gray-100">
       <h2 className="font-bold text-lg mb-2 ml-10 mt-5 mb-5">파일 업로드</h2>
@@ -107,21 +128,21 @@ export default function FileUploadPage() {
         {/* 선택된 파일 미리보기 */}
         {pendingFiles.length > 0 && (
           <div className="bg-white rounded-xl p-1 mb-4 space-y-2">
-            {pendingFiles.map((name) => (
+            {pendingFiles.map((file) => (
               <div
-                key={name}
+                key={file.name}
                 className="flex items-center justify-between text-sm"
               >
                 <div className="flex items-center gap-3">
-                  {getFileIcon(name)}
-                  <span>{name}</span>
+                  {getFileIcon(file.name)}
+                  <span>{file.name}</span>
                 </div>
 
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    removePendingFile(name);
+                    removePendingFile(file.name);
                   }}
                   className="text-orange-400 hover:text-red-500 font-bold leading-none"
                 >
@@ -145,21 +166,22 @@ export default function FileUploadPage() {
       {/* 학습된 파일 */}
       <h2 className="font-bold mt-8 mb-2 ml-10">학습된 파일</h2>
       <div className="bg-gray-100 rounded-xl p-4 space-y-3 mr-5 ml-5">
-        {uploadedFiles.map((name) => (
-          <div
-            key={name}
-            className="bg-white rounded-lg px-4 py-3 flex justify-between items-center"
-          >
-            <div className="flex items-center gap-3">
-              {getFileIcon(name)}
-              <span>{name}</span>
-            </div>
+        {Array.isArray(uploadedFiles) &&
+          uploadedFiles.map((file) => (
+            <div
+              key={file.id}
+              className="bg-white rounded-lg px-4 py-3 flex justify-between items-center"
+            >
+              <div className="flex items-center gap-3">
+                {getFileIcon(file.originalName)}
+                <span>{file.originalName}</span>
+              </div>
 
-            <button className="bg-red-500 text-white px-3 py-1 rounded text-sm">
-              삭제
-            </button>
-          </div>
-        ))}
+              <button className="bg-red-500 text-white px-3 py-1 rounded text-sm">
+                삭제
+              </button>
+            </div>
+          ))}
       </div>
     </div>
   );

@@ -303,4 +303,14 @@ export type Answer = {
   answerText: string;
 }
 
-
+export interface EmbedFile {
+  id: number;
+  originalName: string;
+  storedName: string;
+  extension: string;
+  fileSize: number;
+  status: "UPLOADED" | "EMBEDDING" | "DONE" | "FAILED";
+  embedKey?: string;
+  createdAt: string;
+  updatedAt: string;
+}
