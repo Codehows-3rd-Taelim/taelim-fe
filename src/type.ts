@@ -290,17 +290,15 @@ export type PaginationResponse<T> = {
 };
 
 
-export type Question = {
-  questionId: number;
-  userQuestionText: string;
-  normalizedText: string;
+export interface Qna {
+  id: number;
+  questionText: string;
+  appliedAnswer: string | null;
+  editingAnswer: string | null;
+  status: "EDITING" | "APPLIED" | "FAILED" | null;
   resolved: boolean;
-  createdAt: string;     
-}
-
-export type Answer = {
-  questionId: number;
-  answerText: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 

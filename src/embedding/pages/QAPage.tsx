@@ -1,84 +1,71 @@
 import { useCallback, useEffect, useState } from "react";
+import type { Qna } from "../../type";
 import {
-  getQuestionsAll,
-  getQuestionsResolved,
-  getQuestionsUnresolved,
-  getAnswer,
-  createAnswer,
-  updateAnswer,
+  applyQna,
+  getQnaAll,
+  getQnaResolved,
+  getQnaUnresolved,
 } from "../api/qnaEmbeddingApi";
-import type { Question, Answer } from "../../type";
 
 type Filter = "ALL" | "UNRESOLVED" | "RESOLVED";
 
 export default function QAPage() {
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [qnas, setQnas] = useState<Qna[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [filter, setFilter] = useState<Filter>("UNRESOLVED");
-  const [openQuestionId, setOpenQuestionId] = useState<number | null>(null);
-
+  const [openId, setOpenId] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
-
   const [toast, setToast] = useState<string | null>(null);
 
-  const fetchQuestions = useCallback(async () => {
+  const fetchQna = useCallback(async () => {
     setLoading(true);
 
     const data =
       filter === "ALL"
-        ? await getQuestionsAll()
+        ? await getQnaAll()
         : filter === "RESOLVED"
-        ? await getQuestionsResolved()
-        : await getQuestionsUnresolved();
+        ? await getQnaResolved()
+        : await getQnaUnresolved();
 
-    setQuestions(data);
+    setQnas(data);
     setLoading(false);
   }, [filter]);
 
   useEffect(() => {
-    fetchQuestions();
-    setOpenQuestionId(null);
-  }, [fetchQuestions]);
+    fetchQna();
+    setOpenId(null);
+  }, [fetchQna]);
 
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 2000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setToast(null), 2000);
+    return () => clearTimeout(t);
   }, [toast]);
 
-  const toggleQuestion = async (q: Question) => {
-    if (openQuestionId === q.questionId) {
-      setOpenQuestionId(null);
-      return;
-    }
+  const toggle = (q: Qna) => {
+    setOpenId((prev) => (prev === q.id ? null : q.id));
 
-    setOpenQuestionId(q.questionId);
-
-    if (q.resolved && !answers[q.questionId]) {
-      const answer: Answer = await getAnswer(q.questionId);
+    if (!answers[q.id]) {
       setAnswers((prev) => ({
         ...prev,
-        [q.questionId]: answer.answerText,
+        [q.id]: q.appliedAnswer ?? "",
       }));
     }
   };
 
-  if (loading) {
-    return <div className="p-6">로딩중...</div>;
-  }
+  if (loading) return <div className="p-6">로딩중...</div>;
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
-      <h2 className="font-bold text-lg mb-5 ml-10 mt-5">질문 관리</h2>
+      <h2 className="font-bold text-lg mb-5 ml-10 mt-5">QnA 관리</h2>
 
       {/* 필터 */}
-      <div className="flex gap-0.5 ml-10">
+      <div className="flex gap-1 ml-10">
         {[
           { key: "ALL", label: "전체" },
-          { key: "UNRESOLVED", label: "미응답" },
-          { key: "RESOLVED", label: "답변완료" },
+          { key: "UNRESOLVED", label: "미처리" },
+          { key: "RESOLVED", label: "처리완료" },
         ].map((f) => (
           <button
             key={f.key}
@@ -94,76 +81,79 @@ export default function QAPage() {
         ))}
       </div>
 
-      {/* 질문 리스트 */}
-      <div className="bg-gray-100 rounded-xl p-4 space-y-3 ml-5 mr-5">
-        {questions.map((q) => (
-          <div key={q.questionId} className="bg-white rounded-lg">
-            <button
-              type="button"
-              onClick={() => toggleQuestion(q)}
-              className="w-full px-4 py-3 flex justify-between items-center text-left"
-            >
-              <span>{q.userQuestionText}</span>
-            </button>
+      {/* 리스트 */}
+      <div className="p-4 space-y-3">
+        {qnas.map((q) => {
+          const isResolved = q.resolved === true;
 
-            {openQuestionId === q.questionId && (
-              <div className="px-4 pb-4 ml-1 mt-1 mr-1">
-                <textarea
-                  placeholder={
-                    q.resolved ? "답변을 수정하세요" : "답변을 입력하세요"
-                  }
-                  value={answers[q.questionId] ?? ""}
-                  onChange={(e) =>
-                    setAnswers((prev) => ({
-                      ...prev,
-                      [q.questionId]: e.target.value,
-                    }))
-                  }
-                  className="w-full border rounded px-3 py-2 mb-2 min-h-20"
-                />
+          return (
+            <div key={q.id} className="bg-white rounded-lg">
+              <button
+                onClick={() => toggle(q)}
+                className="w-full px-4 py-3 text-left font-medium flex justify-between"
+              >
+                <span>{q.questionText}</span>
+                {isResolved && (
+                  <span className="text-xs text-gray-400">수정</span>
+                )}
+              </button>
 
-                <button
-                  disabled={submitting || !answers[q.questionId]}
-                  onClick={async () => {
-                    try {
-                      setSubmitting(true);
-
-                      if (q.resolved) {
-                        await updateAnswer(q.questionId, answers[q.questionId]);
-                      } else {
-                        await createAnswer(q.questionId, answers[q.questionId]);
-                      }
-
-                      await fetchQuestions();
-
-                      setToast(
-                        q.resolved
-                          ? "답변이 수정되었습니다."
-                          : "답변이 등록되었습니다."
-                      );
-                    } finally {
-                      setSubmitting(false);
+              {openId === q.id && (
+                <div className="px-4 pb-4">
+                  <textarea
+                    value={answers[q.id] ?? ""}
+                    onChange={(e) =>
+                      setAnswers((prev) => ({
+                        ...prev,
+                        [q.id]: e.target.value,
+                      }))
                     }
-                  }}
-                  className="bg-orange-500 text-white px-4 py-1 rounded disabled:opacity-50"
-                >
-                  {submitting ? "저장중..." : q.resolved ? "수정" : "등록"}
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+                    placeholder="답변을 입력하세요"
+                    className="w-full border rounded px-3 py-2 mb-3 min-h-24"
+                  />
 
-        {questions.length === 0 && (
-          <div className="text-center text-gray-500 py-8">
-            표시할 질문이 없습니다
+                  <button
+                    disabled={submitting}
+                    onClick={async () => {
+                      const confirmMessage = isResolved
+                        ? "수정 내용을 저장하시겠습니까?"
+                        : "저장하시겠습니까?\n저장 후 즉시 반영됩니다.";
+
+                      if (!window.confirm(confirmMessage)) return;
+
+                      try {
+                        setSubmitting(true);
+                        await applyQna(q.id, answers[q.id]);
+                        setToast(
+                          isResolved
+                            ? "QnA가 수정되었습니다."
+                            : "QnA가 저장되었습니다."
+                        );
+                        await fetchQna();
+                        setOpenId(null);
+                      } finally {
+                        setSubmitting(false);
+                      }
+                    }}
+                    className="px-4 py-1 rounded bg-orange-500 text-white"
+                  >
+                    {isResolved ? "수정" : "저장"}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {qnas.length === 0 && (
+          <div className="text-center text-gray-500 py-10">
+            표시할 QnA가 없습니다
           </div>
         )}
       </div>
 
-      {/* 토스트 */}
       {toast && (
-        <div className="fixed top-[22%] left-[58%] -translate-x-1/2 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm z-50">
+        <div className="fixed top-[22%] left-[58%] -translate-x-1/2 bg-blue-500 text-white px-6 py-3 rounded shadow">
           {toast}
         </div>
       )}
