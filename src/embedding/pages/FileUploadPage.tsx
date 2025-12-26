@@ -9,6 +9,10 @@ export default function FileUploadPage() {
 
   const [uploadedFiles, setUploadedFiles] = useState<EmbedFile[]>([]);
 
+  const [duplicateError] = useState<string | null>(null);
+
+  const [duplicateNames, setDuplicateNames] = useState<string[]>([]);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -17,6 +21,18 @@ export default function FileUploadPage() {
       .catch(() => alert("파일 목록 불러오기 실패"));
   }, []);
 
+  const alertedRef = useRef(false);
+
+  useEffect(() => {
+    if (duplicateNames.length > 0 && !alertedRef.current) {
+      alert("이미 등록된 파일이 있습니다.");
+      alertedRef.current = true;
+    }
+
+    if (duplicateNames.length === 0) {
+      alertedRef.current = false;
+    }
+  }, [duplicateNames]);
   //파일 중복 방지
   const isDuplicate = (filename: string) => {
     return (
@@ -40,18 +56,23 @@ export default function FileUploadPage() {
 
     const files = Array.from(e.target.files);
 
-    const allowed = files.filter(
-      (f) => isAllowedFile(f.name) && !isDuplicate(f.name)
-    );
+    const allowed: File[] = [];
+    const duplicates: string[] = [];
 
-    const rejected = files.filter((f) => !isAllowedFile(f.name));
+    files.forEach((file) => {
+      if (!isAllowedFile(file.name)) return;
 
-    if (rejected.length > 0) {
-      alert("PDF 또는 CSV 파일만 업로드 가능합니다.");
-    }
+      if (isDuplicate(file.name)) {
+        duplicates.push(file.name);
+      } else {
+        allowed.push(file);
+      }
+    });
 
-    if (allowed.length < files.length) {
-      alert("이미 추가된 파일은 제외되었습니다.");
+    if (duplicates.length > 0) {
+      setDuplicateNames(duplicates);
+    } else {
+      setDuplicateNames([]);
     }
 
     setPendingFiles((prev) => [...prev, ...allowed]);
@@ -73,18 +94,28 @@ export default function FileUploadPage() {
     setPendingFiles((prev) => [...prev, ...droppedFiles]);
   };
 
+  const generateEmbedKey = async (file: File): Promise<string> => {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  };
+
   // 등록 버튼
   const handleRegister = async () => {
     if (pendingFiles.length === 0) return;
 
     try {
       const newFiles: EmbedFile[] = [];
+
       for (const file of pendingFiles) {
-        const saved = await postEmbedFile(file);
+        const embedKey = await generateEmbedKey(file);
+        const saved = await postEmbedFile(file, embedKey);
         newFiles.push(saved);
       }
 
-      // 배열 합치기
       setUploadedFiles((prev) => [...prev, ...newFiles]);
       setPendingFiles([]);
     } catch (e: unknown) {
@@ -99,7 +130,7 @@ export default function FileUploadPage() {
   };
   return (
     <div className="flex flex-col h-full bg-gray-100">
-      <h2 className="font-bold text-lg mb-2 ml-10 mt-5 mb-5">파일 업로드</h2>
+      <h2 className="font-bold text-lg ml-10 mt-5 mb-5">파일 업로드</h2>
 
       {/* 업로드 박스 */}
       <div className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300 mr-10 ml-10">
@@ -124,7 +155,9 @@ export default function FileUploadPage() {
             (pdf, csv 파일만 등록 가능합니다.)
           </span>
         </div>
-
+        {duplicateError && (
+          <p className="text-sm text-red-500 mt-2">{duplicateError}</p>
+        )}
         {/* 선택된 파일 미리보기 */}
         {pendingFiles.length > 0 && (
           <div className="bg-white rounded-xl p-1 mb-4 space-y-2">
@@ -161,6 +194,11 @@ export default function FileUploadPage() {
         >
           등록
         </button>
+        {duplicateNames.length > 0 && (
+          <p className="text-l text-red-500 mt-6 ">
+            이미 등록된 파일 : {duplicateNames.join(", ")}
+          </p>
+        )}
       </div>
 
       {/* 학습된 파일 */}

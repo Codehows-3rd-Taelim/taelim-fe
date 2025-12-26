@@ -4,9 +4,13 @@ import type { EmbedFile } from "../../type";
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 /** 파일 업로드 */
-export async function postEmbedFile(file: File): Promise<EmbedFile> {
+export async function postEmbedFile(
+  file: File,
+  embedKey: string
+): Promise<EmbedFile> {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("embedKey", embedKey); // ⭐ 추가
 
   const res = await axios.post<EmbedFile>(`${BASE_URL}/embed-files`, formData, {
     headers: {
