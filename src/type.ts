@@ -310,7 +310,7 @@ export interface EmbedFile {
   extension: string;
   fileSize: number;
   status: "UPLOADED" | "EMBEDDING" | "DONE" | "FAILED";
-  embedKey?: string;
+  embedKey: string;
   createdAt: string;
   updatedAt: string;
 }

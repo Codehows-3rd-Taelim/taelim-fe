@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import getFileIcon from "../components/getFileIcon";
 import type { EmbedFile } from "../../type";
-import { getEmbedFiles, postEmbedFile } from "../api/FileUploadApi";
+import { getEmbedFiles, postEmbedFile, deleteEmbedFile } from "../api/FileUploadApi";
 import axios from "axios";
 
 export default function FileUploadPage() {
@@ -15,6 +15,8 @@ export default function FileUploadPage() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+
+  
   useEffect(() => {
     getEmbedFiles()
       .then((files) => setUploadedFiles(Array.isArray(files) ? files : []))
@@ -128,6 +130,24 @@ export default function FileUploadPage() {
       }
     }
   };
+
+const handleDelete = async (file: EmbedFile) => {
+  if (!confirm(`${file.originalName} 파일을 삭제할까요?`)) return;
+
+  try {
+    await deleteEmbedFile(file.id);
+
+    // 화면에서도 제거
+    setUploadedFiles((prev) =>
+      prev.filter((f) => f.id !== file.id)
+    );
+  } catch  {
+    alert("파일 삭제 실패");
+  }
+};
+
+
+
   return (
     <div className="flex flex-col h-full bg-gray-100">
       <h2 className="font-bold text-lg ml-10 mt-5 mb-5">파일 업로드</h2>
@@ -172,13 +192,9 @@ export default function FileUploadPage() {
                 </div>
 
                 <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removePendingFile(file.name);
-                  }}
-                  className="text-orange-400 hover:text-red-500 font-bold leading-none"
-                >
+  type="button"
+  onClick={() => removePendingFile(file.name)}
+>
                   <span className="text-3xl">×</span>
                 </button>
               </div>
@@ -215,9 +231,13 @@ export default function FileUploadPage() {
                 <span>{file.originalName}</span>
               </div>
 
-              <button className="bg-red-500 text-white px-3 py-1 rounded text-sm">
-                삭제
-              </button>
+              <button
+  onClick={() => handleDelete(file)}
+  className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+>
+  삭제
+</button>
+
             </div>
           ))}
       </div>

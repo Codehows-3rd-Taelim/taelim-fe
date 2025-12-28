@@ -26,3 +26,8 @@ export async function getEmbedFiles(): Promise<EmbedFile[]> {
   const res = await axios.get<EmbedFile[]>(`${BASE_URL}/embed-files`);
   return res.data;
 }
+
+/** 파일 삭제 */
+export async function deleteEmbedFile(id: number) {
+  await axios.delete(`${BASE_URL}/embed-files/${id}`);
+}
