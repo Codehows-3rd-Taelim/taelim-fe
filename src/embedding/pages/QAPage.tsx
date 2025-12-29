@@ -29,6 +29,19 @@ export default function QAPage() {
         .catch(err => console.log(err));
     }
   }
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+  };
+
   
   const fetchQna = useCallback(async () => {
     setLoading(true);
@@ -102,12 +115,30 @@ export default function QAPage() {
             <div key={q.id} className="bg-white rounded-lg">
               <button
                 onClick={() => toggle(q)}
-                className="w-full px-4 py-3 text-left font-medium flex justify-between"
+                className="w-full px-4 py-3 text-left font-medium"
               >
-                <span>{q.questionText}</span>
-                {isResolved && (
-                  <span className="text-xs text-gray-400">수정</span>
-                )}
+                <div className="flex justify-between items-center mb-1">
+                 <span className="text-xs text-gray-500">
+                  <span>질문: {formatDate(q.createdAt)}</span>
+                  {isResolved && q.updatedAt && (
+                    <span className="ml-5">
+                      답변: {formatDate(q.updatedAt)}
+                    </span>
+                  )}
+                </span>
+
+
+                </div>
+
+                <div
+                  className={`${
+                    openId === q.id
+                      ? "whitespace-pre-line leading-relaxed"
+                      : "truncate"
+                  }`}
+                >
+                  {q.questionText}
+                </div>
               </button>
 
               {openId === q.id && (
