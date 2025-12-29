@@ -26,10 +26,8 @@ export interface PageResponse<T> {
 
 export const getReports = async (
   params: ReportQueryParams
-): Promise<PageResponse<Report> | Report[]> => {
-  const response = await axios.get(`${BASE_URL}/report`, {
-    params,
-  });
+): Promise<PageResponse<Report>> => {
+  const response = await axios.get(`${BASE_URL}/report`, { params });
   return response.data;
 };
 

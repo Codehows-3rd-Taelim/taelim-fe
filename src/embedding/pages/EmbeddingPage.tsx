@@ -1,5 +1,5 @@
 import { useState } from "react";
-import FileUploadPage from "./FileUploadSection";
+import FileUploadPage from "./FileUploadPage";
 import QAPage from "./QAPage";
 
 export default function EmbeddingPage() {
@@ -17,7 +17,7 @@ export default function EmbeddingPage() {
                 ? "bg-orange-500 text-white border-gray-300"
                 : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
             }`}
-          style={{ borderRadius: '0.5rem 0.5rem 0 0' }}
+          style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
         >
           파일
         </button>
@@ -30,7 +30,7 @@ export default function EmbeddingPage() {
                 ? "bg-orange-500 text-white border-gray-300"
                 : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
             }`}
-          style={{ borderRadius: '0.5rem 0.5rem 0 0' }}
+          style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
         >
           Q&A
         </button>

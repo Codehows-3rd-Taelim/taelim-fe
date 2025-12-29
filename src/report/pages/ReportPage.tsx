@@ -33,7 +33,7 @@ import useOperationManagement from "../../operationManagement/hook/useOperationM
 import { getRobots } from "../../robot/api/RobotApi";
 import { getReports } from "../api/ReportApi";
 
-type SortKey = "sn" | "storeName" | "mapName";
+type SortKey = "sn" | "storeName" | "mapName" | "startTime";
 type SortOrder = "asc" | "desc";
 
 export default function ReportPage() {
@@ -51,8 +51,8 @@ export default function ReportPage() {
   );
 
   const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([
-    null,
-    null,
+    dayjs().subtract(7, "day"),
+    dayjs(),
   ]);
 
   // 실제 검색에 사용되는 State
@@ -67,41 +67,30 @@ export default function ReportPage() {
 
   // 정렬 상태
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [totalPages, setTotalPages] = useState(0);
   // 날짜 범위가 변경될 때마다 데이터 로드
+
   useEffect(() => {
     const loadData = async () => {
-      const start = dateRangeInput[0] ?? dayjs().subtract(10, "year");
+      const start = dateRangeInput[0] ?? dayjs().subtract(7, "day");
       const end = dateRangeInput[1] ?? dayjs();
 
-      try {
-        const targetStoreId =
-          roleLevel === 3 ? undefined : storeId || undefined;
+      const params = {
+        page: page - 1,
+        size: 20,
+        storeId: roleLevel === 3 ? undefined : storeId || undefined,
+        filterStoreId: selectedStoreId === 0 ? undefined : selectedStoreId,
+        sn: selectedSn || undefined,
+        startDate: start.format("YYYY-MM-DD"),
+        endDate: end.format("YYYY-MM-DD"),
+        sortKey: sortKey || undefined,
+        sortOrder,
+      };
 
-        const res = await getReports({
-          page: page - 1,
-          size: 20,
-          storeId: targetStoreId,
-          filterStoreId: selectedStoreId === 0 ? undefined : selectedStoreId,
-          sn: selectedSn || undefined,
-          startDate: start.format("YYYY-MM-DD"),
-          endDate: end.format("YYYY-MM-DD"),
-          sortKey: sortKey || undefined,
-          sortOrder,
-        });
-
-        if ("content" in res) {
-          setReportData(res.content);
-          setTotalPages(res.totalPages ?? 0);
-        } else {
-          // 페이징 없는 응답 (혹시 쓸 경우 대비)
-          setReportData(res);
-          setTotalPages(1);
-        }
-      } catch (err) {
-        console.error("보고서 데이터 불러오기 실패", err);
-      }
+      const res = await getReports(params);
+      setReportData(res.content);
+      setTotalPages(res.totalPages ?? 0);
     };
 
     loadData();
@@ -170,7 +159,7 @@ export default function ReportPage() {
   // 정렬 아이콘 렌더링
   const renderSortIcon = (key: SortKey) => {
     if (sortKey !== key) return null;
-    return sortOrder === "asc" ? (
+    return sortOrder === "desc" ? (
       <ArrowUpwardIcon fontSize="small" />
     ) : (
       <ArrowDownwardIcon fontSize="small" />
@@ -337,7 +326,13 @@ export default function ReportPage() {
               >
                 구역 {renderSortIcon("mapName")}
               </TableCell>
-              <TableCell align="center">시작시간</TableCell>
+              <TableCell
+                align="center"
+                onClick={() => handleSort("startTime")}
+                sx={{ cursor: "pointer", userSelect: "none" }}
+              >
+                시작시간 {renderSortIcon("startTime")}
+              </TableCell>
               <TableCell align="center">종료시간</TableCell>
               <TableCell align="center">청소시간</TableCell>
               <TableCell align="center">청소면적(㎡)</TableCell>
@@ -395,13 +390,13 @@ export default function ReportPage() {
         report={selectedReport}
         onUpdateRemark={(newRemark) => {
           // 선택된 report 갱신
-          setSelectedReport(prev =>
+          setSelectedReport((prev) =>
             prev ? { ...prev, remark: newRemark } : prev
           );
 
           // 테이블 데이터 갱신
-          setReportData(prev =>
-            prev.map(r =>
+          setReportData((prev) =>
+            prev.map((r) =>
               r.puduReportId === selectedReport?.puduReportId
                 ? { ...r, remark: newRemark }
                 : r
