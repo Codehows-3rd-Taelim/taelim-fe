@@ -19,30 +19,37 @@ export default function QAPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  const deleteData = (id: number) => {
-    if(confirm("질문을 삭제하시겠습니까?")) {
-        deleteQna(id)
-        .then(() => {
-          fetchQna();
-          alert("질문이 삭제되었습니다.")
-        })
-        .catch(err => console.log(err));
-    }
-  }
+
+  const statusMap: Record<
+    "APPLIED" | "FAILED" | "NONE",
+    { label: string; color: string }
+  > = {
+    NONE: {
+      label: "미처리",
+      color: "bg-gray-400",
+    },
+    APPLIED: {
+      label: "답변 적용 완료",
+      color: "bg-green-500",
+    },
+    FAILED: {
+      label: "답변 적용 실패",
+      color: "bg-red-500",
+    },
+  };
+
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
-
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     const hh = String(d.getHours()).padStart(2, "0");
     const min = String(d.getMinutes()).padStart(2, "0");
-
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
   };
 
-  
+
   const fetchQna = useCallback(async () => {
     setLoading(true);
 
@@ -57,6 +64,18 @@ export default function QAPage() {
     setLoading(false);
   }, [filter]);
 
+  const deleteData = (id: number) => {
+    if (!confirm("질문을 삭제하시겠습니까?")) return;
+
+    deleteQna(id)
+      .then(() => {
+        fetchQna();
+        alert("질문이 삭제되었습니다.");
+      })
+      .catch(console.error);
+  };
+
+
   useEffect(() => {
     fetchQna();
     setOpenId(null);
@@ -68,6 +87,8 @@ export default function QAPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  
+
   const toggle = (q: Qna) => {
     setOpenId((prev) => (prev === q.id ? null : q.id));
 
@@ -78,6 +99,8 @@ export default function QAPage() {
       }));
     }
   };
+
+  
 
   if (loading) return <div className="p-6">로딩중...</div>;
 
@@ -110,6 +133,8 @@ export default function QAPage() {
       <div className="p-4 space-y-3">
         {qnas.map((q) => {
           const isResolved = q.resolved === true;
+          const statusKey = q.status ?? "NONE";
+          const status = statusMap[statusKey];
 
           return (
             <div key={q.id} className="bg-white rounded-lg">
@@ -117,30 +142,40 @@ export default function QAPage() {
                 onClick={() => toggle(q)}
                 className="w-full px-4 py-3 text-left font-medium"
               >
+                {/* 날짜 */}
                 <div className="flex justify-between items-center mb-1">
-                 <span className="text-xs text-gray-500">
-                  <span>질문: {formatDate(q.createdAt)}</span>
-                  {isResolved && q.updatedAt && (
-                    <span className="ml-5">
-                      답변: {formatDate(q.updatedAt)}
-                    </span>
-                  )}
-                </span>
-
-
+                  <span className="text-xs text-gray-500">
+                    <span>질문: {formatDate(q.createdAt)}</span>
+                    {isResolved && q.updatedAt && (
+                      <span className="ml-5">
+                        답변: {formatDate(q.updatedAt)}
+                      </span>
+                    )}
+                  </span>
                 </div>
 
+                {/* 상태 + 질문 */}
                 <div
-                  className={`${
+                  className={`flex items-center gap-2 ${
                     openId === q.id
                       ? "whitespace-pre-line leading-relaxed"
                       : "truncate"
                   }`}
                 >
-                  {q.questionText}
+                  <span className="text-xs text-gray-600 flex items-center gap-1 shrink-0">
+                    [
+                    <span
+                      className={`w-2 h-2 rounded-full ${status.color}`}
+                    />
+                    {status.label}
+                    ]
+                  </span>
+
+                  <span>{q.questionText}</span>
                 </div>
               </button>
 
+              {/* 상세 */}
               {openId === q.id && (
                 <div className="px-4 pb-4">
                   <textarea
@@ -158,19 +193,23 @@ export default function QAPage() {
                   <button
                     disabled={submitting}
                     onClick={async () => {
-                      const confirmMessage = isResolved
-                        ? "수정 내용을 저장하시겠습니까?"
-                        : "저장하시겠습니까?\n저장 후 즉시 반영됩니다.";
+                      const confirmMessage = !isResolved
+                        ? "저장하시겠습니까?\n저장 후 즉시 반영됩니다."
+                        : q.status === "FAILED"
+                        ? "적용에 실패한 답변입니다.\n다시 시도하시겠습니까?"
+                        : "수정 내용을 저장하시겠습니까?";
 
-                      if (!window.confirm(confirmMessage)) return;
+                      if (!confirm(confirmMessage)) return;
 
                       try {
                         setSubmitting(true);
                         await applyQna(q.id, answers[q.id]);
                         setToast(
-                          isResolved
-                            ? "QnA가 수정되었습니다."
-                            : "QnA가 저장되었습니다."
+                          !isResolved
+                            ? "QnA가 저장되었습니다."
+                            : q.status === "FAILED"
+                            ? "재시도를 완료했습니다."
+                            : "QnA가 수정되었습니다."
                         );
                         await fetchQna();
                         setOpenId(null);
@@ -184,12 +223,11 @@ export default function QAPage() {
                   </button>
 
                   <button
-                    className="ml-3 px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                    className="ml-3 px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600"
                     onClick={() => deleteData(q.id)}
                   >
                     삭제
                   </button>
-
                 </div>
               )}
             </div>
