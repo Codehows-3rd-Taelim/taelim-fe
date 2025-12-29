@@ -6,6 +6,12 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        primary: '#4ce1b6',
+        secondary: '#70bbfd',
+        danger: '#ff4861',
+        warning: '#f6da6e',
+      },
       keyframes: {
         "slide-down": {
           "0%": {

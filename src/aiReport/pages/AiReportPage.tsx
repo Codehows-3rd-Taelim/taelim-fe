@@ -110,10 +110,10 @@ export default function AiReportPage() {
         report.conversationId,
         async () => {
           const reports = await getAiReport();
-          setAiReportData((prev) => {
-            const filteredPrev = prev.filter((r) => !isLoadingReport(r));
-            return [...filteredPrev, ...reports];
-          });
+
+          // 무조건 전체 치환
+          setAiReportData(reports);
+
           setOpenRow(reports[0]?.aiReportId ?? null);
           clearPendingReport(report.conversationId);
           eventSourceRef.current?.close();
@@ -181,13 +181,12 @@ export default function AiReportPage() {
       eventSourceRef.current = subscribeAiReport(
         conversationId,
         async () => {
-          // 성공 시
           try {
             const reports = await getAiReport();
-            setAiReportData((prev) => {
-              const filteredPrev = prev.filter((r) => !isLoadingReport(r));
-              return [...filteredPrev, ...reports];
-            });
+
+            // 기존 상태를 버리고 서버 상태로 완전 교체
+            setAiReportData(reports);
+
             setOpenRow(reports[0]?.aiReportId ?? null);
           } finally {
             setIsLoading(false);
@@ -197,7 +196,6 @@ export default function AiReportPage() {
           }
         },
         (msg) => {
-          // 실패 시 임시 보고서 제거 후 에러 표시
           setAiReportData((prev) =>
             prev.filter((r) => r.conversationId !== conversationId)
           );

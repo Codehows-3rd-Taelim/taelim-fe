@@ -523,13 +523,17 @@ export default function EmployeePage(props: EmployeePageProps) {
                     </td>
                     {!isEditMode && roleLevel !== 1 && (
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => handleDelete(startIdx + i)}
-                          disabled={deletingUserId === u.userId}
-                          className="bg-red-500 text-white px-4 py-1.5 rounded hover:bg-red-600 disabled:bg-gray-400"
-                        >
-                          삭제
-                        </button>
+                        {u.role !== "ADMIN" ? (
+                          <button
+                            onClick={() => handleDelete(startIdx + i)}
+                            disabled={deletingUserId === u.userId}
+                            className="bg-red-500 text-white px-4 py-1.5 rounded hover:bg-red-600 disabled:bg-gray-400"
+                          >
+                            삭제
+                          </button>
+                        ) : (
+                          <div className="h-[40px]" />
+                        )}
                       </td>
                     )}
                   </tr>

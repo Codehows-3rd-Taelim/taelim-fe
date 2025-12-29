@@ -19,10 +19,17 @@ export default function StorePage() {
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const normalizeStores = (apiStores: ApiStore[]): NormalizedStore[] =>
+  // const normalizeStores = (apiStores: ApiStore[]): NormalizedStore[] =>
+  //   apiStores.map((store) => ({
+  //     ...store,
+  //     industryId: store.industry ?? 0,
+  //   }));
+  const normalizeStores = (apiStores: Store[]): NormalizedStore[] =>
     apiStores.map((store) => ({
-      ...store,
-      industryId: store.industry?.industryId ?? 0,
+      storeId: store.storeId,
+      shopId: store.shopId,
+      shopName: store.shopName,
+      industryId: store.industryId ?? 0,
     }));
 
   const fetchStoresPage = useCallback(async (page: number) => {
@@ -206,7 +213,7 @@ export default function StorePage() {
                       </td>
                       <td className="px-2 py-1">
                         <select
-                          value={store.industryId}
+                          value={store.industryId ?? 0}
                           onChange={(e) =>
                             handleFieldChange(
                               store.storeId,
