@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Qna } from "../../type";
 import {
   applyQna,
+  deleteQna,
   getQnaAll,
   getQnaResolved,
   getQnaUnresolved,
@@ -18,6 +19,17 @@ export default function QAPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  const deleteData = (id: number) => {
+    if(confirm("질문을 삭제하시겠습니까?")) {
+        deleteQna(id)
+        .then(() => {
+          fetchQna();
+          alert("질문이 삭제되었습니다.")
+        })
+        .catch(err => console.log(err));
+    }
+  }
+  
   const fetchQna = useCallback(async () => {
     setLoading(true);
 
@@ -135,10 +147,18 @@ export default function QAPage() {
                         setSubmitting(false);
                       }
                     }}
-                    className="px-4 py-1 rounded bg-orange-500 text-white"
+                    className="px-4 py-1 rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
                   >
                     {isResolved ? "수정" : "저장"}
                   </button>
+
+                  <button
+                    className="ml-3 px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                    onClick={() => deleteData(q.id)}
+                  >
+                    삭제
+                  </button>
+
                 </div>
               )}
             </div>
