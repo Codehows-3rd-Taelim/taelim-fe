@@ -11,8 +11,10 @@ import AdminStoreTable from "../components/admin/AdminStoreTable";
 import AdminIndustryTimeChart from "../components/admin/AdminIndustryTimeChart";
 import AdminStoreCleanTimeChart from "../components/admin/AdminStoreCleanTimeChart";
 import AdminStoreCleanAreaChart from "../components/admin/AdminStoreCleanAreaChart";
-// import AdminRobotTopChart from "../components/admin/AdminRobotTopChart";
-// import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
+import AdminOperationRateScatterChart from "../components/admin/AdminOperationRateScatterChart";
+import AdminDashboardRanking from "../components/admin/AdminDashboardRanking";
+import AdminRobotTopChart from "../components/admin/AdminRobotTopChart";
+import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
 // import AdminIndustryCompareChart from "../components/admin/AdminIndustryCompareChart";
 
 export default function AdminDashboardPage() {
@@ -29,7 +31,7 @@ export default function AdminDashboardPage() {
 
   // 사용자 대시보드와 동일한 초기 날짜 설정 (최근 7일)
   const [range, setRange] = useState<DateRange<Dayjs>>([
-    dayjs().subtract(7, "day"),
+    dayjs().subtract(30, "day"),
     dayjs(),
   ]);
 
@@ -65,27 +67,48 @@ export default function AdminDashboardPage() {
 
       {/* KPI */}
       <AdminKpiSection data={data} />
+      <div>
+        <AdminDashboardRanking
+          storeSummaries={data.storeSummaries}
+          operationRateData={data.OperationRateScatterChart}
+        />
+      </div>
+      {/* 매장 테이블 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
+        <div className="bg-white p-6 rounded-xl shadow-xl">
+          <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
+          <AdminStoreTable stores={data.storeSummaries} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2">
+          <div className="flex items-start justify-between mb-4">
+            <h2 className="text-xl font-semibold">매장별 총 청소 면적</h2>
+            <div className="text-x text-slate-400">
+              ※ 해당 기간 동안 청소 이력이 있는 매장만 집계됩니다
+            </div>
+          </div>
+          <AdminStoreCleanAreaChart data={data.storeCleanArea} />
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-1">
+          <h2 className="text-lg font-semibold mb-4">매장 상태 비율</h2>
+          <AdminStoreStatusDonut data={data.storeStatusCount} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업시간</h2>
+          <AdminRobotTopChart data={data.robotTopTime} />
+        </div>
+      </div>
 
       {/* <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업시간</h2>
-        <AdminRobotTopChart data={data.robotTopTime} />
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-lg font-semibold mb-4">매장 상태 비율</h2>
-        <AdminStoreStatusDonut data={data.storeStatusCount} />
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">산업별 매장 수</h2>
           <AdminIndustryCompareChart data={data.industryStoreCount} />
       </div> */}
-
-      {/* 매장 테이블 */}
-      <div className="bg-white p-6 rounded-xl shadow-xl">
-        <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
-        <AdminStoreTable stores={data.storeSummaries} />
-      </div>
 
       {/* 차트 3종 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
@@ -99,9 +122,11 @@ export default function AdminDashboardPage() {
           <AdminStoreCleanTimeChart data={data.storeCleanTime} />
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2">
-          <h2 className="text-lg font-semibold mb-4">매장별 총 청소 면적</h2>
-          <AdminStoreCleanAreaChart data={data.storeCleanArea} />
+        <div className="bg-white p-6 rounded-xl shadow-xl">
+          <h2 className="text-lg font-semibold mb-4">매장별 가동률</h2>
+          <AdminOperationRateScatterChart
+            data={data.OperationRateScatterChart}
+          />
         </div>
       </div>
     </div>

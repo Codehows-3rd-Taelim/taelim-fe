@@ -43,7 +43,7 @@ export default function DateRangePicker({
       // 부모로 선택된 값을 전달
       onChange(
         end.isBefore(start)
-          ? [start, end.endOf("day")] // swap 후 endOf('day') 적용
+          ? [end, start.endOf("day")]
           : [start, end.endOf("day")]
       );
       closePicker(); // 팝오버 닫기

@@ -11,6 +11,8 @@ import type {
   Industry,
   IndustryCompare,
   IndustryStoreCount,
+  OperationRateScatterChartData,
+  
 } from "../../type";
 
 // industryId 추출 헬퍼 함수
@@ -244,6 +246,30 @@ export default function useDashboardAdmin(
     return { labels, areas };
   }, [stores, reports]);
 
+// 9) 매장별 가동률 히트맵
+const OperationRateScatterChart: OperationRateScatterChartData = useMemo(() => {
+  if (!stores.length || !reports.length) {
+    return { stores: [], dates: [], rates: [] };
+  }
+
+  const dates = Array.from(new Set(reports.map(r => r.startTime.split(" ")[0]))).sort();
+  const storesNames = stores.map(s => s.shopName);
+
+  const rates = stores.map(store => {
+    return dates.map(date => {
+      const dayReports = reports.filter(
+        r => r.storeId === store.storeId && r.startTime.startsWith(date)
+      );
+      const totalMinutes = dayReports.reduce((sum, r) => sum + r.cleanTime, 0);
+      const MAX_MINUTES_PER_DAY = 1440;
+      return Math.min(Math.round((totalMinutes / MAX_MINUTES_PER_DAY) * 100), 100);
+    });
+  });
+
+  return { stores: storesNames, dates, rates };
+}, [stores, reports]);
+
+
   return {
     totalRobots,
     totalWorking,
@@ -256,5 +282,7 @@ export default function useDashboardAdmin(
     storeStatusCount,
     industryCompare,
     industryStoreCount,
+    OperationRateScatterChart,
+    
   };
 }

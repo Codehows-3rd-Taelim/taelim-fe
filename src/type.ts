@@ -253,6 +253,7 @@ export interface AdminDashboardData {
   storeStatusCount: StoreStatusCount[];
   industryCompare: IndustryCompare[];
   industryStoreCount: IndustryStoreCount[];
+  OperationRateScatterChart: OperationRateScatterChartData;
 }
 
 export interface RobotTopTime {
@@ -312,3 +313,9 @@ export interface EmbedFile {
   createdAt: string;
   updatedAt: string;
 }
+
+export type OperationRateScatterChartData = {
+  stores: string[];
+  dates: string[];
+  rates: number[][];
+};

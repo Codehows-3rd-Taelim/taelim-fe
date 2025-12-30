@@ -1,10 +1,4 @@
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import type { StoreStatusCount } from "../../../type";
 
 interface Props {
@@ -13,7 +7,7 @@ interface Props {
 
 export default function AdminStoreStatusDonut({ data }: Props) {
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={400}>
       <PieChart>
         <Pie
           data={data}
@@ -21,8 +15,8 @@ export default function AdminStoreStatusDonut({ data }: Props) {
           nameKey="status"
           cx="50%"
           cy="50%"
-          innerRadius={45}
-          outerRadius={80}
+          innerRadius={80}
+          outerRadius={150}
           label
         >
           {data.map((_, idx) => (
