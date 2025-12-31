@@ -135,7 +135,7 @@ export default function AIChat() {
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute z-20 p-2 bg-white rounded shadow md:hidden top-4 left-4"
+            className="absolute z-20 p-2 bg-white rounded shadow md:hidden top-4 left-4 max-w-none"
           >
             <ChevronRight size={20} />
           </button>

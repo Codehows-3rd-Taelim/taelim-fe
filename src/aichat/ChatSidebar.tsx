@@ -17,7 +17,7 @@ export default function ChatSidebar({
   onClose,
 }: Props) {
   return (
-    <aside className="absolute inset-y-0 left-0 w-80 bg-[#fffaf3] border-r px-3 py-5 overflow-y-auto z-20">
+    <aside className="absolute inset-y-0 left-0 w-80 bg-[#F4F3EA] border-r px-3 py-5 overflow-y-auto z-20">
       {/* 상단 */}
       <div className="flex items-center justify-between pr-1">
        <button
