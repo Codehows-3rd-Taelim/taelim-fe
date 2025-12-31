@@ -26,7 +26,7 @@ function isLoadingReport(report: ReportWithLoading): report is LoadingReport {
 
 export default function AiReportPage() {
   const queryRef = useRef<HTMLTextAreaElement>(null);
-  const [searchTextInput, setSearchTextInput] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([
     null,
     null,
@@ -286,7 +286,7 @@ export default function AiReportPage() {
             ref={queryRef}
             placeholder="생성하고 싶은 보고서의 기간을 입력해 주세요.
 ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
-            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-[#D3AC2B] text-sm sm:text-base"
+            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-[D3AC2B] text-sm sm:text-base"
             rows={2}
             disabled={isLoading}
             onKeyDown={(e) => {
@@ -299,7 +299,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
             }}
           />
           <button
-            className="px-6 py-3 min-h-[50px] sm:min-h-[60px] bg-[#333D51] text-white rounded font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed sm:min-w-[100px]"
+            className="px-6 py-3 min-h-[50px] sm:min-h-[60px] bg-[#BA1E1E] text-white rounded font-medium hover:bg-[#1D313B] disabled:opacity-50 disabled:cursor-not-allowed sm:min-w-[100px]"
             onClick={handleGenerateReport}
             disabled={isLoading}
           >
@@ -346,8 +346,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
             <span className="text-ml font-medium">내용</span>
             <input
               type="text"
-              value={searchTextInput}
-              onChange={(e) => setSearchTextInput(e.target.value)}
+              ref={searchInputRef}
               className="w-full sm:w-[300px] lg:w-[500px] px-3 py-2 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -355,7 +354,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
           <div className="flex gap-2">
             <button
               onClick={() => {
-                setSearchText(searchTextInput);
+                setSearchText(searchInputRef.current?.value ?? "");
                 setDateRange(dateRangeInput);
                 setPage(1);
                 setShowFilters(false);
@@ -368,8 +367,10 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
               onClick={() => {
                 setSearchText("");
                 setDateRange([null, null]);
-                setSearchTextInput("");
                 setDateRangeInput([null, null]);
+                if (searchInputRef.current) {
+                  searchInputRef.current.value = "";
+                }
                 setPage(1);
                 setShowFilters(false);
               }}

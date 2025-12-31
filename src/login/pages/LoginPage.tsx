@@ -100,7 +100,7 @@ export default function LoginPage() {
               <span className="text-gray-900">Inus</span>
               <span className="text-red-600">tree</span>
               <span className="ml-2 text-xl font-normal text-gray-500 whitespace-nowrap">
-                로봇관리 플랫폼
+                스마트 로봇 관리 플랫폼
               </span>
             </div>
           </div>

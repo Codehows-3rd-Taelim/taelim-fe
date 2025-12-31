@@ -172,7 +172,7 @@ export default function Header() {
               className="text-xl font-bold tracking-wide text-white cursor-pointer whitespace-nowrap"
               onClick={() => navigate("/")}
             >
-              Inufleet
+              <img className="w-10%" src= "src\assets\inufleet_logo.png"/>
             </div>
           </div>
 
@@ -214,8 +214,8 @@ export default function Header() {
                       flex items-center gap-2 px-3 py-2 rounded-lg
                       ${
                         isActive(item.path)
-                          ? "text-[#9fcac8] transition-none"
-                          : "text-white hover:text-[#9fcac8] transition-colors duration-50"
+                          ? "text-[#B9FF5E] transition-none"
+                          : "text-white hover:text-[#B9FF5E] transition-colors duration-50"
                       }
                     `}
                   >
@@ -252,8 +252,8 @@ export default function Header() {
               text-white text-xs lg:text-sm font-semibold rounded-lg shadow-md transition-colors whitespace-nowrap
               ${
                 isSyncing
-                  ? "bg-yellow-500 cursor-not-allowed"
-                  : "bg-[#D3AC2B] hover:bg-yellow-500"
+                  ? "bg-[#BA1E1E] cursor-not-allowed"
+                  : "bg-[#BA1E1E] hover:border-white"
               }
             `}
             >
