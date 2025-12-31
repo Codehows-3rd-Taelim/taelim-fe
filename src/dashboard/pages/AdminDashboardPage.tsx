@@ -185,50 +185,7 @@ export default function AdminDashboardPage() {
           <h2 className="text-lg font-semibold mb-4">매장 상태 비율</h2>
           <AdminStoreStatusDonut data={data.storeStatusCount} />
         </div>
-        <div className="bg-white p-6 rounded-xl shadow">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <div className="flex justify-between items-center mb-4">
-              {/* 제목 : 선택된 매장명 표시 */}
-              <h2 className="text-lg font-semibold">
-                {selectedStoreId
-                  ? `${
-                      stores.find((s) => s.storeId === selectedStoreId)
-                        ?.shopName ?? "알 수 없는 매장"
-                    } 작업 이력 상태`
-                  : "전체 매장 작업 이력 상태"}
-              </h2>
 
-              {/* 매장 선택 드롭다운 */}
-              <select
-                className="border rounded px-3 py-1 text-sm"
-                value={selectedStoreId ?? ""}
-                onChange={(e) =>
-                  setSelectedStoreId(
-                    e.target.value === "" ? null : Number(e.target.value)
-                  )
-                }
-              >
-                <option value="">전체</option>
-                {stores.map((store) => (
-                  <option key={store.storeId} value={store.storeId}>
-                    {store.shopName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 데이터 없을 때 안내 */}
-            {taskStatusDonut.every((d) => d.count === 0) ? (
-              <div className="flex items-center justify-center h-[300px] text-gray-400 text-xl">
-                {selectedStoreId
-                  ? "선택한 매장의 작업 이력이 없습니다."
-                  : "조회된 작업 이력이 없습니다."}
-              </div>
-            ) : (
-              <AdminTaskStatusDonut data={taskStatusDonut} />
-            )}
-          </div>
-        </div>
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">산업별 매장 수</h2>
           <AdminIndustryCompareChart data={data.industryStoreCount} />

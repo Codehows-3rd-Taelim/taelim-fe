@@ -52,7 +52,7 @@ export default function AdminDashboardRanking({ operationRateData }: Props) {
                 {/* progress bar */}
                 <div className="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-linear-to-r from-green-400 to-green-200 rounded-full transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-green-400 to-green-200 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(s.avgRate, 100)}%` }}
                   />
                 </div>
@@ -81,7 +81,7 @@ export default function AdminDashboardRanking({ operationRateData }: Props) {
                 {/* inverted progress bar */}
                 <div className="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-linear-to-r from-red-300 to-red-300 rounded-full transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-red-300 to-red-300 rounded-full transition-all duration-500"
                     style={{ width: `${dangerRate}%` }}
                   />
                 </div>
