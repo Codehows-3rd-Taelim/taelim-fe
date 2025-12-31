@@ -1,124 +1,197 @@
-import React, { useState } from "react";
-import { Dayjs } from "dayjs";
-import { Box, Button } from "@mui/material";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
-import Popover from "@mui/material/Popover";
-import type { DateRangePickerProps } from "../type";
+import { useState } from "react";
+import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ko";
 
-export default function DateRangePicker({
-  value, // [startDate, endDate] 형태의 Dayjs 배열
-  onChange, // 부모에서 전달된 변경 이벤트 콜백
-  label = "YYYY-MM-DD~YYYY-MM-DD", // 기본 표시 라벨
-}: DateRangePickerProps) {
-  // 📌 달력을 열기 위한 Popover 기준 요소
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+import {
+  LocalizationProvider,
+  DateCalendar,
+  PickersDay,
+} from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import type { PickersDayProps } from "@mui/x-date-pickers/PickersDay";
 
-  // 📌 임시로 선택하는 시작일 / 종료일 (확정되기 전 상태)
-  const [tempStart, setTempStart] = useState<Dayjs | null>(value[0] || null);
-  const [tempEnd, setTempEnd] = useState<Dayjs | null>(value[1] || null);
+import Popover from "@mui/material/Popover";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CloseIcon from "@mui/icons-material/Close";
 
-  // 📌 날짜 선택 UI 열기
-  const openPicker = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget); // 클릭한 Box 기준으로 Popover 열기
-    setTempStart(value[0] || null); // 기존 선택값 임시 저장
-    setTempEnd(value[1] || null);
-  };
+import type { DateRange } from "@mui/x-date-pickers-pro";
 
-  // 📌 날짜 선택 UI 닫기
-  const closePicker = () => {
-    setAnchorEl(null);
-  };
+interface Props {
+  value: DateRange<Dayjs>;
+  onChange: (range: DateRange<Dayjs>) => void;
+}
 
-  // 📌 날짜 선택 확정 (확인 버튼)
-  const handleConfirm = () => {
-    if (tempStart && tempEnd) {
-      // 시작일이 종료일보다 늦으면 자동 swap
-      const start = tempStart;
-      const end = tempEnd;
+export default function DateRangePicker({ value, onChange }: Props) {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [tempStart, setTempStart] = useState<Dayjs | null>(value[0]);
+  const [tempEnd, setTempEnd] = useState<Dayjs | null>(value[1]);
 
-      // 부모로 선택된 값을 전달
-      onChange(
-        end.isBefore(start)
-          ? [end, start.endOf("day")]
-          : [start, end.endOf("day")]
-      );
-      closePicker(); // 팝오버 닫기
+  const today = dayjs();
+
+  /* ------------------ 날짜 선택 ------------------ */
+  const handleDateSelect = (date: Dayjs | null) => {
+    if (!date) return;
+
+    if (!tempStart || tempEnd) {
+      setTempStart(date.startOf("day"));
+      setTempEnd(null);
+      return;
+    }
+
+    if (date.isBefore(tempStart, "day")) {
+      setTempEnd(tempStart.endOf("day"));
+      setTempStart(date.startOf("day"));
+    } else {
+      setTempEnd(date.endOf("day"));
     }
   };
 
-  const open = Boolean(anchorEl); // Popover 열림 여부
+  const confirm = () => {
+    if (tempStart && tempEnd) {
+      onChange([tempStart, tempEnd]);
+      setAnchorEl(null);
+    }
+  };
+
+  /* ------------------ 상태 판단 ------------------ */
+  const isStart = (d: Dayjs) => tempStart && d.isSame(tempStart, "day");
+  const isEnd = (d: Dayjs) => tempEnd && d.isSame(tempEnd, "day");
+  const isInRange = (d: Dayjs) =>
+    tempStart &&
+    tempEnd &&
+    d.isAfter(tempStart, "day") &&
+    d.isBefore(tempEnd, "day");
+
+  const isToday = (d: Dayjs) => d.isSame(today, "day");
 
   return (
-    //  MUI Date Pickers에서 Dayjs를 한국어(locale=ko)로 사용하도록 설정
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ko">
-      {/* ---------------------- 선택 박스 영역 ---------------------- */}
-      <Box
-        onClick={openPicker} // 클릭 시 달력 팝업 열림
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          backgroundColor: "white",
-          border: "1px solid rgba(0,0,0,0.23)",
-          borderRadius: 1,
-          fontSize: value[0] && value[1] ? 14 : 12,
-          px: 1.5,
-          py: 1.2,
-          width: 250,
-          cursor: "pointer",
-        }}
+      {/* 입력 */}
+      <div
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        className="flex items-center gap-2 px-3 py-2 border rounded w-[260px] cursor-pointer bg-white"
       >
-        {/* 선택된 날짜 범위 표시 */}
-        <Box sx={{ flex: 1, whiteSpace: "nowrap" }}>
+        <span className="flex-1 text-sm">
           {value[0] && value[1]
             ? `${value[0].format("YYYY-MM-DD")} ~ ${value[1].format(
                 "YYYY-MM-DD"
               )}`
-            : label}
-        </Box>
-
-        {/* 달력 아이콘 */}
+            : "날짜 선택"}
+        </span>
         <CalendarTodayIcon fontSize="small" />
-      </Box>
+      </div>
 
-      {/* ---------------------- 달력 Popover ---------------------- */}
+      {/* 팝오버 */}
       <Popover
-        open={open}
+        open={Boolean(anchorEl)}
         anchorEl={anchorEl}
-        onClose={closePicker}
+        onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
-        <Box display="flex" p={1} gap={1}>
-          {/* 📌 왼쪽 달력: 시작일 선택 */}
+        <div className="p-4 w-[360px]">
+          {/* 상단 선택된 날짜 */}
+          <div className="flex gap-2 mb-4">
+            <DateBox
+              label="Start"
+              date={tempStart}
+              active={!tempEnd}
+              onClear={() => setTempStart(null)}
+            />
+            <DateBox
+              label="End"
+              date={tempEnd}
+              active={!!tempEnd}
+              onClear={() => setTempEnd(null)}
+            />
+          </div>
+
           <DateCalendar
-            value={tempStart}
-            onChange={(v) => v && setTempStart(v)} // 시작일 임시 저장
+            value={tempEnd || tempStart}
+            onChange={handleDateSelect}
+            showDaysOutsideCurrentMonth
+            slots={{
+              day: (props: PickersDayProps) => {
+                const d = props.day;
+                const start = isStart(d);
+                const end = isEnd(d);
+                const inRange = isInRange(d);
+
+                return (
+                  <div className="relative">
+                    {/* range background */}
+                    {inRange && (
+                      <div className="absolute inset-0 bg-blue-100 z-0" />
+                    )}
+
+                    <PickersDay
+                      {...props}
+                      disableRipple
+                      className={`
+                        relative z-10
+                        ${start || end ? "!bg-blue-600 !text-white" : ""}
+                        ${start || end ? "!rounded-full" : ""}
+                        ${
+                          isToday(d) && !start && !end
+                            ? "!border !border-blue-500"
+                            : ""
+                        }
+                        hover:!bg-blue-200
+                      `}
+                    />
+                  </div>
+                );
+              },
+            }}
           />
 
-          {/* 📌 오른쪽 달력: 종료일 선택 */}
-          <DateCalendar
-            value={tempEnd}
-            onChange={(v) => v && setTempEnd(v)} // 종료일 임시 저장
-            minDate={tempStart || undefined} // 시작일 이후만 선택 가능하도록 제한
-          />
-        </Box>
-
-        {/* 확인 버튼 */}
-        <Box display="flex" justifyContent="flex-end" p={1}>
-          <Button
-            size="small"
-            variant="contained"
-            onClick={handleConfirm}
-            disabled={!tempStart || !tempEnd} // 둘 다 선택해야 활성화
-          >
-            선택
-          </Button>
-        </Box>
+          <div className="flex justify-end mt-3">
+            <button
+              onClick={confirm}
+              disabled={!tempStart || !tempEnd}
+              className="px-4 py-1.5 text-sm text-white bg-blue-600 rounded disabled:opacity-40"
+            >
+              선택
+            </button>
+          </div>
+        </div>
       </Popover>
     </LocalizationProvider>
+  );
+}
+
+/* ------------------ 상단 날짜 박스 ------------------ */
+function DateBox({
+  label,
+  date,
+  active,
+  onClear,
+}: {
+  label: string;
+  date: Dayjs | null;
+  active?: boolean;
+  onClear?: () => void;
+}) {
+  return (
+    <div
+      className={`flex-1 px-3 py-2 rounded-lg ${
+        active ? "bg-white border" : "bg-gray-100"
+      }`}
+    >
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className="flex items-center justify-between">
+        <span
+          className={`text-sm ${
+            active ? "text-blue-600 font-medium" : ""
+          }`}
+        >
+          {date ? date.format("MM/DD/YYYY") : "--"}
+        </span>
+        {date && onClear && (
+          <button onClick={onClear}>
+            <CloseIcon fontSize="small" />
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

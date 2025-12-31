@@ -12,35 +12,24 @@ import type {
   IndustryCompare,
   IndustryStoreCount,
   OperationRateScatterChartData,
-  
+  TaskStatusDonut,
 } from "../../type";
 
 // industryId 추출 헬퍼 함수
 function getIndustryId(store: Store): number | null {
-  // 1순위: industry 객체에서 추출
-  if (store.industry?.industryId !== undefined) {
-    return store.industry.industryId;
-  }
-  // 2순위: 직접 industryId 필드
-  if (store.industryId !== undefined) {
-    return store.industryId;
-  }
-  return null;
+  return store.industryId ?? null;
 }
 
 // industryName 추출 헬퍼 함수
 function getIndustryName(store: Store, industries: Industry[]): string {
-  const industryId = getIndustryId(store);
-  
-  if (industryId === null) return "미분류";
-  
-  // 1순위: store.industry.industryName
-  if (store.industry?.industryName) {
-    return store.industry.industryName;
-  }
-  
-  // 2순위: industries 배열에서 검색
-  const industry = industries.find((i) => i.industryId === industryId);
+  const industryId = store.industryId;
+
+  if (industryId == null) return "미분류";
+
+  const industry = industries.find(
+    (i) => i.industryId === industryId
+  );
+
   return industry?.industryName ?? `산업 ${industryId}`;
 }
 
@@ -51,9 +40,12 @@ export default function useDashboardAdmin(
   industries: Industry[]
 ): AdminDashboardData {
   // 1) KPI
+  const totalStores = stores.length;
   const totalRobots = robots.length;
   const totalWorking = robots.filter((r) => r.status === 1).length;
+  const totalCharging = robots.filter((r) => r.isCharging === 1).length;
   const totalOffline = robots.filter((r) => r.online === false).length;
+  const totalWaiting = totalRobots - (totalWorking + totalCharging + totalOffline)
 
   // 2) 매장 요약
   const storeSummaries: StoreSummary[] = useMemo(() => {
@@ -269,10 +261,35 @@ const OperationRateScatterChart: OperationRateScatterChartData = useMemo(() => {
   return { stores: storesNames, dates, rates };
 }, [stores, reports]);
 
+  // 10) 작업 이력 상태 (전체 or 매장별 공용)
+  const taskStatusDonut = useMemo(() => {
+    const result = {
+      FINISH: 0,
+      INTERRUPT: 0,
+      CANCEL: 0,
+    };
+
+    reports.forEach((r) => {
+      if (r.status === 0) result.CANCEL++;
+      else if (r.status === 1 || r.status === 4) result.FINISH++;
+      else result.INTERRUPT++;
+    });
+
+    const taskStatusDonut: TaskStatusDonut[] = [
+      { status: "FINISH", count: result.FINISH },
+      { status: "INTERRUPT", count: result.INTERRUPT },
+      { status: "CANCEL", count: result.CANCEL },
+    ];
+
+    return taskStatusDonut;
+  }, [reports]);
 
   return {
+    totalStores,
     totalRobots,
     totalWorking,
+    totalCharging,
+    totalWaiting,
     totalOffline,
     storeSummaries,
     industryOperationTime,
@@ -283,6 +300,6 @@ const OperationRateScatterChart: OperationRateScatterChartData = useMemo(() => {
     industryCompare,
     industryStoreCount,
     OperationRateScatterChart,
-    
+    taskStatusDonut,
   };
 }

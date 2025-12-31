@@ -31,7 +31,7 @@ function App() {
         <Box
           component="main"
           sx={{
-            pt: isLoginPage ? 0 : "64px",
+            pt: isLoginPage ? 0 : "var(--header-height)",
             flex: 1,
             minHeight: 0, // 추가
             display: "flex",

@@ -1,4 +1,8 @@
-@import "tailwindcss";
+@import "./easydev.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -12,6 +16,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --header-height: 60px;
 }
 
 a {
@@ -53,6 +59,11 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* 데스크탑 ver */
+@media (min-width: 1024px) {
+  :root { --header-height: 80px; }
 }
 
 @media (prefers-color-scheme: light) {

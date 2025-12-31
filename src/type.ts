@@ -239,8 +239,11 @@ export type StoreSummary = {
 
 // 관리자용 대시보드 데이터 타입
 export interface AdminDashboardData {
+  totalStores: number;
   totalRobots: number;
   totalWorking: number;
+  totalCharging: number;
+  totalWaiting: number;
   totalOffline: number;
 
   storeSummaries: StoreSummary[];
@@ -254,6 +257,7 @@ export interface AdminDashboardData {
   industryCompare: IndustryCompare[];
   industryStoreCount: IndustryStoreCount[];
   OperationRateScatterChart: OperationRateScatterChartData;
+  taskStatusDonut: TaskStatusDonut[];
 }
 
 export interface RobotTopTime {
@@ -318,4 +322,9 @@ export type OperationRateScatterChartData = {
   stores: string[];
   dates: string[];
   rates: number[][];
+};
+
+export type TaskStatusDonut = {
+  status: "FINISH" | "INTERRUPT" | "CANCEL";
+  count: number;
 };
