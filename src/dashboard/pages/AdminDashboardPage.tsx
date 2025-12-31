@@ -63,7 +63,7 @@ export default function AdminDashboardPage() {
 
   const filteredReports = useMemo(() => {
     if (!selectedStoreId) return reports;
-    return reports.filter(r => r.storeId === selectedStoreId);
+    return reports.filter((r) => r.storeId === selectedStoreId);
   }, [reports, selectedStoreId]);
 
   const taskStatusDonut = useMemo<TaskStatusDonut[]>(() => {
@@ -82,7 +82,6 @@ export default function AdminDashboardPage() {
     ];
   }, [filteredReports]);
 
-  
   return (
     <div className="pt-6 w-full  max-w-[1400px] mx-auto px-4 lg:px-6 space-y-6 bg-gray-100">
       {/* 헤더 + 날짜 선택 (사용자 대시보드 UI와 동일한 레이아웃) */}
@@ -92,16 +91,15 @@ export default function AdminDashboardPage() {
         {/* 사용자 대시보드와 동일한 크기/디자인 */}
         <DateRangePicker value={range} onChange={setRange} />
       </div>
-
       {/* KPI */}
       <AdminKpiSection data={data} />
+      //가동률 우수, 저조
       <div>
         <AdminDashboardRanking
           storeSummaries={data.storeSummaries}
           operationRateData={data.OperationRateScatterChart}
         />
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2 min-h-[400px]">
           <div className="flex items-start justify-between mb-4">
@@ -112,12 +110,52 @@ export default function AdminDashboardPage() {
           </div>
           <AdminStoreCleanAreaChart data={data.storeCleanArea} />
         </div>
-        {/* <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-1">
-          <h2 className="text-lg font-semibold mb-4">매장 상태 비율</h2>
-          <AdminStoreStatusDonut data={data.storeStatusCount} />
-        </div> */}
-      </div>
 
+        <div className="bg-white p-6 rounded-xl shadow">
+          <div className="bg-white p-6 rounded-xl shadow">
+            <div className="flex flex-col gap-2 mb-4">
+              {/* 제목 */}
+              <h2 className="text-lg font-semibold">
+                {selectedStoreId
+                  ? `${
+                      stores.find((s) => s.storeId === selectedStoreId)
+                        ?.shopName ?? "알 수 없는 매장"
+                    } 작업 이력 상태`
+                  : "전체 매장 작업 이력 상태"}
+              </h2>
+
+              {/* 매장 선택 드롭다운 */}
+              <select
+                className="w-fit border rounded px-3 py-1 text-sm"
+                value={selectedStoreId ?? ""}
+                onChange={(e) =>
+                  setSelectedStoreId(
+                    e.target.value === "" ? null : Number(e.target.value)
+                  )
+                }
+              >
+                <option value="">전체</option>
+                {stores.map((store) => (
+                  <option key={store.storeId} value={store.storeId}>
+                    {store.shopName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 데이터 없을 때 안내 */}
+            {taskStatusDonut.every((d) => d.count === 0) ? (
+              <div className="flex items-center justify-center h-[300px] text-gray-400 text-xl">
+                {selectedStoreId
+                  ? "선택한 매장의 작업 이력이 없습니다."
+                  : "조회된 작업 이력이 없습니다."}
+              </div>
+            ) : (
+              <AdminTaskStatusDonut data={taskStatusDonut} />
+            )}
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2">
           <div className="flex items-start justify-between mb-4">
@@ -129,7 +167,6 @@ export default function AdminDashboardPage() {
           <AdminStoreCleanTimeChart data={data.storeCleanTime} />
         </div>
       </div>
-
       {/* 매장 테이블 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
         <div className="bg-white p-6 rounded-xl shadow-xl">
@@ -143,80 +180,76 @@ export default function AdminDashboardPage() {
           <AdminRobotTopChart data={data.robotTopTime} />
         </div>
       </div>
-
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업시간</h2>
-        <AdminRobotTopChart data={data.robotTopTime} />
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">매장 상태 비율</h2>
           <AdminStoreStatusDonut data={data.storeStatusCount} />
         </div>
         <div className="bg-white p-6 rounded-xl shadow">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <div className="flex justify-between items-center mb-4">
-            {/* 제목 : 선택된 매장명 표시 */}
-            <h2 className="text-lg font-semibold">
-              {selectedStoreId
-                ? `${stores.find(
-                    (s) => s.storeId === selectedStoreId
-                  )?.shopName ?? "알 수 없는 매장"} 작업 이력 상태`
-                : "전체 매장 작업 이력 상태"}
-            </h2>
+          <div className="bg-white p-6 rounded-xl shadow">
+            <div className="flex justify-between items-center mb-4">
+              {/* 제목 : 선택된 매장명 표시 */}
+              <h2 className="text-lg font-semibold">
+                {selectedStoreId
+                  ? `${
+                      stores.find((s) => s.storeId === selectedStoreId)
+                        ?.shopName ?? "알 수 없는 매장"
+                    } 작업 이력 상태`
+                  : "전체 매장 작업 이력 상태"}
+              </h2>
 
-            {/* 매장 선택 드롭다운 */}
-            <select
-              className="border rounded px-3 py-1 text-sm"
-              value={selectedStoreId ?? ""}
-              onChange={(e) =>
-                setSelectedStoreId(
-                  e.target.value === "" ? null : Number(e.target.value)
-                )
-              }
-            >
-              <option value="">전체</option>
-              {stores.map((store) => (
-                <option key={store.storeId} value={store.storeId}>
-                  {store.shopName}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 데이터 없을 때 안내 */}
-          {taskStatusDonut.every((d) => d.count === 0) ? (
-            <div className="flex items-center justify-center h-[300px] text-gray-400 text-xl">
-              {selectedStoreId
-                ? "선택한 매장의 작업 이력이 없습니다."
-                : "조회된 작업 이력이 없습니다."}
+              {/* 매장 선택 드롭다운 */}
+              <select
+                className="border rounded px-3 py-1 text-sm"
+                value={selectedStoreId ?? ""}
+                onChange={(e) =>
+                  setSelectedStoreId(
+                    e.target.value === "" ? null : Number(e.target.value)
+                  )
+                }
+              >
+                <option value="">전체</option>
+                {stores.map((store) => (
+                  <option key={store.storeId} value={store.storeId}>
+                    {store.shopName}
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : (
-            <AdminTaskStatusDonut data={taskStatusDonut} />
-          )}
-        </div>
-      </div>
 
-      <div className="bg-white p-6 rounded-xl shadow">
+            {/* 데이터 없을 때 안내 */}
+            {taskStatusDonut.every((d) => d.count === 0) ? (
+              <div className="flex items-center justify-center h-[300px] text-gray-400 text-xl">
+                {selectedStoreId
+                  ? "선택한 매장의 작업 이력이 없습니다."
+                  : "조회된 작업 이력이 없습니다."}
+              </div>
+            ) : (
+              <AdminTaskStatusDonut data={taskStatusDonut} />
+            )}
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">산업별 매장 수</h2>
           <AdminIndustryCompareChart data={data.industryStoreCount} />
-      </div>
-
-      {/* 차트 3종 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-        <div className="bg-white p-6 rounded-xl shadow-xl">
-          <h2 className="text-lg font-semibold mb-4">산업별 일별 가동 시간</h2>
-          <AdminIndustryTimeChart data={data.industryOperationTime} />
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-xl">
-          <h2 className="text-lg font-semibold mb-4">매장별 가동률</h2>
-          <AdminOperationRateScatterChart
-            data={data.OperationRateScatterChart}
-          />
+        {/* 차트 3종 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
+          <div className="bg-white p-6 rounded-xl shadow-xl">
+            <h2 className="text-lg font-semibold mb-4">
+              산업별 일별 가동 시간
+            </h2>
+            <AdminIndustryTimeChart data={data.industryOperationTime} />
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-xl">
+            <h2 className="text-lg font-semibold mb-4">매장별 가동률</h2>
+            <AdminOperationRateScatterChart
+              data={data.OperationRateScatterChart}
+            />
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );
