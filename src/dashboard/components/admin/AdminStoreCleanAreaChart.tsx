@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
   LabelList,
+  Cell,
 } from "recharts";
 
 export default function AdminStoreCleanAreaChart({
@@ -21,6 +22,23 @@ export default function AdminStoreCleanAreaChart({
     }))
     .filter((item) => item.area > 0)
     .sort((a, b) => b.area - a.area);
+
+  if (list.length === 0)
+    return <p className="text-gray-500">표시할 데이터가 없습니다.</p>;
+
+  const maxArea = Math.max(...list.map((d) => d.area));
+
+  const getFill = (area: number) => {
+    const ratio = area / maxArea;
+    const start = [244, 243, 234];
+    const end = [163, 172, 91];
+
+    const r = Math.round(start[0] + (end[0] - start[0]) * ratio);
+    const g = Math.round(start[1] + (end[1] - start[1]) * ratio);
+    const b = Math.round(start[2] + (end[2] - start[2]) * ratio);
+
+    return `rgb(${r},${g},${b})`;
+  };
 
   return (
     <div className="w-full h-full relative">
@@ -63,12 +81,10 @@ export default function AdminStoreCleanAreaChart({
             cursor={{ fill: "rgba(241,245,249,0.8)" }}
           />
 
-          <Bar
-            dataKey="area"
-            barSize={28}
-            radius={[0, 10, 10, 0]}
-            className="fill-blue-400"
-          >
+          <Bar dataKey="area" barSize={28} radius={[0, 10, 10, 0]}>
+            {list.map((d, idx) => (
+              <Cell key={idx} fill={getFill(d.area)} />
+            ))}
             <LabelList
               dataKey="area"
               position="right"

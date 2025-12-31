@@ -47,7 +47,7 @@ function App() {
               overflowY: "auto",
               display: "flex",
               flexDirection: "column",
-              // backgroundColor: "#f3f4f6",
+              backgroundColor: "#F3F4F6",
             }}
           >
             <Routes>

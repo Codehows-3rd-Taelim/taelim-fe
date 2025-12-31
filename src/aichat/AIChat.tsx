@@ -109,7 +109,7 @@ export default function AIChat() {
   };
 
   return (
-    <div className="relative h-full min-h-0 bg-white">
+    <div className="relative h-full min-h-0">
       <div className="hidden md:block">
         <ChatSidebar
           chatList={chatList}

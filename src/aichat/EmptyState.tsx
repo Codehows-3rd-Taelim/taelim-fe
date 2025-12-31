@@ -16,7 +16,7 @@ export default function EmptyState({ input, setInput, send }: Props) {
   ];
 
   return (
-    <div className="flex flex-col items-center px-4 bg-white">
+    <div className="flex flex-col items-center px-4">
       <h1 className="text-[22px] font-semibold mb-8 text-center">
         안녕하세요. 무엇을 도와드릴까요?
       </h1>

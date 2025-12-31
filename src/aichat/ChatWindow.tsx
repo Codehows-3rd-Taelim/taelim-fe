@@ -21,10 +21,7 @@ function normalizeSentenceSpacing(text: string) {
     return `@@CODE_BLOCK_${codeBlocks.length - 1}@@`;
   });
 
-  let result = protectedText.replace(
-    /([.!?])([가-힣])/g,
-    "$1 $2"
-  );
+  let result = protectedText.replace(/([.!?])([가-힣])/g, "$1 $2");
 
   codeBlocks.forEach((block, i) => {
     result = result.replace(`@@CODE_BLOCK_${i}@@`, block);
@@ -49,8 +46,7 @@ export default function ChatWindow({
     const el = scrollAreaRef.current;
     if (!el) return;
 
-    const atBottom =
-      el.scrollTop + el.clientHeight >= el.scrollHeight - 16;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 16;
 
     setIsAtBottom(atBottom);
   };
@@ -103,12 +99,7 @@ export default function ChatWindow({
 
       {/* 입력창 */}
       <div className="shrink-0 w-[900px] mx-auto pt-4 -translate-x-[7px]">
-        <ChatInput
-          input={input}
-          setInput={setInput}
-          send={send}
-          size="small"
-        />
+        <ChatInput input={input} setInput={setInput} send={send} size="small" />
       </div>
     </div>
   );

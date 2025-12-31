@@ -276,7 +276,7 @@ export default function AiReportPage() {
 
   // ------------------ UI 렌더링 ------------------
   return (
-    <div className="w-full flex-1 px-3 sm:px-6 py-4 bg-[#f7f7f7]">
+    <div className="w-full max-w-[1400px] mx-auto px-3 sm:px-6 py-4 bg-gray-100">
       {error && (
         <div className="p-3 sm:p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold whitespace-pre-line text-sm">
           <button onClick={() => setError(null)} className="float-right">
@@ -337,7 +337,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
         <div
           className={`${
             showFilters ? "block" : "hidden"
-          } lg:flex lg:items-center gap-4 bg-white lg:bg-transparent p-4 lg:p-0 rounded-lg lg:rounded-none shadow lg:shadow-none`}
+          } justify-center lg:flex lg:items-center gap-4 bg-white lg:bg-transparent p-4 lg:p-0 rounded-lg lg:rounded-none shadow lg:shadow-none`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 lg:mb-0">
             <span className="text-sm font-medium">생성일자</span>

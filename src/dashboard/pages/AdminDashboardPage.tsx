@@ -14,7 +14,7 @@ import AdminStoreCleanAreaChart from "../components/admin/AdminStoreCleanAreaCha
 import AdminOperationRateScatterChart from "../components/admin/AdminOperationRateScatterChart";
 import AdminDashboardRanking from "../components/admin/AdminDashboardRanking";
 import AdminRobotTopChart from "../components/admin/AdminRobotTopChart";
-import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
+// import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
 // import AdminIndustryCompareChart from "../components/admin/AdminIndustryCompareChart";
 
 export default function AdminDashboardPage() {
@@ -56,7 +56,7 @@ export default function AdminDashboardPage() {
   const data = useDashboardAdmin(stores, robots, reports, industries);
 
   return (
-    <div className="w-full p-6 space-y-6 bg-gray-100">
+    <div className="pt-6 w-full  max-w-[1400px] mx-auto px-4 lg:px-6 space-y-6 bg-gray-100">
       {/* 헤더 + 날짜 선택 (사용자 대시보드 UI와 동일한 레이아웃) */}
       <div className="flex justify-between items-center">
         <h3 className="text-3xl font-bold">관리자 대시보드</h3>
@@ -73,16 +73,9 @@ export default function AdminDashboardPage() {
           operationRateData={data.OperationRateScatterChart}
         />
       </div>
-      {/* 매장 테이블 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-        <div className="bg-white p-6 rounded-xl shadow-xl">
-          <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
-          <AdminStoreTable stores={data.storeSummaries} />
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2">
+        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2 min-h-[400px]">
           <div className="flex items-start justify-between mb-4">
             <h2 className="text-xl font-semibold">매장별 총 청소 면적</h2>
             <div className="text-x text-slate-400">
@@ -91,13 +84,31 @@ export default function AdminDashboardPage() {
           </div>
           <AdminStoreCleanAreaChart data={data.storeCleanArea} />
         </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-1">
+        {/* <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-1">
           <h2 className="text-lg font-semibold mb-4">매장 상태 비율</h2>
           <AdminStoreStatusDonut data={data.storeStatusCount} />
+        </div> */}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2">
+          <div className="flex items-start justify-between mb-4">
+            <h2 className="text-xl font-semibold">매장별 총 청소 시간</h2>
+            <div className="text-x text-slate-400">
+              ※ 해당 기간 동안 청소 이력이 있는 매장만 집계됩니다
+            </div>
+          </div>
+          <AdminStoreCleanTimeChart data={data.storeCleanTime} />
         </div>
       </div>
 
+      {/* 매장 테이블 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
+        <div className="bg-white p-6 rounded-xl shadow-xl">
+          <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
+          <AdminStoreTable stores={data.storeSummaries} />
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업시간</h2>
@@ -115,11 +126,6 @@ export default function AdminDashboardPage() {
         <div className="bg-white p-6 rounded-xl shadow-xl">
           <h2 className="text-lg font-semibold mb-4">산업별 일별 가동 시간</h2>
           <AdminIndustryTimeChart data={data.industryOperationTime} />
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-xl">
-          <h2 className="text-lg font-semibold mb-4">매장별 총 청소 시간</h2>
-          <AdminStoreCleanTimeChart data={data.storeCleanTime} />
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-xl">

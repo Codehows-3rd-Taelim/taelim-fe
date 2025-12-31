@@ -51,7 +51,7 @@ export default function UserDashboardPage() {
   if (!data) return <div className="p-6">데이터 로딩 중...</div>;
 
   return (
-    <div className="w-full max-w-screen-xl mx-auto px-4 lg:px-6 space-y-6 bg-gray-100">
+    <div className="w-full max-w-7xl mx-auto px-4 lg:px-6 space-y-6 bg-gray-100">
       {/* 상단 헤더 */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{storeName} 대시보드</h2>
@@ -98,7 +98,9 @@ export default function UserDashboardPage() {
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow-lg">
-          <h4 className="font-semibold mb-3 text-center">일별 로봇 가동 시간 (h)</h4>
+          <h4 className="font-semibold mb-3 text-center">
+            일별 로봇 가동 시간 (h)
+          </h4>
           <DailyCleanTimeChart data={data.dailyOperationTime} />
         </div>
 
