@@ -7,10 +7,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#4ce1b6',
-        secondary: '#70bbfd',
-        danger: '#ff4861',
-        warning: '#f6da6e',
+        primary: {
+          DEFAULT: '#4ce1b6',
+        },
+        secondary: {
+          DEFAULT: '#70bbfd',
+        },
+        danger: {
+          DEFAULT: '#ff4861',
+        },
+        warning: {
+          DEFAULT: '#f6da6e',
+        },
       },
       keyframes: {
         "slide-down": {

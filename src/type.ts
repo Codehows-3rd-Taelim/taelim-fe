@@ -239,8 +239,11 @@ export type StoreSummary = {
 
 // 관리자용 대시보드 데이터 타입
 export interface AdminDashboardData {
+  totalStores: number;
   totalRobots: number;
   totalWorking: number;
+  totalCharging: number;
+  totalWaiting: number;
   totalOffline: number;
 
   storeSummaries: StoreSummary[];
@@ -253,6 +256,7 @@ export interface AdminDashboardData {
   storeStatusCount: StoreStatusCount[];
   industryCompare: IndustryCompare[];
   industryStoreCount: IndustryStoreCount[];
+  taskStatusDonut: TaskStatusDonut[];
 }
 
 export interface RobotTopTime {
@@ -312,3 +316,8 @@ export interface EmbedFile {
   createdAt: string;
   updatedAt: string;
 }
+
+export type TaskStatusDonut = {
+  status: "FINISH" | "INTERRUPT" | "CANCEL";
+  count: number;
+};

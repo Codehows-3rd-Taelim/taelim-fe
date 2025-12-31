@@ -286,7 +286,7 @@ export default function AiReportPage() {
             ref={queryRef}
             placeholder="생성하고 싶은 보고서의 기간을 입력해 주세요.
 ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
-            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm sm:text-base"
+            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-[#D3AC2B] text-sm sm:text-base"
             rows={2}
             disabled={isLoading}
             onKeyDown={(e) => {
@@ -299,7 +299,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
             }}
           />
           <button
-            className="px-6 py-3 min-h-[50px] sm:min-h-[60px] bg-orange-500 text-white rounded font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed sm:min-w-[100px]"
+            className="px-6 py-3 min-h-[50px] sm:min-h-[60px] bg-[#333D51] text-white rounded font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed sm:min-w-[100px]"
             onClick={handleGenerateReport}
             disabled={isLoading}
           >
@@ -335,7 +335,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
           } lg:flex lg:items-center lg:justify-center gap-4 bg-white lg:bg-transparent p-4 lg:p-0 rounded-lg lg:rounded-none lg:shadow-none`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 lg:mb-1">
-            <span className="text-sm font-medium">생성일자</span>
+            <span className="text-ml font-medium">생성일자</span>
             <DateRangePicker
               value={dateRangeInput}
               onChange={setDateRangeInput}
@@ -343,7 +343,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 lg:mb-0 ml-1">
-            <span className="text-sm font-medium">내용</span>
+            <span className="text-ml font-medium">내용</span>
             <input
               type="text"
               value={searchTextInput}
@@ -360,7 +360,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                 setPage(1);
                 setShowFilters(false);
               }}
-              className="flex-1 sm:flex-none p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors ml-1"
+              className="flex-1 sm:flex-none min-w-[56px] p-2 bg-[#333D51] text-white rounded hover:bg-slate-500 transition-colors mr-1"
             >
               <Search size={20} className="mx-auto" />
             </button>
@@ -373,7 +373,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                 setPage(1);
                 setShowFilters(false);
               }}
-              className="flex-1 sm:flex-none px-1 py-1 border border-black text-black rounded hover:bg-gray-50 transition-colors text-sm"
+              className="flex-1 sm:flex-none min-w-[80px] px-1 py-1 bg-[#CBD0D8] text-black rounded hover:bg-slate-300 transition-colors text-ml"
             >
               초기화
             </button>
