@@ -30,8 +30,9 @@ export default function AdminStoreCleanAreaChart({
 
   const getFill = (area: number) => {
     const ratio = area / maxArea;
-    const start = [244, 243, 234];
-    const end = [163, 172, 91];
+
+const start = [236, 253, 245]; // emerald-50
+const end = [5, 150, 105];     // emerald-600
 
     const r = Math.round(start[0] + (end[0] - start[0]) * ratio);
     const g = Math.round(start[1] + (end[1] - start[1]) * ratio);

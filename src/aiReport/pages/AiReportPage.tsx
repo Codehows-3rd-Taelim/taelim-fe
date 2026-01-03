@@ -583,7 +583,11 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
         </div>
       </div>
 
+
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-    </div>
+      <div className="h-6 bg-gray-100" />
+
+    </div >
+    
   );
 }

@@ -2,8 +2,9 @@ import { FaInstagram, FaStore, FaYoutube } from "react-icons/fa";
 
 export default function Footer() {
   return (
+    
     <footer className="w-full bg-[#333D51] py-6 px-3">
-      <div className="max-w-full mx-auto flex flex-col items-center gap-2 text-center">
+      <div className="  flex flex-col items-center gap-2 text-center">
         <div className="w-full max-w-[1200px] flex flex-col md:flex-row justify-center items-center md:items-start gap-4 text-center md:text-left">
           {/* 왼쪽: 고객센터 */}
           <div className=" text-center md:text-left text-white">

@@ -157,7 +157,7 @@ export default function ReportPage() {
       : robots.filter((r) => r.storeId === selectedStoreIdInput);
 
   return (
-    <div className="w-full h-full  max-w-[1400px] mx-auto pt-4 px-4 lg:px-6 space-y-6 bg-gray-100">
+ <div className="w-full h-full max-w-[1400px] mx-auto pt-4 px-4 lg:px-6 space-y-6 bg-gray-100">
       {/* 검색 UI */}
       <div className="flex flex-wrap justify-center items-center gap-4 mb-4 ml-4">
         <div className="flex items-center gap-2">
@@ -299,7 +299,7 @@ export default function ReportPage() {
 
       {/* 페이지네이션 */}
       {ReportData.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-4 pb-6 ">
           <Pagination
             page={page}
             totalPages={totalPages}

@@ -6,6 +6,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Cell,
 } from "recharts";
 import type { IndustryStoreCount } from "../../../type";
 
@@ -14,15 +15,55 @@ export default function AdminIndustryCompareChart({
 }: {
   data: IndustryStoreCount[];
 }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-80 p-4 bg-white rounded-2xl shadow flex items-center justify-center text-gray-400">
+        표시할 데이터가 없습니다.
+      </div>
+    );
+  }
+
+  const max = Math.max(...data.map((d) => d.storeCount)) || 1;
+
+  const getFill = (value: number) => {
+    const ratio = value / max;
+
+    const start = [227, 233, 255]; // 연한 indigo
+    const end = [54, 79, 199];     // 진한 indigo
+
+    const r = Math.round(start[0] + (end[0] - start[0]) * ratio);
+    const g = Math.round(start[1] + (end[1] - start[1]) * ratio);
+    const b = Math.round(start[2] + (end[2] - start[2]) * ratio);
+
+    return `rgb(${r},${g},${b})`;
+  };
+
   return (
     <div className="w-full h-80 p-4 bg-white rounded-2xl shadow">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <XAxis dataKey="industryName" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="storeCount" name="매장 수" />
+          <XAxis
+            dataKey="industryName"
+            className="text-sm fill-slate-600"
+          />
+          <YAxis
+            allowDecimals={false}
+            className="text-sm fill-slate-600"
+          />
+          <Tooltip
+            formatter={(v: number) => [`${Math.round(v)}개`, "매장 수"]}
+            cursor={{ fill: "rgba(241,245,249,0.8)" }}
+          />
+          <Legend formatter={() => "매장 수 (개)"} />
+
+          <Bar
+            dataKey="storeCount"
+            radius={[8, 8, 0, 0]}
+          >
+            {data.map((d, idx) => (
+              <Cell key={idx} fill={getFill(d.storeCount)} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
