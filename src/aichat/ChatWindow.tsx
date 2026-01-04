@@ -12,27 +12,6 @@ interface Props {
   isTyping: boolean;
 }
 
-/** AI 메시지 문장 간격 보정 */
-function normalizeSentenceSpacing(text: string) {
-  const codeBlocks: string[] = [];
-
-  const protectedText = text.replace(/```[\s\S]*?```/g, (match) => {
-    codeBlocks.push(match);
-    return `@@CODE_BLOCK_${codeBlocks.length - 1}@@`;
-  });
-
-  let result = protectedText.replace(
-    /([.!?])([가-힣])/g,
-    "$1 $2"
-  );
-
-  codeBlocks.forEach((block, i) => {
-    result = result.replace(`@@CODE_BLOCK_${i}@@`, block);
-  });
-
-  return result;
-}
-
 export default function ChatWindow({
   messages,
   input,
@@ -71,25 +50,18 @@ export default function ChatWindow({
         className="flex-1 overflow-y-auto"
       >
         <div className="flex flex-col gap-3 w-[900px] mx-auto">
-          {messages.map((m) => {
-            const text =
-              m.senderType === "AI"
-                ? normalizeSentenceSpacing(m.rawMessage)
-                : m.rawMessage;
-
-            return (
-              <div
-                key={m.id}
-                className={`p-3 rounded-xl max-w-[900px] whitespace-pre-wrap ${
-                  m.senderType === "USER"
-                    ? "bg-orange-500 text-white self-end"
-                    : "bg-white border border-gray-300 self-start"
-                }`}
-              >
-                <ReactMarkdown>{text}</ReactMarkdown>
-              </div>
-            );
-          })}
+          {messages.map((m) => (
+            <div
+              key={m.id}
+              className={`p-3 rounded-xl max-w-[900px] whitespace-pre-wrap ${
+                m.senderType === "USER"
+                  ? "bg-orange-500 text-white self-end"
+                  : "bg-white border border-gray-300 self-start"
+              }`}
+            >
+              <ReactMarkdown>{m.rawMessage}</ReactMarkdown>
+            </div>
+          ))}
 
           {isTyping && (
             <div className="text-gray-400 italic px-4 py-2 animate-pulse self-start">
