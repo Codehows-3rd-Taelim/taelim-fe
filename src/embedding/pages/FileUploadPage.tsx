@@ -149,7 +149,7 @@ const handleDelete = async (file: EmbedFile) => {
 
 
   return (
-    <div className="flex flex-col h-full bg-gray-100">
+    <div className="flex flex-col h-full bg-gray-100 " >
       <h2 className="font-bold text-lg ml-10 mt-5 mb-5">파일 업로드</h2>
 
       {/* 업로드 박스 */}

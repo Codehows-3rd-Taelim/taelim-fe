@@ -43,7 +43,7 @@ export default function AiReportPage() {
   const prefetchedRef = useRef<Set<number>>(new Set());
 
   const [startDate, endDate] = dateRange;
-  
+
   const shouldAutoOpenRef = useRef(false);
 
   // ------------------ localStorage 관련 ------------------
@@ -114,7 +114,9 @@ export default function AiReportPage() {
 
         // 정리된 pending 기준으로만 SSE 재연결
         restored
-          .filter((r) => cleaned.some((p: any) => p.conversationId === r.conversationId))
+          .filter((r) =>
+            cleaned.some((p: any) => p.conversationId === r.conversationId)
+          )
           .forEach((report) => {
             eventSourceRef.current = subscribeAiReport(
               report.conversationId,
@@ -269,10 +271,13 @@ export default function AiReportPage() {
 
   // ------------------ UI 렌더링 ------------------
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-3 sm:px-6 py-4 bg-gray-100">
+    <div className="w-full h-full max-w-[1400px] mx-auto px-3 sm:px-6 py-4 bg-gray-100">
       {error && (
         <div className="relative p-3 sm:p-4 mb-4 bg-red-100 text-red-700 rounded-lg font-bold whitespace-pre-line text-sm pr-10">
-          <button onClick={() => setError(null)} className="absolute right-3 top-1/2 -translate-y-1/2">
+          <button
+            onClick={() => setError(null)}
+            className="absolute right-3 top-1/2 -translate-y-1/2"
+          >
             <X size={18} />
           </button>
           {error}
@@ -537,29 +542,19 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <span className="text-gray-500">
-                    보고서 기간:
-                  </span>
+                  <span className="text-gray-500">보고서 기간:</span>
                   <span>
                     {r.startTime
-                        ? dayjs(r.startTime).format("YYYY-MM-DD")
-                        : "-"}{" "}
-                      ~ {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
+                      ? dayjs(r.startTime).format("YYYY-MM-DD")
+                      : "-"}{" "}
+                    ~ {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
                   </span>
                   <span className="text-gray-400 mx-1">|</span>
-                  <span className="text-gray-500">
-                    생성일자:
-                  </span>
-                  <span>
-                    {dayjs(r.createdAt).format("YYYY-MM-DD")}
-                  </span>
+                  <span className="text-gray-500">생성일자:</span>
+                  <span>{dayjs(r.createdAt).format("YYYY-MM-DD")}</span>
                   <span className="text-gray-400 mx-1">|</span>
-                  <span className="text-gray-500">
-                    작성자:
-                  </span>
-                  <span>
-                    {r.name}
-                  </span>
+                  <span className="text-gray-500">작성자:</span>
+                  <span>{r.name}</span>
                 </div>
               </div>
 
@@ -588,7 +583,11 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
         </div>
       </div>
 
+
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-    </div>
+      <div className="h-6 bg-gray-100" />
+
+    </div >
+    
   );
 }

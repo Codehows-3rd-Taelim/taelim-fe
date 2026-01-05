@@ -8,7 +8,7 @@ type ApiStore = Omit<Store, "industryId"> & {
 };
 type NormalizedStore = Store & { industryId: number };
 
-const itemsPerPage = 20;
+const itemsPerPage = 15;
 
 export default function StorePage() {
   const [stores, setStores] = useState<NormalizedStore[]>([]);
@@ -41,7 +41,7 @@ export default function StorePage() {
       const normalized = normalizeStores(response.content);
       setStores(normalized);
       setEditableStores(normalized);
-      setTotalItems(response.totalElements); // 전체 아이템 수
+      setTotalItems(response.totalElements);
       setCurrentPage(page);
     } catch (err) {
       console.error(err);
@@ -127,11 +127,6 @@ export default function StorePage() {
     }
   };
 
-  const displayedStores = editableStores.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   return (
     <div className="w-full h-full flex flex-col px-6 py-4 bg-gray-100">
       {/* <div className="w-full min-h-screen px-6 py-4 bg-gray-100"> */}
@@ -194,7 +189,7 @@ export default function StorePage() {
                 </tr>
               </thead>
               <tbody>
-                {displayedStores.map((store) => {
+                {editableStores.map((store) => {
                   const modified = isStoreModified(store);
                   return (
                     <tr

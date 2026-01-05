@@ -10,7 +10,7 @@ export async function postEmbedFile(
 ): Promise<EmbedFile> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("embedKey", embedKey); // ⭐ 추가
+  formData.append("embedKey", embedKey); 
 
   const res = await axios.post<EmbedFile>(`${BASE_URL}/embed-files`, formData, {
     headers: {
