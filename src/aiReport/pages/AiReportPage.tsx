@@ -304,7 +304,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
             }}
           />
           <button
-            className="px-6 py-3 min-h-[50px] sm:min-h-[60px] bg-[#BA1E1E] text-white rounded font-medium hover:bg-[#1D313B] disabled:opacity-50 disabled:cursor-not-allowed sm:min-w-[100px]"
+            className="px-6 py-3 min-h-[50px] sm:min-h-[60px] bg-[#d14e4e] hover:bg-[#d11a1a]  text-white rounded font-medium  disabled:opacity-50 disabled:cursor-not-allowed sm:min-w-[100px]"
             onClick={handleGenerateReport}
             disabled={isLoading}
           >
@@ -583,11 +583,8 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
         </div>
       </div>
 
-
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       <div className="h-6 bg-gray-100" />
-
-    </div >
-    
+    </div>
   );
 }

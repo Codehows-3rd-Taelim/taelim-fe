@@ -28,11 +28,11 @@ export default function QAPage() {
       color: "bg-gray-400",
     },
     APPLIED: {
-      label: "답변 적용 완료",
+      label: "완료",
       color: "bg-green-500",
     },
     FAILED: {
-      label: "답변 적용 실패",
+      label: "실패",
       color: "bg-red-500",
     },
   };
@@ -70,7 +70,6 @@ export default function QAPage() {
       .catch(console.error);
   };
 
-
   useEffect(() => {
     fetchQna();
     setOpenId(null);
@@ -89,9 +88,7 @@ export default function QAPage() {
       setAnswers((prev) => ({
         ...prev,
         [q.id]:
-          q.status === "FAILED"
-            ? q.editingAnswer ?? ""
-            : q.appliedAnswer ?? "",
+          q.status === "FAILED" ? q.editingAnswer ?? "" : q.appliedAnswer ?? "",
       }));
     }
   };
@@ -99,11 +96,11 @@ export default function QAPage() {
   if (loading) return <div className="p-6">로딩중...</div>;
 
   return (
-    <div className="flex flex-col h-full bg-gray-100">
-      <h2 className="font-bold text-lg mb-5 ml-10 mt-5">QnA 관리</h2>
+    <div className="flex flex-col h-full bg-gray-100 ">
+      <h2 className="font-bold text-lg my-5 ml-10 ">QnA 관리</h2>
 
       {/* 필터 */}
-      <div className="flex gap-1 ml-10">
+      <div className="flex gap-1 ml-10 mb-5">
         {[
           { key: "ALL", label: "전체" },
           { key: "UNRESOLVED", label: "미처리" },
@@ -114,7 +111,7 @@ export default function QAPage() {
             onClick={() => setFilter(f.key as Filter)}
             className={`px-3 py-1 rounded text-sm ${
               filter === f.key
-                ? "bg-orange-500 text-white"
+                ? "bg-[#4A607A] text-white"
                 : "bg-gray-200 text-gray-700"
             }`}
           >
@@ -124,17 +121,17 @@ export default function QAPage() {
       </div>
 
       {/* 리스트 */}
-      <div className="p-4 space-y-3">
+      <div className="px-10 space-y-3 ">
         {qnas.map((q) => {
           const isResolved = q.resolved === true;
           const statusKey = q.status ?? "NONE";
           const status = statusMap[statusKey];
 
           return (
-            <div key={q.id} className="bg-white rounded-lg">
+            <div key={q.id} className="bg-white rounded-lg ">
               <button
                 onClick={() => toggle(q)}
-                className="w-full px-4 py-3 text-left font-medium"
+                className="w-full px-4  py-3 text-left font-medium"
               >
                 {/* 날짜 */}
                 <div className="flex justify-between items-center mb-1">
@@ -158,11 +155,8 @@ export default function QAPage() {
                 >
                   <span className="text-xs text-gray-600 flex items-center gap-1 shrink-0">
                     [
-                    <span
-                      className={`w-2 h-2 rounded-full ${status.color}`}
-                    />
-                    {status.label}
-                    ]
+                    <span className={`w-2 h-2 rounded-full ${status.color}`} />
+                    {status.label}]
                   </span>
 
                   <span>{q.questionText}</span>
@@ -192,9 +186,8 @@ export default function QAPage() {
                     disabled={submitting}
                     onClick={async () => {
                       const confirmMessage = isResolved
-                      ? "답변을 수정하시겠습니까?"
-                      : "답변을 저장하시겠습니까?\n저장 후 즉시 반영됩니다.";
-
+                        ? "답변을 수정하시겠습니까?"
+                        : "답변을 저장하시겠습니까?\n저장 후 즉시 반영됩니다.";
 
                       if (!confirm(confirmMessage)) return;
 
@@ -202,8 +195,8 @@ export default function QAPage() {
                         setSubmitting(true);
                         await applyQna(q.id, answers[q.id]);
 
-                        setQnas(prev =>
-                          prev.map(item =>
+                        setQnas((prev) =>
+                          prev.map((item) =>
                             item.id === q.id
                               ? {
                                   ...item,
@@ -214,7 +207,7 @@ export default function QAPage() {
                                 }
                               : item
                           )
-                        ); 
+                        );
 
                         setToast(
                           isResolved
@@ -234,7 +227,7 @@ export default function QAPage() {
                         setSubmitting(false);
                       }
                     }}
-                    className="px-4 py-1 rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
+                    className="px-4 py-1 rounded  text-white bg-[#324153] hover:bg-[#4A607A] disabled:opacity-50"
                   >
                     {q.status === "FAILED"
                       ? "다시 시도"
@@ -244,7 +237,7 @@ export default function QAPage() {
                   </button>
 
                   <button
-                    className="ml-3 px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+                    className="ml-3 px-4 py-1 rounded  text-white bg-[#d14e4e] hover:bg-[#d11a1a] "
                     onClick={() => {
                       const message = q.resolved
                         ? "질문을 삭제하시면 챗봇에 등록한 답변도 함께 삭제됩니다.\n그래도 삭제하시겠습니까?"
@@ -257,7 +250,6 @@ export default function QAPage() {
                   >
                     삭제
                   </button>
-
                 </div>
               )}
             </div>

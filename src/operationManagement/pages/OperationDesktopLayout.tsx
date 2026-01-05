@@ -43,7 +43,7 @@ export default function OperationDesktopLayout(
                 onClick={() => setActiveTab("employee")}
                 className={`px-4 py-3 font-bold transition-colors text-sm sm:text-base ${
                   activeTab === "employee"
-                    ? "bg-orange-500 text-white border-b-4 border-orange-600"
+                    ? "bg-[#4A607A] text-white border-[#4A607A]"
                     : "bg-gray-300 text-gray-700 hover:bg-gray-300"
                 }`}
                 style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
@@ -54,7 +54,7 @@ export default function OperationDesktopLayout(
                 onClick={() => setActiveTab("store")}
                 className={`px-4 py-3 font-bold transition-colors text-sm sm:text-base ${
                   activeTab === "store"
-                    ? "bg-orange-500 text-white border-b-4 border-orange-600"
+                    ? "bg-[#4A607A] text-white border-[#4A607A]"
                     : "bg-gray-300 text-gray-700 hover:bg-gray-300"
                 }`}
                 style={{ borderRadius: "0.5rem 0.5rem 0 0" }}

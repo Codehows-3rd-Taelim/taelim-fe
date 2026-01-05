@@ -347,13 +347,13 @@ export default function EmployeePage(props: EmployeePageProps) {
           <div className="flex gap-2">
             <button
               onClick={() => setIsRegisterOpen(true)}
-              className="bg-orange-500 text-white px-4 py-2 rounded"
+              className="bg-[#324153] hover:bg-[#4A607A] text-white px-4 py-2 rounded"
             >
-              직원 등록
+              + 직원 등록
             </button>
             <button
               onClick={handleEditMode}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
+              className="bg-[#4A607A] hover:bg-[#324153]  text-white px-4 py-2 rounded"
             >
               수정
             </button>
@@ -363,7 +363,7 @@ export default function EmployeePage(props: EmployeePageProps) {
           <div className="flex gap-2">
             <button
               onClick={handleConfirm}
-              className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400"
+              className="bg-[#324153] hover:bg-[#4A607A] text-white px-4 py-2 rounded disabled:bg-gray-400"
               disabled={!isSaveButtonEnabled}
             >
               확인
@@ -555,7 +555,7 @@ export default function EmployeePage(props: EmployeePageProps) {
                           <button
                             onClick={() => handleDelete(u.userId)}
                             disabled={deletingUserId === u.userId}
-                            className="bg-red-500 text-white px-4 py-1.5 rounded hover:bg-red-600 disabled:bg-gray-400"
+                            className=" text-white px-4 py-1.5 rounded bg-[#d14e4e] hover:bg-[#d11a1a] disabled:bg-gray-400"
                           >
                             삭제
                           </button>

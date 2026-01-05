@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import getFileIcon from "../components/getFileIcon";
 import type { EmbedFile } from "../../type";
-import { getEmbedFiles, postEmbedFile, deleteEmbedFile } from "../api/FileUploadApi";
+import {
+  getEmbedFiles,
+  postEmbedFile,
+  deleteEmbedFile,
+} from "../api/FileUploadApi";
 import axios from "axios";
 
 export default function FileUploadPage() {
@@ -15,8 +19,6 @@ export default function FileUploadPage() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-
-  
   useEffect(() => {
     getEmbedFiles()
       .then((files) => setUploadedFiles(Array.isArray(files) ? files : []))
@@ -131,25 +133,21 @@ export default function FileUploadPage() {
     }
   };
 
-const handleDelete = async (file: EmbedFile) => {
-  if (!confirm(`${file.originalName} 파일을 삭제할까요?`)) return;
+  const handleDelete = async (file: EmbedFile) => {
+    if (!confirm(`${file.originalName} 파일을 삭제할까요?`)) return;
 
-  try {
-    await deleteEmbedFile(file.id);
+    try {
+      await deleteEmbedFile(file.id);
 
-    // 화면에서도 제거
-    setUploadedFiles((prev) =>
-      prev.filter((f) => f.id !== file.id)
-    );
-  } catch  {
-    alert("파일 삭제 실패");
-  }
-};
-
-
+      // 화면에서도 제거
+      setUploadedFiles((prev) => prev.filter((f) => f.id !== file.id));
+    } catch {
+      alert("파일 삭제 실패");
+    }
+  };
 
   return (
-    <div className="flex flex-col h-full bg-gray-100 " >
+    <div className="flex flex-col h-full bg-gray-100 ">
       <h2 className="font-bold text-lg ml-10 mt-5 mb-5">파일 업로드</h2>
 
       {/* 업로드 박스 */}
@@ -165,7 +163,7 @@ const handleDelete = async (file: EmbedFile) => {
 
         {/* + 업로드 영역 (항상 보임) */}
         <div
-          className="bg-orange-400 rounded-xl h-35 flex flex-col items-center justify-center text-white text-4xl mb-4 cursor-pointer"
+          className="bg-[#4A607A] hover:bg-[#324153] rounded-xl h-35 pb-7 pt-2 flex flex-col items-center justify-center text-white text-4xl mb-4  cursor-pointer"
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
@@ -192,9 +190,9 @@ const handleDelete = async (file: EmbedFile) => {
                 </div>
 
                 <button
-  type="button"
-  onClick={() => removePendingFile(file.name)}
->
+                  type="button"
+                  onClick={() => removePendingFile(file.name)}
+                >
                   <span className="text-3xl">×</span>
                 </button>
               </div>
@@ -206,7 +204,7 @@ const handleDelete = async (file: EmbedFile) => {
           type="button"
           onClick={handleRegister}
           disabled={pendingFiles.length === 0}
-          className="w-full bg-orange-500 disabled:bg-gray-300 text-white py-2 rounded font-semibold"
+          className="w-full bg-[#324153] hover:bg-[#4A607A] text-white py-2 rounded font-semibold"
         >
           등록
         </button>
@@ -232,12 +230,11 @@ const handleDelete = async (file: EmbedFile) => {
               </div>
 
               <button
-  onClick={() => handleDelete(file)}
-  className="bg-red-500 text-white px-3 py-1 rounded text-sm"
->
-  삭제
-</button>
-
+                onClick={() => handleDelete(file)}
+                className="bg-[#d14e4e] hover:bg-[#d11a1a] text-white px-3 py-1 rounded text-sm"
+              >
+                삭제
+              </button>
             </div>
           ))}
       </div>

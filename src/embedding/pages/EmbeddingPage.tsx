@@ -15,7 +15,7 @@ export default function EmbeddingPage() {
             className={`px-4 py-2 font-semibold transition border border-b-0 mr-0.5
               ${
                 tab === "file"
-                  ? "bg-orange-500 text-white border-gray-300"
+                  ? "bg-[#4A607A] text-white border-[#4A607A]"
                   : "bg-gray-300 text-gray-600 border-gray-300 hover:bg-gray-200"
               }`}
             style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
@@ -27,7 +27,7 @@ export default function EmbeddingPage() {
             className={`px-4 py-2 font-semibold transition border border-b-0
               ${
                 tab === "qa"
-                  ? "bg-orange-500 text-white border-gray-300"
+                  ? "bg-[#4A607A] text-white border-[#4A607A]"
                   : "bg-gray-300 text-gray-600 border-gray-300 hover:bg-gray-200"
               }`}
             style={{ borderRadius: "0.5rem 0.5rem 0 0" }}

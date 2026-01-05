@@ -26,16 +26,10 @@ export default function ChatInput({
     }
   };
 
+  const height =
+    size === "large" ? "h-[72px] md:h-[140px]" : "h-[56px] md:h-[160px]";
 
-const height =
-  size === "large"
-    ? "h-[72px] md:h-[140px]"
-    : "h-[56px] md:h-[160px]";
-
-const padding =
-  size === "large"
-    ? "p-2 md:p-5"
-    : "p-1.5 md:p-6";
+  const padding = size === "large" ? "p-2 md:p-5" : "p-1.5 md:p-6";
 
   return (
     <div
@@ -50,7 +44,6 @@ const padding =
         -mt-4
       "
     >
-  
       <div
         className="
           pointer-events-none
@@ -83,10 +76,9 @@ const padding =
         />
       </div>
 
-     
       <button
         onClick={() => send(input)}
-        className="absolute bottom-4 right-4 bg-[#BA1E1E] hover:bg-[#1D313B] text-white px-4 py-2 rounded-md"
+        className="absolute bottom-4 right-4 bg-[#d14e4e] hover:bg-[#d11a1a]  text-white px-4 py-2 rounded-md"
       >
         확인
       </button>

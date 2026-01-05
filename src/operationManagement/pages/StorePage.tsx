@@ -144,7 +144,7 @@ export default function StorePage() {
             disabled={!isAnyStoreModified}
             className={`px-4 py-2 rounded text-white font-medium transition-colors ${
               isAnyStoreModified
-                ? "bg-orange-500 hover:bg-orange-600 cursor-pointer"
+                ? " bg-[#324153] hover:bg-[#4A607A] cursor-pointer"
                 : "bg-gray-400 cursor-not-allowed opacity-80"
             }`}
           >
@@ -196,7 +196,7 @@ export default function StorePage() {
                       key={store.storeId}
                       className={`h-11 border-b border-gray-200 transition-colors ${
                         modified
-                          ? "bg-orange-50/70 hover:bg-orange-100/70"
+                          ? "bg-red-50/70 hover:bg-red-100/70"
                           : "hover:bg-blue-50/50"
                       }`}
                     >
@@ -217,9 +217,7 @@ export default function StorePage() {
                             )
                           }
                           className={`border rounded-md p-1 w-60 text-center focus:ring-blue-500 focus:border-blue-500 ${
-                            modified
-                              ? "border-orange-500 ring-2 ring-orange-200"
-                              : ""
+                            modified ? "border-red-500 ring-2 ring-red-200" : ""
                           }`}
                         >
                           <option value={0}>-- 미지정 --</option>
