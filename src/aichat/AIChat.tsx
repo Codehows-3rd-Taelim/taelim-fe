@@ -26,7 +26,17 @@ export default function AIChat() {
 
   const select = async (id: string) => {
     setCurrentId(id);
-    setMessages(await loadConversation(id));
+
+    const data: Message[] = await loadConversation(id);
+
+    // 히스토리는 전부 스트리밍 종료 상태
+    setMessages(
+      data.map((m) => ({
+        ...m,
+        isStreaming: false,
+      }))
+    );
+
     setIsSidebarOpen(false);
   };
 
@@ -43,9 +53,14 @@ export default function AIChat() {
     const effectiveId = currentId ?? crypto.randomUUID();
 
     setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), rawMessage: message, senderType: "USER" },
-    ]);
+      ...prev,{
+        id: crypto.randomUUID(),
+        rawMessage: message,
+        senderType: "USER",
+        isStreaming: false, 
+      },
+]);
+
 
     setInput("");
     setIsTyping(true);
@@ -59,9 +74,15 @@ export default function AIChat() {
       const reader = res.body!.getReader();
       const decoder = new TextDecoder("utf-8");
 
+      // 스트리밍 메시지 시작
       setMessages((prev) => [
         ...prev,
-        { id: tempAiId, rawMessage: "", senderType: "AI" },
+        {
+          id: tempAiId,
+          rawMessage: "",
+          senderType: "AI",
+          isStreaming: true,
+        },
       ]);
 
       let buffer = "";
@@ -76,40 +97,44 @@ export default function AIChat() {
 
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
-          const token = line.slice(5).trim();
+
+          const payload = line.slice(5);
+          const token = payload === "" ? "\n\n" : payload.replace(/^ /, "");
 
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === tempAiId ? { ...m, rawMessage: m.rawMessage + token } : m
+              m.id === tempAiId
+                ? { ...m, rawMessage: m.rawMessage + token }
+                : m
             )
           );
         }
       }
 
+      // 스트리밍 종료 → 최종 메시지로 교체
       setMessages((prev) => {
         const temp = prev.find((m) => m.id === tempAiId);
         if (!temp) return prev;
+
         return [
           ...prev.filter((m) => m.id !== tempAiId),
           {
             id: crypto.randomUUID(),
             rawMessage: temp.rawMessage,
             senderType: "AI",
+            isStreaming: false,
           },
         ];
       });
     } finally {
       setIsTyping(false);
       loadChatHistory().then(setChatList);
-      // 완료 후 알림 pull
-      setTimeout(() => {
-        fetchUndeliveredNotifications();
-      }, 300);
+      setTimeout(fetchUndeliveredNotifications, 300);
     }
   };
 
   return (
-    <div className="relative h-full min-h-0 bg-white">
+    <div className="relative h-full min-h-0">
       <div className="hidden md:block">
         <ChatSidebar
           chatList={chatList}
@@ -131,7 +156,7 @@ export default function AIChat() {
         </div>
       )}
 
-      <main className="relative flex items-center justify-center h-full overflow-auto md:pl-80">
+      <main className="relative flex h-full overflow-auto md:pl-80">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -141,17 +166,21 @@ export default function AIChat() {
           </button>
         )}
 
-        {messages.length === 0 ? (
-          <EmptyState input={input} setInput={setInput} send={send} />
-        ) : (
-          <ChatWindow
-            messages={messages}
-            input={input}
-            setInput={setInput}
-            send={send}
-            isTyping={isTyping}
-          />
-        )}
+        <div className="flex flex-col flex-1 pt-[var(--header-height)]">
+          {messages.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center">
+              <EmptyState input={input} setInput={setInput} send={send} />
+            </div>
+          ) : (
+            <ChatWindow
+              messages={messages}
+              input={input}
+              setInput={setInput}
+              send={send}
+              isTyping={isTyping}
+            />
+          )}
+        </div>
       </main>
     </div>
   );

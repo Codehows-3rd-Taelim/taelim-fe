@@ -7,23 +7,6 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 dayjs.extend(isBetween);
 
-import {
-  Box,
-  TextField,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  MenuItem,
-  Select,
-} from "@mui/material";
-
-import type { DateRange } from "@mui/x-date-pickers-pro/models";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
 import CleanReport from "./CleanReport";
@@ -33,75 +16,58 @@ import useOperationManagement from "../../operationManagement/hook/useOperationM
 import { getRobots } from "../../robot/api/RobotApi";
 import { getReports } from "../api/ReportApi";
 
-type SortKey = "sn" | "storeName" | "mapName";
+type SortKey = "sn" | "storeName" | "mapName" | "startTime";
 type SortOrder = "asc" | "desc";
 
 export default function ReportPage() {
   const { roleLevel, storeId } = useAuthStore();
   const { getStoreName, allStores } = useOperationManagement();
 
-  // 모달 관련 State
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
-  // 검색 입력용 State
   const [selectedSnInput, setSelectedSnInput] = useState("");
   const [selectedStoreIdInput, setSelectedStoreIdInput] = useState(
     roleLevel === 3 ? 0 : storeId || 0
   );
 
-  const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([
-    null,
-    null,
-  ]);
+  const [dateRangeInput, setDateRangeInput] = useState<
+    [Dayjs | null, Dayjs | null]
+  >([dayjs().subtract(7, "day"), dayjs()]);
 
-  // 실제 검색에 사용되는 State
   const [selectedSn, setSelectedSn] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState(
     roleLevel === 3 ? 0 : storeId || 0
   );
 
-  const [AiReportData, setAiReportData] = useState<Report[]>([]);
+  const [ReportData, setReportData] = useState<Report[]>([]);
   const [robots, setRobots] = useState<Robot[]>([]);
   const [page, setPage] = useState(1);
 
-  // 정렬 상태
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [totalPages, setTotalPages] = useState(0);
-  // 날짜 범위가 변경될 때마다 데이터 로드
+
   useEffect(() => {
     const loadData = async () => {
-      const start = dateRangeInput[0] ?? dayjs().subtract(10, "year");
+      const start = dateRangeInput[0] ?? dayjs().subtract(7, "day");
       const end = dateRangeInput[1] ?? dayjs();
 
-      try {
-        const targetStoreId =
-          roleLevel === 3 ? undefined : storeId || undefined;
+      const params = {
+        page: page - 1,
+        size: 15,
+        storeId: roleLevel === 3 ? undefined : storeId || undefined,
+        filterStoreId: selectedStoreId === 0 ? undefined : selectedStoreId,
+        sn: selectedSn || undefined,
+        startDate: start.format("YYYY-MM-DD"),
+        endDate: end.format("YYYY-MM-DD"),
+        sortKey: sortKey || undefined,
+        sortOrder,
+      };
 
-        const res = await getReports({
-          page: page - 1,
-          size: 20,
-          storeId: targetStoreId,
-          filterStoreId: selectedStoreId === 0 ? undefined : selectedStoreId,
-          sn: selectedSn || undefined,
-          startDate: start.format("YYYY-MM-DD"),
-          endDate: end.format("YYYY-MM-DD"),
-          sortKey: sortKey || undefined,
-          sortOrder,
-        });
-
-        if ("content" in res) {
-          setAiReportData(res.content);
-          setTotalPages(res.totalPages ?? 0);
-        } else {
-          // 페이징 없는 응답 (혹시 쓸 경우 대비)
-          setAiReportData(res);
-          setTotalPages(1);
-        }
-      } catch (err) {
-        console.error("보고서 데이터 불러오기 실패", err);
-      }
+      const res = await getReports(params);
+      setReportData(res.content);
+      setTotalPages(res.totalPages ?? 0);
     };
 
     loadData();
@@ -116,7 +82,6 @@ export default function ReportPage() {
     sortOrder,
   ]);
 
-  // Robot 목록 로드
   useEffect(() => {
     const loadRobots = async () => {
       try {
@@ -131,105 +96,71 @@ export default function ReportPage() {
     loadRobots();
   }, [roleLevel, storeId]);
 
-  useEffect(() => {
-    if (!selectedSnInput) return;
-
-    const robot = robots.find((r) => String(r.sn) === selectedSnInput);
-
-    if (robot && roleLevel === 3) {
-      setTimeout(() => setSelectedStoreIdInput(robot.storeId), 0);
-    }
-  }, [selectedSnInput, robots, roleLevel]);
-
   const formatDynamicTime = (cleanTimeSeconds: number) => {
     const totalSeconds = Math.floor(cleanTimeSeconds);
     if (totalSeconds === 0) return "-";
-
     const seconds = totalSeconds % 60;
     const totalMinutes = Math.floor(totalSeconds / 60);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-
-    if (hours === 0) {
-      return `${totalMinutes}분 ${seconds}초`;
-    } else {
-      return `${hours}시간 ${minutes}분 ${seconds}초`;
-    }
+    return hours === 0
+      ? `${totalMinutes}분 ${seconds}초`
+      : `${hours}시간 ${minutes}분 ${seconds}초`;
   };
 
-  // 정렬 핸들러
   const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
+    if (sortKey === key) setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    else {
       setSortKey(key);
       setSortOrder("asc");
     }
   };
 
-  // 정렬 아이콘 렌더링
   const renderSortIcon = (key: SortKey) => {
     if (sortKey !== key) return null;
-    return sortOrder === "asc" ? (
-      <ArrowUpwardIcon fontSize="small" />
+    return sortOrder === "desc" ? (
+      <ArrowUpwardIcon className="w-4 h-4 inline ml-1" />
     ) : (
-      <ArrowDownwardIcon fontSize="small" />
+      <ArrowDownwardIcon className="w-4 h-4 inline ml-1" />
     );
   };
 
-  // 검색 버튼 핸들러
   const handleSearch = () => {
     setSelectedSn(selectedSnInput);
     setSelectedStoreId(selectedStoreIdInput);
     setPage(1);
   };
 
-  // 초기화 버튼 핸들러
   const handleReset = () => {
     setDateRangeInput([null, null]);
     setSelectedSnInput("");
     setSelectedSn("");
-
     const defaultStoreId = roleLevel === 3 ? 0 : storeId || 0;
     setSelectedStoreIdInput(defaultStoreId);
     setSelectedStoreId(defaultStoreId);
     setPage(1);
   };
 
-  // 로우 클릭 핸들러
   const handleRowClick = (report: Report) => {
     setSelectedReport(report);
     setModalOpen(true);
   };
 
-  // 모달 닫기 핸들러
   const handleModalClose = () => {
     setModalOpen(false);
     setSelectedReport(null);
   };
 
-  // 선택된 매장 기준으로 SN 필터링
   const filteredRobots =
     selectedStoreIdInput === 0
       ? robots
       : robots.filter((r) => r.storeId === selectedStoreIdInput);
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        flex: 1,
-        px: 6,
-        py: 6,
-        bgcolor: "#f7f7f7",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div className="w-full h-full max-w-[1400px] mx-auto pt-4 px-4 lg:px-6 space-y-6 bg-gray-100">
       {/* 검색 UI */}
-      <Box display="flex" alignItems="center" gap={2} sx={{ ml: 4 }}>
-        {/* 조회일자 */}
-        <Box display="flex" alignItems="center" gap={2}>
+      <div className="flex flex-wrap justify-center items-center gap-4 mb-4 ml-4">
+        <div className="flex items-center gap-2">
           <span>조회일자</span>
           <DateRangePicker
             value={dateRangeInput}
@@ -237,163 +168,164 @@ export default function ReportPage() {
             fullWidth={false}
             size="small"
           />
-        </Box>
+        </div>
 
-        <Box display="flex" alignItems="center" gap={2}>
-          {/* 매장 필터 */}
+        <div className="flex items-center gap-2">
           <span>매장명</span>
           {roleLevel === 3 ? (
-            <Select
+            <select
               value={selectedStoreIdInput}
               onChange={(e) => {
                 setSelectedStoreIdInput(Number(e.target.value));
                 setSelectedSnInput("");
               }}
-              displayEmpty
-              size="small"
-              sx={{ width: 200, backgroundColor: "white" }}
+              className="px-2 py-1 border border-gray-300 rounded bg-white"
             >
-              <MenuItem value={0}>전체</MenuItem>
+              <option value={0}>전체</option>
               {allStores.map((store) => (
-                <MenuItem key={store.storeId} value={store.storeId}>
+                <option key={store.storeId} value={store.storeId}>
                   {store.shopName}
-                </MenuItem>
+                </option>
               ))}
-            </Select>
+            </select>
           ) : (
-            <TextField
+            <input
               value={getStoreName(storeId || 0)}
               disabled
-              size="small"
-              sx={{ width: 200, backgroundColor: "#f0f0f0" }}
+              className="px-2 py-1 border border-gray-200 rounded bg-gray-200"
             />
           )}
 
-          {/* SN 필터 */}
           <span>SN (별명)</span>
-          <Select
+          <select
             value={selectedSnInput}
             onChange={(e) => setSelectedSnInput(e.target.value)}
-            displayEmpty
-            size="small"
-            sx={{ width: 200, backgroundColor: "white" }}
+            className="px-2 py-1 border border-gray-300 rounded bg-white"
           >
-            <MenuItem value="">전체</MenuItem>
+            <option value="">전체</option>
             {filteredRobots.map((robot) => (
-              <MenuItem key={robot.robotId} value={String(robot.sn)}>
+              <option key={robot.robotId} value={String(robot.sn)}>
                 {robot.sn}
                 {robot.nickname && ` (${robot.nickname})`}
-              </MenuItem>
+              </option>
             ))}
-          </Select>
+          </select>
 
-          {/* 검색 버튼 */}
-          <IconButton onClick={handleSearch}>
-            <SearchIcon />
-          </IconButton>
+          <button
+            onClick={handleSearch}
+            className="p-2 rounded bg-gray-200 hover:bg-gray-300"
+          >
+            <SearchIcon className="w-5 h-5" />
+          </button>
 
-          {/* 초기화 버튼 */}
-          <Button
-            variant="outlined"
-            sx={{ borderColor: "black", fontWeight: "bold", color: "black" }}
+          <button
             onClick={handleReset}
+            className="px-3 py-1 font-bold border border-black rounded text-black hover:bg-gray-100"
           >
             초기화
-          </Button>
-        </Box>
-      </Box>
+          </button>
+        </div>
+      </div>
 
-      {/* 보고서 테이블 */}
-      <TableContainer
-        component={Paper}
-        sx={{
-          borderRadius: 3,
-          maxHeight: "auto",
-          overflowY: "auto",
-          mt: 3,
-        }}
-      >
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell
-                align="center"
+      {/* 테이블 */}
+      <div className="overflow-x-auto rounded-xl shadow-xl bg-white">
+        <table className="min-w-full border-collapse">
+          <thead className="bg-gray-50">
+            <tr>
+              <th
                 onClick={() => handleSort("sn")}
-                sx={{ cursor: "pointer", userSelect: "none" }}
+                className="cursor-pointer px-4 py-2 text-center font-semibold"
               >
                 SN {renderSortIcon("sn")}
-              </TableCell>
-              <TableCell
-                align="center"
+              </th>
+              <th
                 onClick={() => handleSort("storeName")}
-                sx={{ cursor: "pointer", userSelect: "none" }}
+                className="cursor-pointer px-4 py-2 text-center font-semibold"
               >
                 매장명 {renderSortIcon("storeName")}
-              </TableCell>
-              <TableCell
-                align="center"
+              </th>
+              <th
                 onClick={() => handleSort("mapName")}
-                sx={{ cursor: "pointer", userSelect: "none" }}
+                className="cursor-pointer px-4 py-2 text-center font-semibold"
               >
                 구역 {renderSortIcon("mapName")}
-              </TableCell>
-              <TableCell align="center">시작시간</TableCell>
-              <TableCell align="center">종료시간</TableCell>
-              <TableCell align="center">청소시간</TableCell>
-              <TableCell align="center">청소면적(㎡)</TableCell>
-              <TableCell align="center">전력소비(kwh)</TableCell>
-              <TableCell align="center">물사용량(㎖)</TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {AiReportData.map((r) => (
-              <TableRow
+              </th>
+              <th
+                onClick={() => handleSort("startTime")}
+                className="cursor-pointer px-4 py-2 text-center font-semibold"
+              >
+                시작시간 {renderSortIcon("startTime")}
+              </th>
+              <th className="px-4 py-2 text-center font-semibold">종료시간</th>
+              <th className="px-4 py-2 text-center font-semibold">청소시간</th>
+              <th className="px-4 py-2 text-center font-semibold">
+                청소면적(㎡)
+              </th>
+              <th className="px-4 py-2 text-center font-semibold">
+                전력소비(kwh)
+              </th>
+              <th className="px-4 py-2 text-center font-semibold">
+                물사용량(㎖)
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {ReportData.map((r) => (
+              <tr
                 key={r.reportId}
                 onClick={() => handleRowClick(r)}
-                sx={{
-                  cursor: "pointer",
-                  "&:hover": {
-                    bgcolor: "#f5f5f5",
-                  },
-                }}
+                className="cursor-pointer hover:bg-gray-100"
               >
-                <TableCell align="center">{r.sn}</TableCell>
-                <TableCell align="center">{getStoreName(r.storeId)}</TableCell>
-                <TableCell align="center">{r.mapName}</TableCell>
-                <TableCell align="center">{r.startTime}</TableCell>
-                <TableCell align="center">{r.endTime}</TableCell>
-                <TableCell align="center">
+                <td className="px-4 py-2 text-center">{r.sn}</td>
+                <td className="px-4 py-2 text-center">
+                  {getStoreName(r.storeId)}
+                </td>
+                <td className="px-4 py-2 text-center">{r.mapName}</td>
+                <td className="px-4 py-2 text-center">{r.startTime}</td>
+                <td className="px-4 py-2 text-center">{r.endTime}</td>
+                <td className="px-4 py-2 text-center">
                   {formatDynamicTime(r.cleanTime)}
-                </TableCell>
-                <TableCell align="center">
-                  {r.cleanArea == null ? "-" : r.cleanArea}
-                </TableCell>
-                <TableCell align="center">
+                </td>
+                <td className="px-4 py-2 text-center">{r.cleanArea ?? "-"}</td>
+                <td className="px-4 py-2 text-center">
                   {Math.round(r.costBattery * 1.3 * 100) / 10000}
-                </TableCell>
-                <TableCell align="center">{r.costWater}</TableCell>
-              </TableRow>
+                </td>
+                <td className="px-4 py-2 text-center">{r.costWater}</td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </tbody>
+        </table>
+      </div>
 
       {/* 페이지네이션 */}
-      {AiReportData.length > 0 && (
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={(newPage) => setPage(newPage)}
-        />
+      {ReportData.length > 0 && (
+        <div className="mt-4 pb-6 ">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(newPage) => setPage(newPage)}
+          />
+        </div>
       )}
 
-      {/* 청소 보고서 모달 */}
+      {/* 모달 */}
       <CleanReport
         open={modalOpen}
         onClose={handleModalClose}
         report={selectedReport}
+        onUpdateRemark={(newRemark) => {
+          setSelectedReport((prev) =>
+            prev ? { ...prev, remark: newRemark } : prev
+          );
+          setReportData((prev) =>
+            prev.map((r) =>
+              r.puduReportId === selectedReport?.puduReportId
+                ? { ...r, remark: newRemark }
+                : r
+            )
+          );
+        }}
       />
-    </Box>
+    </div>
   );
 }

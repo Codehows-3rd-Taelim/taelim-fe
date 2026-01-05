@@ -13,7 +13,7 @@ function getStatusStyle(robot: Robot) {
   if (!robot.online) return "text-gray-400"; // 오프라인
 
   if (robot.status === 1) return "text-blue-600 font-semibold"; // 작업중
-  if (robot.status === 2) return "text-orange-500 font-semibold"; // 충전중
+  if (robot.isCharging === 1) return "text-orange-400 font-semibold"; // 충전중
 
   return "text-green-600 font-semibold"; // 대기중
 }

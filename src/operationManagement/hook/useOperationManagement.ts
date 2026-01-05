@@ -64,7 +64,7 @@ export default function useOperationManagement() {
     // 2.공통 데이터 로딩
   useEffect(() => {
     if (!jwtToken) return;
-
+// 페이지네이션 UI 없음 → 전체 목록 조회용
     const loadData = async () => {
         const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
         const page = 1;  // 첫 페이지
@@ -82,8 +82,12 @@ export default function useOperationManagement() {
 
         // 직원 목록
         try {
-            const users = await getUsers(storeIdToFetch);
-            setList(users);
+            const users = await getUsers({
+  page: 1,
+  size: 100,
+  storeId: storeIdToFetch,
+});
+            setList(users.content);
         } catch (err) {
             console.error("직원 목록 로드 실패", err);
             setList([]);
@@ -163,8 +167,12 @@ export default function useOperationManagement() {
             setIsIdChecked(false);
 
             const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
-            const updated = await getUsers(storeIdToFetch);
-            setList(updated);
+            const updated = await getUsers({
+  page: 1,
+  size: 100,
+  storeId: storeIdToFetch,
+});
+setList(updated.content);
             // 성공 시 에러를 던지지 않음
         } catch (err) {
             console.error(err);

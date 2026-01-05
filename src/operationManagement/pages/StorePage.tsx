@@ -8,7 +8,7 @@ type ApiStore = Omit<Store, "industryId"> & {
 };
 type NormalizedStore = Store & { industryId: number };
 
-const itemsPerPage = 20;
+const itemsPerPage = 15;
 
 export default function StorePage() {
   const [stores, setStores] = useState<NormalizedStore[]>([]);
@@ -19,10 +19,17 @@ export default function StorePage() {
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const normalizeStores = (apiStores: ApiStore[]): NormalizedStore[] =>
+  // const normalizeStores = (apiStores: ApiStore[]): NormalizedStore[] =>
+  //   apiStores.map((store) => ({
+  //     ...store,
+  //     industryId: store.industry ?? 0,
+  //   }));
+  const normalizeStores = (apiStores: Store[]): NormalizedStore[] =>
     apiStores.map((store) => ({
-      ...store,
-      industryId: store.industry?.industryId ?? 0,
+      storeId: store.storeId,
+      shopId: store.shopId,
+      shopName: store.shopName,
+      industryId: store.industryId ?? 0,
     }));
 
   const fetchStoresPage = useCallback(async (page: number) => {
@@ -34,7 +41,7 @@ export default function StorePage() {
       const normalized = normalizeStores(response.content);
       setStores(normalized);
       setEditableStores(normalized);
-      setTotalItems(response.totalElements); // 전체 아이템 수
+      setTotalItems(response.totalElements);
       setCurrentPage(page);
     } catch (err) {
       console.error(err);
@@ -120,11 +127,6 @@ export default function StorePage() {
     }
   };
 
-  const displayedStores = editableStores.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   return (
     <div className="w-full h-full flex flex-col px-6 py-4 bg-gray-100">
       {/* <div className="w-full min-h-screen px-6 py-4 bg-gray-100"> */}
@@ -142,7 +144,7 @@ export default function StorePage() {
             disabled={!isAnyStoreModified}
             className={`px-4 py-2 rounded text-white font-medium transition-colors ${
               isAnyStoreModified
-                ? "bg-orange-500 hover:bg-orange-600 cursor-pointer"
+                ? " bg-[#324153] hover:bg-[#4A607A] cursor-pointer"
                 : "bg-gray-400 cursor-not-allowed opacity-80"
             }`}
           >
@@ -187,14 +189,14 @@ export default function StorePage() {
                 </tr>
               </thead>
               <tbody>
-                {displayedStores.map((store) => {
+                {editableStores.map((store) => {
                   const modified = isStoreModified(store);
                   return (
                     <tr
                       key={store.storeId}
                       className={`h-11 border-b border-gray-200 transition-colors ${
                         modified
-                          ? "bg-orange-50/70 hover:bg-orange-100/70"
+                          ? "bg-red-50/70 hover:bg-red-100/70"
                           : "hover:bg-blue-50/50"
                       }`}
                     >
@@ -206,7 +208,7 @@ export default function StorePage() {
                       </td>
                       <td className="px-2 py-1">
                         <select
-                          value={store.industryId}
+                          value={store.industryId ?? 0}
                           onChange={(e) =>
                             handleFieldChange(
                               store.storeId,
@@ -215,9 +217,7 @@ export default function StorePage() {
                             )
                           }
                           className={`border rounded-md p-1 w-60 text-center focus:ring-blue-500 focus:border-blue-500 ${
-                            modified
-                              ? "border-orange-500 ring-2 ring-orange-200"
-                              : ""
+                            modified ? "border-red-500 ring-2 ring-red-200" : ""
                           }`}
                         >
                           <option value={0}>-- 미지정 --</option>
