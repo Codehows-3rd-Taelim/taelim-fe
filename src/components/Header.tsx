@@ -172,7 +172,7 @@ export default function Header() {
               className="text-xl font-bold tracking-wide text-white cursor-pointer whitespace-nowrap"
               onClick={() => navigate("/")}
             >
-              <img className="h-8 w-auto lg:h-14" src= "src\assets\inufleet_logo(w).png"/>
+              <img className="w-auto h-[clamp(8px,5vw,45px)]" src= "src\assets\inufleet_logo(w).png"/>
             </div>
           </div>
 
