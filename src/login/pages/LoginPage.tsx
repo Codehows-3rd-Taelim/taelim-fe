@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import robotImage from "../../assets/robot.png";
+import robotImage from "../../assets/robot1.png";
 import type { LoginRequest, LoginResponse } from "../../type";
 import { getAuthToken } from "../api/LoginApi";
 import { useNavigate } from "react-router-dom";
@@ -76,7 +76,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col min-w-full min-h-screen bg-white md:flex-row font-inter">
+    <div className="flex flex-col min-w-full min-h-screen bg-[#c9c9c9] md:flex-row font-inter">
       {/* 왼쪽 이미지 - 패딩 줄임 */}
       <div className="hidden md:flex md:w-[55%] md:min-w-[55%] justify-center items-center pr-2">
         <img
@@ -92,7 +92,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md min-w-[450px]">
           {/* 제목 */}
           <div className="mb-6 text-center">
-            <h1 className="mb-2 text-4xl font-extrabold text-gray-800">
+            <h1 className="mb-2 text-4xl font-extrabold text-white-800">
               로그인
             </h1>
 
@@ -100,12 +100,12 @@ export default function LoginPage() {
               <span className="text-gray-900">Inus</span>
               <span className="text-red-600">tree</span>
               <span className="ml-2 text-xl font-normal text-gray-500 whitespace-nowrap">
-                로봇관리 플랫폼
+                스마트 로봇 관리 플랫폼
               </span>
             </div>
           </div>
 
-          <div className="border-2 border-amber-300 rounded-xl shadow-2xl p-8 bg-white min-w-[400px]">
+          <div className="border-2 border-[#324153] rounded-xl shadow-2xl p-8 bg-white min-w-[400px]">
             {/* 오류 메시지 */}
             {loginError && (
               <div className="flex items-center p-3 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50">
@@ -121,7 +121,7 @@ export default function LoginPage() {
                 placeholder="아이디를 입력하세요"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                className="w-full px-4 py-3 text-base text-gray-700 border border-gray-300 rounded-lg outline-none focus:border-amber-400 focus:shadow-md"
+                className="w-full px-4 py-3 text-base text-gray-700 border border-gray-300 rounded-lg outline-none focus:border-[#324153] focus:shadow-md"
               />
 
               {/* 비밀번호 */}
@@ -132,7 +132,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={handlePasswordKeyPress}
-                  className="w-full px-4 py-3 pr-12 text-gray-700 border border-gray-300 rounded-lg outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+                  className="w-full px-4 py-3 pr-12 text-gray-700 border border-gray-300 rounded-lg outline-none focus:border-[#324153] focus:shadow-md"
                 />
 
                 <button
@@ -147,7 +147,7 @@ export default function LoginPage() {
               {/* 버튼 */}
               <button
                 onClick={handleSubmit}
-                className="w-full py-3 mt-4 text-lg font-semibold text-black bg-orange-600 rounded-lg shadow-md hover:bg-orange-700"
+                className="w-full py-3 mt-4 text-lg font-semibold text-white bg-[#4A607A] hover:bg-[#324153] rounded-lg shadow-md "
               >
                 로그인
               </button>
@@ -156,7 +156,7 @@ export default function LoginPage() {
             <p className="mt-6 text-xs text-center text-gray-400">
               비밀번호를 잊어버렸다면
               <br />
-              <span className="font-semibold text-orange-600">
+              <span className="font-semibold text-[#d14e4e]">
                 관리자에게 문의
               </span>
               하여 재설정할 수 있습니다.

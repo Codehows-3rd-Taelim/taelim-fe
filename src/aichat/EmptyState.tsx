@@ -16,8 +16,8 @@ export default function EmptyState({ input, setInput, send }: Props) {
   ];
 
   return (
-    <div className="flex flex-col items-center px-4 bg-white">
-      <h1 className="text-[22px] font-semibold mb-8 text-center">
+    <div className="flex flex-col items-center w-full px-4">
+      <h1 className="text-[40px] font-semibold mb-8 text-center">
         안녕하세요. 무엇을 도와드릴까요?
       </h1>
 
@@ -28,9 +28,9 @@ export default function EmptyState({ input, setInput, send }: Props) {
           <button
             key={i}
             onClick={() => send(s)}
-            className="flex gap-2 hover:text-orange-600 text-[15px]"
+            className="flex gap-2 hover:text-[#324153] text-[15px]"
           >
-            🔍 {s}
+            ❓ {s}
           </button>
         ))}
       </div>

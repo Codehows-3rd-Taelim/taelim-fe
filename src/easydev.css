@@ -1,0 +1,46 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+@layer components {
+  /* Card */
+  .ed-card {
+    @apply bg-white rounded-xl border border-gray-200;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+
+  .ed-card-header {
+    @apply px-6 py-4 font-semibold border-b;
+  }
+
+  .ed-card-body {
+    @apply p-6;
+  }
+
+  /* Button */
+  .ed-btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-md
+           hover:opacity-90 transition;
+  }
+
+  .ed-btn-outline {
+    @apply border border-gray-300 px-4 py-2 rounded-md;
+  }
+
+  /* Table */
+  .ed-table {
+    @apply w-full text-sm;
+  }
+
+  .ed-table th {
+    @apply text-left text-gray-500 font-medium px-4 py-3 border-b;
+  }
+
+  .ed-table td {
+    @apply px-4 py-3 border-b;
+  }
+
+  .ed-table tbody tr:hover {
+    background: rgba(0,0,0,0.03);
+  }
+}

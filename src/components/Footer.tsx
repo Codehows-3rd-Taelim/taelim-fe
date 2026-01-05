@@ -1,114 +1,46 @@
-import { Box } from "@mui/material";
 import { FaInstagram, FaStore, FaYoutube } from "react-icons/fa";
 
 export default function Footer() {
   return (
-    <Box
-      component="footer"
-      sx={{
-        width: "100%",
-        bgcolor: "#f5f5f5",
-        py: 3,
-        px: 3,
-      }}
-    >
-      <Box sx={{ maxWidth: "100%", mx: "auto" }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 2,
-            textAlign: "center",
-          }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              maxWidth: "1200px",
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 4,
-              textAlign: { xs: "center", md: "left" },
-            }}
-          >
-            {/* 왼쪽: 고객센터 */}
-            <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
-              <Box sx={{ fontWeight: 600, mb: 0.5 }}>고객센터</Box>
-              <Box>TEL : 010-2089-8170</Box>
-              <Box>E-mail : inustree@naver.com</Box>
-              <Box sx={{ mt: 1 }}>
-                <a
-                  href="https://inustree-robotics.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#991b1b",
-                    textDecoration: "none",
-                    marginRight: "8px",
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.textDecoration = "underline")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.textDecoration = "none")
-                  }
-                >
-                  로봇정보
-                </a>
+    
+    <footer className="w-full bg-[#333D51] py-6 px-3">
+      <div className="  flex flex-col items-center gap-2 text-center">
+        <div className="w-full max-w-[1200px] flex flex-col md:flex-row justify-center items-center md:items-start gap-4 text-center md:text-left">
+          {/* 왼쪽: 고객센터 */}
+          <div className=" text-center md:text-left text-white">
+            <div className="font-semibold mb-1 text-l">고객센터</div>
+            <div>TEL : 010-2089-8170</div>
+            <div>E-mail : inustree@naver.com</div>
+          </div>
 
-                <a
-                  href="http://inustree.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#991b1b",
-                    textDecoration: "none",
-                    marginLeft: "8px",
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.textDecoration = "underline")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.textDecoration = "none")
-                  }
-                >
-                  회사정보
-                </a>
-              </Box>
-            </Box>
+          {/* 오른쪽: SNS 아이콘 */}
+          <div className=" mt-5 flex gap-8 text-3xl items-center ">
+            <a
+              href="https://www.instagram.com/inustree/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FaInstagram className="text-white hover:text-red-600" />
+            </a>
 
-            {/* 오른쪽: SNS 아이콘 */}
-            <Box sx={{ display: "flex", gap: 3, fontSize: "1.5rem" }}>
-              <a
-                href="https://www.instagram.com/inustree/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FaInstagram style={{ color: "#E1306C" }} />
-              </a>
+            <a
+              href="https://www.youtube.com/@inustree5216"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FaYoutube className="text-white hover:text-red-600" />
+            </a>
 
-              <a
-                href="https://www.youtube.com/@inustree5216"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FaYoutube style={{ color: "#dc2626" }} />
-              </a>
-
-              <a
-                href="https://smartstore.naver.com/inustree_"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FaStore style={{ color: "#ef4444" }} />
-              </a>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+            <a
+              href="https://inustree-robotics.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FaStore className="text-white hover:text-red-600" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }

@@ -11,7 +11,7 @@ const Card: React.FC<{ title: string; value: string | number; sub?: string }> = 
 
 export default function KpiSection({ performance }: { performance: Performance }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
       <Card
         title="청소 시간"
         value={`${performance.laborTimeSaving.toLocaleString()} h`}
