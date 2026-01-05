@@ -46,9 +46,9 @@ export default function ChatWindow({
       <div
         ref={scrollAreaRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto pb-[88px]"
       >
-        <div className="flex flex-col gap-3 w-[900px] mx-auto">
+        <div className="flex flex-col gap-3 w-full max-w-[900px] px-4 mx-auto">
           {messages.map((m) => (
             <div
               key={m.id}
@@ -73,7 +73,7 @@ export default function ChatWindow({
       </div>
 
       {/* 입력창 */}
-      <div className="shrink-0 w-[900px] mx-auto pt-4 -translate-x-[7px]">
+      <div className="shrink-0 w-full max-w-[900px] px-4 mx-auto pt-4">
         <ChatInput input={input} setInput={setInput} send={send} size="small" />
       </div>
     </div>

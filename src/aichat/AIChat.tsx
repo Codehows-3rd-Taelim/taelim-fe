@@ -109,6 +109,7 @@ export default function AIChat() {
   };
 
   return (
+    
     <div className="relative h-full min-h-0">
       <div className="hidden md:block">
         <ChatSidebar
@@ -131,7 +132,7 @@ export default function AIChat() {
         </div>
       )}
 
-      <main className="relative flex items-center justify-center h-full overflow-auto md:pl-80">
+      <main className="relative flex h-full overflow-auto md:pl-80">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -141,8 +142,11 @@ export default function AIChat() {
           </button>
         )}
 
+        <div className="flex flex-col flex-1 pt-[var(--header-height)]">
         {messages.length === 0 ? (
-          <EmptyState input={input} setInput={setInput} send={send} />
+           <div className="flex flex-1 items-center justify-center">
+            <EmptyState input={input} setInput={setInput} send={send} />
+          </div>
         ) : (
           <ChatWindow
             messages={messages}
@@ -152,7 +156,10 @@ export default function AIChat() {
             isTyping={isTyping}
           />
         )}
+        </div>
+      
       </main>
-    </div>
+      </div>
+   
   );
 }

@@ -26,11 +26,44 @@ export default function ChatInput({
     }
   };
 
-  const height = size === "large" ? "h-[140px]" : "h-[160px]";
-  const padding = size === "large" ? "p-5" : "p-6";
+
+const height =
+  size === "large"
+    ? "h-[72px] md:h-[140px]"
+    : "h-[56px] md:h-[160px]";
+
+const padding =
+  size === "large"
+    ? "p-2 md:p-5"
+    : "p-1.5 md:p-6";
 
   return (
-    <div className="relative w-full max-w-full md:max-w-[900px] bg-white border border-gray-300 rounded-2xl shadow-md mx-auto mb-5">
+    <div
+      className="
+        relative
+        w-full max-w-full md:max-w-[900px]
+        bg-white
+        border border-gray-200
+        rounded-t-xl rounded-b-2xl
+        shadow-[0_-4px_12px_rgba(0,0,0,0.06)]
+        mx-auto mb-5
+        -mt-4
+      "
+    >
+  
+      <div
+        className="
+          pointer-events-none
+          absolute
+          top-0 left-0 right-0
+          h-4
+          rounded-t-xl
+          bg-gradient-to-b
+          from-white
+          to-transparent
+        "
+      />
+
       <div className={padding}>
         <textarea
           value={input}
@@ -39,10 +72,18 @@ export default function ChatInput({
           onCompositionEnd={() => setIsComposing(false)}
           onKeyDown={handleKeyDown}
           placeholder="내용을 입력해주세요."
-          className={`w-full ${height} text-[16px] outline-none resize-none`}
+          className={`
+            w-full
+            ${height}
+            text-[14px] md:text-[16px]
+            outline-none
+            resize-none
+            pr-[72px] md:pr-[80px]
+          `}
         />
       </div>
 
+     
       <button
         onClick={() => send(input)}
         className="absolute bottom-4 right-4 bg-[#BA1E1E] hover:bg-[#1D313B] text-white px-4 py-2 rounded-md"
