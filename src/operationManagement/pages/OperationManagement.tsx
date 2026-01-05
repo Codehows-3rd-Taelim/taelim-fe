@@ -32,7 +32,7 @@ export default function OperationManagement() {
 
   // 인증 완료 후 정상 렌더링
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex flex-col flex-1 min-h-0 pb-6">
       <OperationDesktopLayout {...props} />
     </div>
   );

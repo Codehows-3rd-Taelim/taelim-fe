@@ -6,6 +6,20 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        primary: {
+          DEFAULT: '#4ce1b6',
+        },
+        secondary: {
+          DEFAULT: '#70bbfd',
+        },
+        danger: {
+          DEFAULT: '#ff4861',
+        },
+        warning: {
+          DEFAULT: '#f6da6e',
+        },
+      },
       keyframes: {
         "slide-down": {
           "0%": {

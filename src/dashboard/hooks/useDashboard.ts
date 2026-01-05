@@ -18,18 +18,29 @@ function formatDate(dt: string) {
 
 /* 로봇 상태 카운트 (작동중/대기/충전/오프라인) */
 function getRobotStatusCounts(robots: Robot[]): RobotStatus {
-  let working = 0,
-    standby = 0,
-    charging = 0,
-    offline = 0;
+  let working = 0;
+  let standby = 0;
+  let charging = 0;
+  let offline = 0;
 
   robots.forEach((r) => {
-    if (r.online === false) offline++;
-    else {
-      if (r.status === 1) working++;
-      else if (r.status === 0) standby++;
-      else charging++;
+    // 오프라인
+    if (!r.online) {
+      offline++;
+      return;
     }
+    // 작업중
+    if (r.status === 1) {
+      working++;
+      return;
+    }
+    // 충전중
+    if (r.isCharging === 1) {
+      charging++;
+      return;
+    }
+    // 대기중
+    standby++;
   });
 
   return { working, standby, charging, offline };

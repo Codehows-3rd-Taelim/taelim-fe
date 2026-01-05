@@ -158,8 +158,8 @@ export default function EmployeeRegistrationModal({
                 onClick={handleIdCheck}
                 className={`h-10 px-4 rounded-md whitespace-nowrap font-medium ${
                   isIdChecked
-                    ? "bg-green-600 text-white"
-                    : "bg-orange-500 text-white"
+                    ? "bg-[#324153] text-white"
+                    : "bg-[#d14e4e] hover:bg-[#d11a1a] text-white"
                 }`}
                 disabled={!hasRegistrationPermission}
               >
