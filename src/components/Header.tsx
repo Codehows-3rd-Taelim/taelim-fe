@@ -190,8 +190,8 @@ export default function Header() {
                       flex items-center justify-center p-3 rounded-lg
                       ${
                         isActive(item.path)
-                          ? "text-[#9fcac8] transition-none"
-                          : "text-white hover:text-[#9fcac8] transition-colors duration-50"
+                          ? "text-[#B9FF5E] transition-none"
+                          : "text-white hover:text-[#B9FF5E] transition-colors duration-50"
                       }
                     `}
                     title={item.name}
