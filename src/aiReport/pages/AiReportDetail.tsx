@@ -112,7 +112,7 @@ export default function AiReportDetail({ report, onDeleted }: AiReportDetailProp
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 className="animate-spin text-orange-500" size={48} />
+        <Loader2 className="animate-spin text-[#BA1E1E]" size={48} />
         <p className="text-lg font-medium text-gray-700">
           보고서 생성 중입니다. 잠시만 기다려 주세요.
         </p>
