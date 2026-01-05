@@ -139,6 +139,7 @@ export interface Message {
   id: string;
   rawMessage: string;
   senderType: SenderType;
+  isStreaming: boolean;
 }
 
 /*  ======= 날짜 ======= */

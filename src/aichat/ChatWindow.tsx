@@ -1,8 +1,8 @@
-// src/aichat/ChatWindow.tsx
 import { useEffect, useRef, useState } from "react";
 import type { Message } from "../type";
 import ChatInput from "./ChatInput";
 import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 
 interface Props {
   messages: Message[];
@@ -23,17 +23,15 @@ export default function ChatWindow({
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
-  /** 스크롤 위치 감지 */
   const handleScroll = () => {
     const el = scrollAreaRef.current;
     if (!el) return;
 
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 16;
-
-    setIsAtBottom(atBottom);
+    setIsAtBottom(
+      el.scrollTop + el.clientHeight >= el.scrollHeight - 16
+    );
   };
 
-  /** 하단에 있을 때만 자동 스크롤 */
   useEffect(() => {
     if (isAtBottom) {
       bottomRef.current?.scrollIntoView();
@@ -42,7 +40,6 @@ export default function ChatWindow({
 
   return (
     <div className="h-full flex flex-col py-10">
-      {/* 메시지 영역 */}
       <div
         ref={scrollAreaRef}
         onScroll={handleScroll}
@@ -58,7 +55,20 @@ export default function ChatWindow({
                   : "bg-white border border-gray-300 self-start"
               }`}
             >
-              <ReactMarkdown>{m.rawMessage}</ReactMarkdown>
+              {m.senderType === "AI" && m.isStreaming ? (
+
+                <span className="whitespace-pre-wrap">
+                  {m.rawMessage}
+                </span>
+              ) : (
+          
+                <ReactMarkdown
+                  key={m.id + "-final"}
+                  remarkPlugins={[remarkBreaks]}
+                >
+                  {m.rawMessage}
+                </ReactMarkdown>
+              )}
             </div>
           ))}
 
@@ -72,9 +82,13 @@ export default function ChatWindow({
         </div>
       </div>
 
-      {/* 입력창 */}
       <div className="shrink-0 w-full max-w-[900px] px-4 mx-auto pt-4">
-        <ChatInput input={input} setInput={setInput} send={send} size="small" />
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          send={send}
+          size="small"
+        />
       </div>
     </div>
   );
