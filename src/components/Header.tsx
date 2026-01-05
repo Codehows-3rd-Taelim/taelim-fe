@@ -17,7 +17,6 @@ import {
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
 import type { SyncRecordDTO, User as UserType } from "../type";
 import { getLastSyncTime, syncNow } from "../sync/syncApi";
-import { useLocation } from "react-router-dom";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -35,16 +34,6 @@ export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const location = useLocation();
-  const currentPath = location.pathname;
-
-  const isActive = (path: string) => {
-    if (path === "/") {
-      return currentPath === "/";
-    }
-    return currentPath.startsWith(path);
-  };
 
   /** 사용자 이름 찾기 */
   const getUserName = (uid: number): string => {
@@ -154,9 +143,9 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#333D51] h-[var(--header-height)]">
-      <div className="h-full px-4 md:px-6">
-        <div className="relative flex items-center justify-between h-full">
+    <header className="fixed top-0 left-0 right-0 z-50 shadow-lg bg-linear-to-r from-orange-400 to-orange-500">
+      <div className="px-4 md:px-6">
+        <div className="relative flex items-center justify-between h-16 ">
           {/* 모바일: 햄버거 메뉴 (맨 왼쪽) */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -172,31 +161,15 @@ export default function Header() {
               className="text-xl font-bold tracking-wide text-white cursor-pointer whitespace-nowrap"
               onClick={() => navigate("/")}
             >
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-              Inufleet
-=======
               <img
                 className="w-auto h-[clamp(8px,5vw,45px)]"
                 src="src\assets\inufleet_logo_w.png"
               />
->>>>>>> Stashed changes
-=======
-              <img className="w-auto h-[clamp(8px,5vw,45px)]" src= "src\assets\inufleet_logo(w).png"/>
->>>>>>> 7ff26fcef2446bfa2dd9dc8f79e59dc64e337136
             </div>
           </div>
 
           {/* 중앙: 메뉴 아이콘들 (lg 이상) */}
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-          <div className="items-center justify-center flex-1 hidden lg:flex">
-=======
           <div className="items-center justify-center flex-1 hidden min-w-0 lg:flex">
->>>>>>> Stashed changes
-=======
-          <div className="items-center justify-center flex-1 hidden lg:flex min-w-0">
->>>>>>> 7ff26fcef2446bfa2dd9dc8f79e59dc64e337136
             {/* 메뉴 - 아이콘만 (lg ~ 2xl 미만) */}
             <nav className="flex items-center justify-center flex-1 gap-4 xl:gap-6 2xl:hidden">
               {visibleNavItems.map((item) => {
@@ -205,49 +178,27 @@ export default function Header() {
                   <button
                     key={item.name}
                     onClick={() => handleNavClick(item.path)}
-                    className={`
-                      flex items-center justify-center p-3 rounded-lg
-                      ${
-                        isActive(item.path)
-                          ? "text-[#B9FF5E] transition-none"
-                          : "text-white hover:text-[#B9FF5E] transition-colors duration-50"
-                      }
-                    `}
+                    className="flex items-center justify-center p-3 text-white transition-colors rounded-lg hover:bg-white/10"
                     title={item.name}
                   >
-                    <Icon size={22} />
+                    <Icon size={20} className="flex-shrink-0" />
                   </button>
                 );
               })}
             </nav>
 
             {/* 메뉴 - 아이콘 + 텍스트 (2xl 이상, 1500px 이상) */}
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-            <nav className="items-center justify-center flex-1 hidden gap-1 2xl:flex">
-=======
             <nav className="items-center justify-center flex-1 hidden min-w-0 gap-6 2xl:flex">
->>>>>>> Stashed changes
-=======
-            <nav className="items-center justify-center flex-1 hidden gap-6 min-w-0 2xl:flex">
->>>>>>> 7ff26fcef2446bfa2dd9dc8f79e59dc64e337136
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.name}
                     onClick={() => handleNavClick(item.path)}
-                    className={`
-                      flex items-center gap-2 px-3 py-2 rounded-lg
-                      ${
-                        isActive(item.path)
-                          ? "text-[#B9FF5E] transition-none"
-                          : "text-white hover:text-[#B9FF5E] transition-colors duration-50"
-                      }
-                    `}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg hover:bg-white/10 whitespace-nowrap"
                   >
-                    <Icon size={22} className="flex-shrink-0" />
-                    <span className="whitespace-nowrap">{item.name}</span>
+                    <Icon size={18} className="flex-shrink-0" />
+                    <span>{item.name}</span>
                   </button>
                 );
               })}
@@ -263,7 +214,7 @@ export default function Header() {
           </div>
 
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
-          <div className="z-10 flex items-center gap-2 lg:gap-4 shrink-0">
+          <div className="z-10 flex items-center gap-2 lg:gap-4">
             {/*  동기화 시간 표시 (lg 이상) */}
             <div className="hidden text-xs text-white xl:text-sm lg:block whitespace-nowrap">
               {formatSyncTime()}
@@ -279,8 +230,8 @@ export default function Header() {
               text-white text-xs lg:text-sm font-semibold rounded-lg shadow-md transition-colors whitespace-nowrap
               ${
                 isSyncing
-                  ? "bg-[#BA1E1E] cursor-not-allowed"
-                  : "bg-[#BA1E1E] hover:border-white"
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-amber-600 hover:bg-amber-700"
               }
             `}
             >
@@ -345,7 +296,7 @@ export default function Header() {
                     className="fixed inset-0 z-10"
                     onClick={() => setIsUserMenuOpen(false)}
                   />
-                  <div className="absolute right-0 z-20 w-full mt-2 overflow-hidden bg-[#333D51] rounded-lg shadow-lg">
+                  <div className="absolute right-0 z-20 w-full mt-2 overflow-hidden bg-orange-400 rounded-lg shadow-lg">
                     <button
                       onClick={handleLogoutClick}
                       className="w-full px-4 py-3 font-medium text-center text-white transition-colors hover:bg-white/10 whitespace-nowrap"
@@ -361,7 +312,7 @@ export default function Header() {
 
         {/* 모바일 메뉴 */}
         {isMobileMenuOpen && (
-          <div className="py-4 border-t lg:hidden border-white/20 bg-[#333D51]/95 backdrop-blur-sm">
+          <div className="py-4 border-t lg:hidden border-white/20">
             <nav className="flex flex-col gap-2">
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
