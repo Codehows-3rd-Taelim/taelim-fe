@@ -26,10 +26,10 @@ export default function AdminRobotTopChart({ data }: Props) {
     const ratio = (value - minTime) / (maxTime - minTime);
 
     const yellowShades: Record<number, string> = {
-      200: "#FDE68A",
-      300: "#FCD34D",
-      400: "#FBBF24",
-      500: "#D3AC2B",
+ 200: "#FFF3BF",
+  300: "#FFE066",
+  400: "#FCC419",
+  500: "#E6B800",
     };
 
     const shadeKeys = [200, 300, 400, 500];
@@ -62,7 +62,7 @@ export default function AdminRobotTopChart({ data }: Props) {
 
         <XAxis
           dataKey="robotName"
-          angle={-30}
+          angle={-45}
           textAnchor="end"
           interval={0}
           height={70}

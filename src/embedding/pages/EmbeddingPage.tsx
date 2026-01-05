@@ -6,7 +6,7 @@ export default function EmbeddingPage() {
   const [tab, setTab] = useState<"file" | "qa">("file");
 
   return (
-    <div className="w-full  h-full flex justify-center bg-gray-100">
+    <div className="w-full  h-full flex justify-center bg-gray-100 pb-6">
       <div className="w-full max-w-[1400px] flex flex-col px-4 pt-2 pb-0">
         {/* 탭 영역 */}
         <div className="flex  px-4 pt-6  bg-gray-100 border-b-2 border-gray-400 sm:px-6">

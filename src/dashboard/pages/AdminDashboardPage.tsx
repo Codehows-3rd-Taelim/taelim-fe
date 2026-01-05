@@ -9,14 +9,14 @@ import type { DateRange } from "@mui/x-date-pickers-pro/models";
 import AdminKpiSection from "../components/admin/AdminKpiSection";
 import AdminStoreTable from "../components/admin/AdminStoreTable";
 import AdminIndustryTimeChart from "../components/admin/AdminIndustryTimeChart";
-import AdminStoreCleanTimeChart from "../components/admin/AdminStoreCleanTimeChart";
+// import AdminStoreCleanTimeChart from "../components/admin/AdminStoreCleanTimeChart";
 import AdminStoreCleanAreaChart from "../components/admin/AdminStoreCleanAreaChart";
 import AdminOperationRateScatterChart from "../components/admin/AdminOperationRateScatterChart";
 import AdminDashboardRanking from "../components/admin/AdminDashboardRanking";
 import AdminRobotTopChart from "../components/admin/AdminRobotTopChart";
 // import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
 // import AdminIndustryCompareChart from "../components/admin/AdminIndustryCompareChart";
-import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
+// import AdminStoreStatusDonut from "../components/admin/AdminStoreStatusDonut";
 import AdminIndustryCompareChart from "../components/admin/AdminIndustryCompareChart";
 import AdminTaskStatusDonut from "../components/admin/AdminTaskStatusDonut";
 import type { TaskStatusDonut } from "../../type";
@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
 
   // 사용자 대시보드와 동일한 초기 날짜 설정 (최근 7일)
   const [range, setRange] = useState<DateRange<Dayjs>>([
-    dayjs().subtract(30, "day"),
+    dayjs().subtract(7, "day"),
     dayjs(),
   ]);
 
@@ -83,174 +83,125 @@ export default function AdminDashboardPage() {
   }, [filteredReports]);
 
   return (
-    <div className="pt-6 w-full  max-w-[1400px] mx-auto px-4 lg:px-6 space-y-6 bg-gray-100">
-      {/* 헤더 + 날짜 선택 (사용자 대시보드 UI와 동일한 레이아웃) */}
+    <div className="pt-6 pb-10 w-full max-w-[1400px] mx-auto px-4 lg:px-6 bg-gray-100 space-y-10">
+      {/* 1. 제목 + 날짜 */}
       <div className="flex justify-between items-center">
         <h3 className="text-3xl font-bold">관리자 대시보드</h3>
-
-        {/* 사용자 대시보드와 동일한 크기/디자인 */}
         <DateRangePicker value={range} onChange={setRange} />
       </div>
-      {/* KPI */}
+
+      {/* 2. KPI 요약 */}
       <AdminKpiSection data={data} />
-      //가동률 우수, 저조
-      <div>
+
+      {/* 3. 가동률 핵심 요약 */}
+      <section className="space-y-6">
         <AdminDashboardRanking
           storeSummaries={data.storeSummaries}
           operationRateData={data.OperationRateScatterChart}
         />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2 min-h-[400px]">
-          <div className="flex items-start justify-between mb-4">
-            <h2 className="text-xl font-semibold">매장별 총 청소 면적</h2>
-            <div className="text-x text-slate-400">
-              ※ 해당 기간 동안 청소 이력이 있는 매장만 집계됩니다
-            </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
+          <h2 className="text-xl font-semibold mb-4">매장별 가동률 분포</h2>
+          <AdminOperationRateScatterChart
+            data={data.OperationRateScatterChart}
+          />
+        </div>
+      </section>
+
+      {/* 4. 작업량 분석 (면적 + 상태) */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 청소 면적 */}
+        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2 min-h-[420px]">
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-xl font-semibold">
+              매장별 총 청소 면적
+              <span className="ml-2 text-sm text-slate-400">(누적)</span>
+            </h2>
+            <span className="text-xs text-slate-400">
+              ※ 청소 이력 있는 매장만 집계
+            </span>
           </div>
           <AdminStoreCleanAreaChart data={data.storeCleanArea} />
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <div className="flex flex-col gap-2 mb-4">
-              {/* 제목 */}
-              <h2 className="text-lg font-semibold">
-                {selectedStoreId
-                  ? `${
-                      stores.find((s) => s.storeId === selectedStoreId)
-                        ?.shopName ?? "알 수 없는 매장"
-                    } 작업 이력 상태`
-                  : "전체 매장 작업 이력 상태"}
-              </h2>
+        {/* 작업 상태 */}
+        <div className="bg-white p-6 rounded-xl shadow min-h-[420px]">
+          <h2 className="text-lg font-semibold mb-4">
+            {selectedStoreId
+              ? `${
+                  stores.find((s) => s.storeId === selectedStoreId)?.shopName
+                } 작업 상태`
+              : "전체 매장 작업 상태"}
+          </h2>
 
-              {/* 매장 선택 드롭다운 */}
-              <select
-                className="w-fit border rounded px-3 py-1 text-sm"
-                value={selectedStoreId ?? ""}
-                onChange={(e) =>
-                  setSelectedStoreId(
-                    e.target.value === "" ? null : Number(e.target.value)
-                  )
-                }
-              >
-                <option value="">전체</option>
-                {stores.map((store) => (
-                  <option key={store.storeId} value={store.storeId}>
-                    {store.shopName}
-                  </option>
-                ))}
-              </select>
+          <select
+            className="mb-4 w-fit border rounded px-3 py-1 text-sm"
+            value={selectedStoreId ?? ""}
+            onChange={(e) =>
+              setSelectedStoreId(
+                e.target.value === "" ? null : Number(e.target.value)
+              )
+            }
+          >
+            <option value="">전체</option>
+            {stores.map((store) => (
+              <option key={store.storeId} value={store.storeId}>
+                {store.shopName}
+              </option>
+            ))}
+          </select>
+
+          {taskStatusDonut.every((d) => d.count === 0) ? (
+            <div className="flex items-center justify-center h-[260px] text-gray-400">
+              데이터 없음
             </div>
-
-            {/* 데이터 없을 때 안내 */}
-            {taskStatusDonut.every((d) => d.count === 0) ? (
-              <div className="flex items-center justify-center h-[300px] text-gray-400 text-xl">
-                {selectedStoreId
-                  ? "선택한 매장의 작업 이력이 없습니다."
-                  : "조회된 작업 이력이 없습니다."}
-              </div>
-            ) : (
-              <AdminTaskStatusDonut data={taskStatusDonut} />
-            )}
-          </div>
+          ) : (
+            <AdminTaskStatusDonut data={taskStatusDonut} />
+          )}
         </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2">
-          <div className="flex items-start justify-between mb-4">
-            <h2 className="text-xl font-semibold">매장별 총 청소 시간</h2>
-            <div className="text-x text-slate-400">
-              ※ 해당 기간 동안 청소 이력이 있는 매장만 집계됩니다
-            </div>
-          </div>
+      </section>
+
+      {/* 5. 시간 기반 분석 */}
+
+      {/* <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
+          <h2 className="text-xl font-semibold mb-4">매장별 총 청소 시간</h2>
           <AdminStoreCleanTimeChart data={data.storeCleanTime} />
-        </div>
-      </div>
-      {/* 매장 테이블 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-        <div className="bg-white p-6 rounded-xl shadow-xl">
-          <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
+        </div> */}
+
+      {/* 매장 요약 정보 */}
+      <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
+        <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
+
+        <div className="flex-1 overflow-hidden">
           <AdminStoreTable stores={data.storeSummaries} />
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업시간</h2>
-          <AdminRobotTopChart data={data.robotTopTime} />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">매장 상태 비율</h2>
-          <AdminStoreStatusDonut data={data.storeStatusCount} />
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <div className="flex justify-between items-center mb-4">
-              {/* 제목 : 선택된 매장명 표시 */}
-              <h2 className="text-lg font-semibold">
-                {selectedStoreId
-                  ? `${
-                      stores.find((s) => s.storeId === selectedStoreId)
-                        ?.shopName ?? "알 수 없는 매장"
-                    } 작업 이력 상태`
-                  : "전체 매장 작업 이력 상태"}
-              </h2>
+      {/* 6. 상세 관리 영역 */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 로봇 TOP 작업 시간 */}
+        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
+          <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업 시간</h2>
 
-              {/* 매장 선택 드롭다운 */}
-              <select
-                className="border rounded px-3 py-1 text-sm"
-                value={selectedStoreId ?? ""}
-                onChange={(e) =>
-                  setSelectedStoreId(
-                    e.target.value === "" ? null : Number(e.target.value)
-                  )
-                }
-              >
-                <option value="">전체</option>
-                {stores.map((store) => (
-                  <option key={store.storeId} value={store.storeId}>
-                    {store.shopName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 데이터 없을 때 안내 */}
-            {taskStatusDonut.every((d) => d.count === 0) ? (
-              <div className="flex items-center justify-center h-[300px] text-gray-400 text-xl">
-                {selectedStoreId
-                  ? "선택한 매장의 작업 이력이 없습니다."
-                  : "조회된 작업 이력이 없습니다."}
-              </div>
-            ) : (
-              <AdminTaskStatusDonut data={taskStatusDonut} />
-            )}
+          <div className="flex-1 flex items-center">
+            <AdminRobotTopChart data={data.robotTopTime} />
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow">
+
+        {/* 산업별 매장 수 */}
+        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
           <h2 className="text-lg font-semibold mb-4">산업별 매장 수</h2>
-          <AdminIndustryCompareChart data={data.industryStoreCount} />
-        </div>
 
-        {/* 차트 3종 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-          <div className="bg-white p-6 rounded-xl shadow-xl">
-            <h2 className="text-lg font-semibold mb-4">
-              산업별 일별 가동 시간
-            </h2>
-            <AdminIndustryTimeChart data={data.industryOperationTime} />
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-xl">
-            <h2 className="text-lg font-semibold mb-4">매장별 가동률</h2>
-            <AdminOperationRateScatterChart
-              data={data.OperationRateScatterChart}
-            />
+          <div className="flex-1 flex items-center">
+            <AdminIndustryCompareChart data={data.industryStoreCount} />
           </div>
         </div>
-      </div>
+      </section>
+      <section className="space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
+          <h2 className="text-xl font-semibold mb-4">산업별 일별 가동 시간</h2>
+          <AdminIndustryTimeChart data={data.industryOperationTime} />
+        </div>
+      </section>
     </div>
   );
 }

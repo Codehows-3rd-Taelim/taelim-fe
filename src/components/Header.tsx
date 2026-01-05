@@ -334,7 +334,7 @@ export default function Header() {
 
         {/* 모바일 메뉴 */}
         {isMobileMenuOpen && (
-          <div className="py-4 border-t lg:hidden border-white/20">
+          <div className="py-4 border-t lg:hidden border-white/20 bg-[#333D51]/95 backdrop-blur-sm">
             <nav className="flex flex-col gap-2">
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;

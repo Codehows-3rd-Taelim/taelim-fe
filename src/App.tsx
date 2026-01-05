@@ -101,13 +101,14 @@ function App() {
                 }
               />
             </Routes>
-            {!isLoginPage && (
+            
+          </Container>
+        </Box>
+        {!isLoginPage && (
               <Box component="footer" sx={{ width: "100%", flexShrink: 0 }}>
                 <Footer />
               </Box>
             )}
-          </Container>
-        </Box>
       </Box>
     </AuthProvider>
   );
