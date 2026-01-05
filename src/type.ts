@@ -300,7 +300,7 @@ export interface Qna {
   questionText: string;
   appliedAnswer: string | null;
   editingAnswer: string | null;
-  status: "EDITING" | "APPLIED" | "FAILED" | null;
+  status: "APPLIED" | "FAILED" | null;
   resolved: boolean;
   createdAt: string;
   updatedAt: string;

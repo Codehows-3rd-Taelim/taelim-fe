@@ -19,17 +19,34 @@ export default function QAPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  const deleteData = (id: number) => {
-    if(confirm("질문을 삭제하시겠습니까?")) {
-        deleteQna(id)
-        .then(() => {
-          fetchQna();
-          alert("질문이 삭제되었습니다.")
-        })
-        .catch(err => console.log(err));
-    }
-  }
-  
+  const statusMap: Record<
+    "APPLIED" | "FAILED" | "NONE",
+    { label: string; color: string }
+  > = {
+    NONE: {
+      label: "미처리",
+      color: "bg-gray-400",
+    },
+    APPLIED: {
+      label: "답변 적용 완료",
+      color: "bg-green-500",
+    },
+    FAILED: {
+      label: "답변 적용 실패",
+      color: "bg-red-500",
+    },
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+  };
+
   const fetchQna = useCallback(async () => {
     setLoading(true);
 
@@ -43,6 +60,16 @@ export default function QAPage() {
     setQnas(data);
     setLoading(false);
   }, [filter]);
+
+  const deleteData = (id: number) => {
+    deleteQna(id)
+      .then(() => {
+        fetchQna();
+        alert("질문이 삭제되었습니다.");
+      })
+      .catch(console.error);
+  };
+
 
   useEffect(() => {
     fetchQna();
@@ -61,7 +88,10 @@ export default function QAPage() {
     if (!answers[q.id]) {
       setAnswers((prev) => ({
         ...prev,
-        [q.id]: q.appliedAnswer ?? "",
+        [q.id]:
+          q.status === "FAILED"
+            ? q.editingAnswer ?? ""
+            : q.appliedAnswer ?? "",
       }));
     }
   };
@@ -97,19 +127,49 @@ export default function QAPage() {
       <div className="p-4 space-y-3">
         {qnas.map((q) => {
           const isResolved = q.resolved === true;
+          const statusKey = q.status ?? "NONE";
+          const status = statusMap[statusKey];
 
           return (
             <div key={q.id} className="bg-white rounded-lg">
               <button
                 onClick={() => toggle(q)}
-                className="w-full px-4 py-3 text-left font-medium flex justify-between"
+                className="w-full px-4 py-3 text-left font-medium"
               >
-                <span>{q.questionText}</span>
-                {isResolved && (
-                  <span className="text-xs text-gray-400">수정</span>
-                )}
+                {/* 날짜 */}
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs text-gray-500">
+                    <span>질문: {formatDate(q.createdAt)}</span>
+                    {isResolved && q.updatedAt && (
+                      <span className="ml-5">
+                        답변: {formatDate(q.updatedAt)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                {/* 상태 + 질문 */}
+                <div
+                  className={`flex items-center gap-2 ${
+                    openId === q.id
+                      ? "whitespace-pre-line leading-relaxed"
+                      : "truncate"
+                  }`}
+                >
+                  <span className="text-xs text-gray-600 flex items-center gap-1 shrink-0">
+                    [
+                    <span
+                      className={`w-2 h-2 rounded-full ${status.color}`}
+                    />
+                    {status.label}
+                    ]
+                  </span>
+
+                  <span>{q.questionText}</span>
+                </div>
               </button>
 
+              {/* 상세 */}
               {openId === q.id && (
                 <div className="px-4 pb-4">
                   <textarea
@@ -120,7 +180,11 @@ export default function QAPage() {
                         [q.id]: e.target.value,
                       }))
                     }
-                    placeholder="답변을 입력하세요"
+                    placeholder={
+                      q.status === "FAILED"
+                        ? "이전 작업이 실패했습니다. 다시 시도하세요."
+                        : "답변을 입력하세요"
+                    }
                     className="w-full border rounded px-3 py-2 mb-3 min-h-24"
                   />
 
@@ -128,33 +192,68 @@ export default function QAPage() {
                     disabled={submitting}
                     onClick={async () => {
                       const confirmMessage = isResolved
-                        ? "수정 내용을 저장하시겠습니까?"
-                        : "저장하시겠습니까?\n저장 후 즉시 반영됩니다.";
+                      ? "답변을 수정하시겠습니까?"
+                      : "답변을 저장하시겠습니까?\n저장 후 즉시 반영됩니다.";
 
-                      if (!window.confirm(confirmMessage)) return;
+
+                      if (!confirm(confirmMessage)) return;
 
                       try {
                         setSubmitting(true);
                         await applyQna(q.id, answers[q.id]);
+
+                        setQnas(prev =>
+                          prev.map(item =>
+                            item.id === q.id
+                              ? {
+                                  ...item,
+                                  status: "APPLIED",
+                                  resolved: true,
+                                  updatedAt: new Date().toISOString(),
+                                  appliedAnswer: answers[q.id],
+                                }
+                              : item
+                          )
+                        ); 
+
                         setToast(
                           isResolved
-                            ? "QnA가 수정되었습니다."
-                            : "QnA가 저장되었습니다."
+                            ? "답변이 수정되었습니다."
+                            : "답변이 저장되었습니다."
                         );
+
                         await fetchQna();
                         setOpenId(null);
+                      } catch {
+                        setToast(
+                          isResolved
+                            ? "답변 수정에 실패했습니다. 다시 시도해주세요."
+                            : "답변 등록에 실패했습니다. 다시 시도해주세요."
+                        );
                       } finally {
                         setSubmitting(false);
                       }
                     }}
                     className="px-4 py-1 rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
                   >
-                    {isResolved ? "수정" : "저장"}
+                    {q.status === "FAILED"
+                      ? "다시 시도"
+                      : isResolved
+                      ? "수정"
+                      : "저장"}
                   </button>
 
                   <button
-                    className="ml-3 px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
-                    onClick={() => deleteData(q.id)}
+                    className="ml-3 px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+                    onClick={() => {
+                      const message = q.resolved
+                        ? "질문을 삭제하시면 챗봇에 등록한 답변도 함께 삭제됩니다.\n그래도 삭제하시겠습니까?"
+                        : "질문을 삭제하시겠습니까?";
+
+                      if (!confirm(message)) return;
+
+                      deleteData(q.id);
+                    }}
                   >
                     삭제
                   </button>
