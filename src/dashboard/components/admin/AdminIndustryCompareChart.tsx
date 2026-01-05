@@ -28,8 +28,9 @@ export default function AdminIndustryCompareChart({
   const getFill = (value: number) => {
     const ratio = value / max;
 
-    const start = [227, 233, 255]; // 연한 indigo
-    const end = [54, 79, 199];     // 진한 indigo
+    // 밝은 #333D51 → 원본 #333D51
+    const start = [99, 109, 129]; // 밝은 slate
+    const end = [51, 61, 81]; // #333D51
 
     const r = Math.round(start[0] + (end[0] - start[0]) * ratio);
     const g = Math.round(start[1] + (end[1] - start[1]) * ratio);
@@ -42,24 +43,15 @@ export default function AdminIndustryCompareChart({
     <div className="w-full h-80 p-4 bg-white rounded-2xl shadow">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <XAxis
-            dataKey="industryName"
-            className="text-sm fill-slate-600"
-          />
-          <YAxis
-            allowDecimals={false}
-            className="text-sm fill-slate-600"
-          />
+          <XAxis dataKey="industryName" className="text-sm fill-slate-600" />
+          <YAxis allowDecimals={false} className="text-sm fill-slate-600" />
           <Tooltip
             formatter={(v: number) => [`${Math.round(v)}개`, "매장 수"]}
             cursor={{ fill: "rgba(241,245,249,0.8)" }}
           />
           <Legend formatter={() => "매장 수 (개)"} />
 
-          <Bar
-            dataKey="storeCount"
-            radius={[8, 8, 0, 0]}
-          >
+          <Bar dataKey="storeCount" radius={[8, 8, 0, 0]}>
             {data.map((d, idx) => (
               <Cell key={idx} fill={getFill(d.storeCount)} />
             ))}

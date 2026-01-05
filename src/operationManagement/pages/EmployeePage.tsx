@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import type { User, Store } from "../../type";
-import { deleteEmployee, updateEmployee } from "../api/EmployeeApi";
+import { deleteEmployee, getUsers, updateEmployee } from "../api/EmployeeApi";
 import Pagination from "../../components/Pagination";
 import EmployeeRegistrationModal from "./EmployeeRegistrationModal";
 
@@ -41,9 +41,10 @@ interface EmployeePageProps extends RegistrationProps {
   allStores: Store[];
   roleLevel: number;
   getStoreName: (storeId: number) => string;
+  storeId?: number;
 }
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 15;
 
 /* =====================
    유틸
@@ -86,6 +87,7 @@ export default function EmployeePage(props: EmployeePageProps) {
     allStores,
     roleLevel,
     getStoreName,
+    storeId,
     form,
     setFormValue,
     isIdChecked,
@@ -106,6 +108,7 @@ export default function EmployeePage(props: EmployeePageProps) {
      상태
   ===================== */
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editableList, setEditableList] = useState<User[]>([]);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
@@ -114,7 +117,7 @@ export default function EmployeePage(props: EmployeePageProps) {
   /* =====================
      정렬된 리스트
   ===================== */
-  const sortedList = useMemo(() => {
+  const baseList = useMemo(() => {
     const copy = [...list];
     copy.sort((a, b) => {
       if (a.storeId !== b.storeId) return a.storeId - b.storeId;
@@ -126,13 +129,7 @@ export default function EmployeePage(props: EmployeePageProps) {
     return copy;
   }, [list]);
 
-  /* =====================
-     페이징
-  ===================== */
-  const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
-  const displayList = isEditMode ? editableList : sortedList;
-  const displayedList = displayList.slice(startIdx, startIdx + ITEMS_PER_PAGE);
-  const totalPages = Math.ceil(sortedList.length / ITEMS_PER_PAGE);
+  const displayList = isEditMode ? editableList : baseList;
 
   const canEdit = roleLevel >= 2;
 
@@ -146,6 +143,30 @@ export default function EmployeePage(props: EmployeePageProps) {
     storeId: 0,
     role: "USER",
   };
+
+  const fetchEmployeesPage = async (page: number) => {
+    if (isEditMode) {
+      alert("수정 중에는 페이지를 이동할 수 없습니다.");
+      return;
+    }
+
+    try {
+      const res = await getUsers({
+        page,
+        size: ITEMS_PER_PAGE,
+        storeId,
+      });
+      setList(res.content);
+      setTotalItems(res.totalElements);
+      setCurrentPage(page);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployeesPage(1);
+  }, []);
 
   const resetRegisterForm = () => {
     (Object.keys(initialForm) as (keyof RegistrationForm)[]).forEach((key) => {
@@ -162,7 +183,7 @@ export default function EmployeePage(props: EmployeePageProps) {
   ===================== */
   const handleEditMode = () => {
     setIsEditMode(true);
-    setEditableList([...sortedList]);
+    setEditableList([...baseList]);
   };
 
   const handleCancel = () => {
@@ -238,9 +259,10 @@ export default function EmployeePage(props: EmployeePageProps) {
     }
   };
 
-  const handleDelete = async (index: number) => {
+  const handleDelete = async (userId: number) => {
     if (roleLevel === 1) return;
-    const target = sortedList[index];
+
+    const target = list.find((u) => u.userId === userId);
     if (!target) return;
 
     if (!window.confirm(`[${target.name}] 직원을 삭제하시겠습니까?`)) return;
@@ -248,7 +270,13 @@ export default function EmployeePage(props: EmployeePageProps) {
     setDeletingUserId(target.userId);
     try {
       await deleteEmployee(target.userId);
-      setList((prev) => prev.filter((u) => u.userId !== target.userId));
+
+      const remaining = totalItems - 1;
+      const lastPage = Math.max(1, Math.ceil(remaining / ITEMS_PER_PAGE));
+
+      fetchEmployeesPage(currentPage > lastPage ? lastPage : currentPage);
+    } catch (e) {
+      alert("삭제 중 오류가 발생했습니다.");
     } finally {
       setDeletingUserId(null);
     }
@@ -351,7 +379,7 @@ export default function EmployeePage(props: EmployeePageProps) {
       </div>
 
       {/* 테이블 */}
-      {sortedList.length === 0 ? (
+      {displayList.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           조회된 직원이 없습니다.
         </div>
@@ -372,7 +400,7 @@ export default function EmployeePage(props: EmployeePageProps) {
                 </tr>
               </thead>
               <tbody>
-                {displayedList.map((u, i) => (
+                {displayList.map((u, i) => (
                   <tr
                     key={u.userId}
                     className="text-center border-t hover:bg-gray-50"
@@ -525,7 +553,7 @@ export default function EmployeePage(props: EmployeePageProps) {
                       <td className="px-4 py-3">
                         {u.role !== "ADMIN" ? (
                           <button
-                            onClick={() => handleDelete(startIdx + i)}
+                            onClick={() => handleDelete(u.userId)}
                             disabled={deletingUserId === u.userId}
                             className="bg-red-500 text-white px-4 py-1.5 rounded hover:bg-red-600 disabled:bg-gray-400"
                           >
@@ -545,8 +573,8 @@ export default function EmployeePage(props: EmployeePageProps) {
           <div className="mt-5 flex justify-center">
             <Pagination
               page={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
+              totalPages={Math.ceil(totalItems / ITEMS_PER_PAGE)}
+              onPageChange={fetchEmployeesPage}
               maxButtons={5}
             />
           </div>

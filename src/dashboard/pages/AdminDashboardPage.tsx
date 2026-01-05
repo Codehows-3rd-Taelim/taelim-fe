@@ -9,7 +9,7 @@ import type { DateRange } from "@mui/x-date-pickers-pro/models";
 import AdminKpiSection from "../components/admin/AdminKpiSection";
 import AdminStoreTable from "../components/admin/AdminStoreTable";
 import AdminIndustryTimeChart from "../components/admin/AdminIndustryTimeChart";
-import AdminStoreCleanTimeChart from "../components/admin/AdminStoreCleanTimeChart";
+// import AdminStoreCleanTimeChart from "../components/admin/AdminStoreCleanTimeChart";
 import AdminStoreCleanAreaChart from "../components/admin/AdminStoreCleanAreaChart";
 import AdminOperationRateScatterChart from "../components/admin/AdminOperationRateScatterChart";
 import AdminDashboardRanking from "../components/admin/AdminDashboardRanking";
@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
 
   // 사용자 대시보드와 동일한 초기 날짜 설정 (최근 7일)
   const [range, setRange] = useState<DateRange<Dayjs>>([
-    dayjs().subtract(30, "day"),
+    dayjs().subtract(7, "day"),
     dayjs(),
   ]);
 
@@ -82,7 +82,7 @@ export default function AdminDashboardPage() {
     ];
   }, [filteredReports]);
 
- return (
+  return (
     <div className="pt-6 pb-10 w-full max-w-[1400px] mx-auto px-4 lg:px-6 bg-gray-100 space-y-10">
       {/* 1. 제목 + 날짜 */}
       <div className="flex justify-between items-center">
@@ -128,7 +128,9 @@ export default function AdminDashboardPage() {
         <div className="bg-white p-6 rounded-xl shadow min-h-[420px]">
           <h2 className="text-lg font-semibold mb-4">
             {selectedStoreId
-              ? `${stores.find(s => s.storeId === selectedStoreId)?.shopName} 작업 상태`
+              ? `${
+                  stores.find((s) => s.storeId === selectedStoreId)?.shopName
+                } 작업 상태`
               : "전체 매장 작업 상태"}
           </h2>
 
@@ -149,7 +151,7 @@ export default function AdminDashboardPage() {
             ))}
           </select>
 
-          {taskStatusDonut.every(d => d.count === 0) ? (
+          {taskStatusDonut.every((d) => d.count === 0) ? (
             <div className="flex items-center justify-center h-[260px] text-gray-400">
               데이터 없음
             </div>
@@ -160,50 +162,46 @@ export default function AdminDashboardPage() {
       </section>
 
       {/* 5. 시간 기반 분석 */}
-      <section className="space-y-6">
-        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
+
+      {/* <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
           <h2 className="text-xl font-semibold mb-4">매장별 총 청소 시간</h2>
           <AdminStoreCleanTimeChart data={data.storeCleanTime} />
+        </div> */}
+
+      {/* 매장 요약 정보 */}
+      <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
+        <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
+
+        <div className="flex-1 overflow-hidden">
+          <AdminStoreTable stores={data.storeSummaries} />
+        </div>
+      </div>
+      {/* 6. 상세 관리 영역 */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 로봇 TOP 작업 시간 */}
+        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
+          <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업 시간</h2>
+
+          <div className="flex-1 flex items-center">
+            <AdminRobotTopChart data={data.robotTopTime} />
+          </div>
         </div>
 
+        {/* 산업별 매장 수 */}
+        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
+          <h2 className="text-lg font-semibold mb-4">산업별 매장 수</h2>
+
+          <div className="flex-1 flex items-center">
+            <AdminIndustryCompareChart data={data.industryStoreCount} />
+          </div>
+        </div>
+      </section>
+      <section className="space-y-6">
         <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
           <h2 className="text-xl font-semibold mb-4">산업별 일별 가동 시간</h2>
           <AdminIndustryTimeChart data={data.industryOperationTime} />
         </div>
       </section>
-{/* 매장 요약 정보 */}
-  <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
-    <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
-
-    <div className="flex-1 overflow-hidden">
-      <AdminStoreTable stores={data.storeSummaries} />
-    </div>
-  </div>
-      {/* 6. 상세 관리 영역 */}
-<section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  
-
-  {/* 로봇 TOP 작업 시간 */}
-  <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
-    <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업 시간</h2>
-
-    <div className="flex-1 flex items-center">
-      <AdminRobotTopChart data={data.robotTopTime} />
-    </div>
-  </div>
-
-  {/* 산업별 매장 수 */}
-  <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
-    <h2 className="text-lg font-semibold mb-4">산업별 매장 수</h2>
-
-    <div className="flex-1 flex items-center">
-      <AdminIndustryCompareChart data={data.industryStoreCount} />
-    </div>
-  </div>
-</section>
-
-
-
     </div>
   );
 }
