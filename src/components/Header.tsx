@@ -172,12 +172,31 @@ export default function Header() {
               className="text-xl font-bold tracking-wide text-white cursor-pointer whitespace-nowrap"
               onClick={() => navigate("/")}
             >
+<<<<<<< HEAD
+<<<<<<< Updated upstream
+              Inufleet
+=======
+              <img
+                className="w-auto h-[clamp(8px,5vw,45px)]"
+                src="src\assets\inufleet_logo_w.png"
+              />
+>>>>>>> Stashed changes
+=======
               <img className="w-auto h-[clamp(8px,5vw,45px)]" src= "src\assets\inufleet_logo(w).png"/>
+>>>>>>> 7ff26fcef2446bfa2dd9dc8f79e59dc64e337136
             </div>
           </div>
 
           {/* 중앙: 메뉴 아이콘들 (lg 이상) */}
+<<<<<<< HEAD
+<<<<<<< Updated upstream
+          <div className="items-center justify-center flex-1 hidden lg:flex">
+=======
+          <div className="items-center justify-center flex-1 hidden min-w-0 lg:flex">
+>>>>>>> Stashed changes
+=======
           <div className="items-center justify-center flex-1 hidden lg:flex min-w-0">
+>>>>>>> 7ff26fcef2446bfa2dd9dc8f79e59dc64e337136
             {/* 메뉴 - 아이콘만 (lg ~ 2xl 미만) */}
             <nav className="flex items-center justify-center flex-1 gap-4 xl:gap-6 2xl:hidden">
               {visibleNavItems.map((item) => {
@@ -203,7 +222,15 @@ export default function Header() {
             </nav>
 
             {/* 메뉴 - 아이콘 + 텍스트 (2xl 이상, 1500px 이상) */}
+<<<<<<< HEAD
+<<<<<<< Updated upstream
+            <nav className="items-center justify-center flex-1 hidden gap-1 2xl:flex">
+=======
+            <nav className="items-center justify-center flex-1 hidden min-w-0 gap-6 2xl:flex">
+>>>>>>> Stashed changes
+=======
             <nav className="items-center justify-center flex-1 hidden gap-6 min-w-0 2xl:flex">
+>>>>>>> 7ff26fcef2446bfa2dd9dc8f79e59dc64e337136
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -238,7 +265,7 @@ export default function Header() {
           {/* 오른쪽: 동기화 버튼 + 사용자 메뉴 */}
           <div className="z-10 flex items-center gap-2 lg:gap-4 shrink-0">
             {/*  동기화 시간 표시 (lg 이상) */}
-            <div className="hidden text-xs xl:text-sm text-white lg:block whitespace-nowrap">
+            <div className="hidden text-xs text-white xl:text-sm lg:block whitespace-nowrap">
               {formatSyncTime()}
             </div>
 
@@ -291,7 +318,7 @@ export default function Header() {
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 text-white rounded-lg hover:bg-white/10 transition-colors"
               >
-                <User size={24} className="lg:w-7 lg:h-7 flex-shrink-0" />
+                <User size={24} className="flex-shrink-0 lg:w-7 lg:h-7" />
                 <div className="flex-col items-start hidden sm:flex">
                   <span className="text-sm font-medium leading-tight whitespace-nowrap">
                     {getUserDisplayText()}
@@ -302,7 +329,7 @@ export default function Header() {
                     </span>
                   )}
                 </div>
-                <div className="hidden sm:block flex-shrink-0">
+                <div className="flex-shrink-0 hidden sm:block">
                   {isUserMenuOpen ? (
                     <ChevronUp size={18} />
                   ) : (
