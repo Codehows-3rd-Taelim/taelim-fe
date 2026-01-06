@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import robotImage from "../../assets/robot1.png";
+import robotImage from "../../assets/inufleet_robot_1.png";
 import type { LoginRequest, LoginResponse } from "../../type";
 import { getAuthToken } from "../api/LoginApi";
 import { useNavigate } from "react-router-dom";
@@ -15,155 +15,130 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // 이미지 preload
   useEffect(() => {
     const img = new Image();
     img.src = robotImage;
     img.onload = () => setImageLoaded(true);
   }, []);
 
-  // 이미 로그인되어 있으면 메인 페이지로 이동
   useEffect(() => {
     const token = localStorage.getItem("jwtToken");
-    if (token) {
-      navigate("/", { replace: true });
-    }
+    if (token) navigate("/", { replace: true });
   }, [navigate]);
 
-  // 로그인 처리
   const handleSubmit = async () => {
     if (!userId.trim() || !password.trim()) {
       setLoginError("아이디와 비밀번호를 모두 입력해주세요.");
       return;
     }
 
-    setLoginError(null);
-
-    const loginUser: LoginRequest = {
-      id: userId,
-      pw: password,
-    };
-
     try {
-      const data: LoginResponse = await getAuthToken(loginUser);
-
-      useAuthStore.getState().login({
-        jwtToken: data.jwtToken,
-        roleLevel: data.roleLevel,
-        storeId: data.storeId,
-        userId: data.userId,
+      const data: LoginResponse = await getAuthToken({
+        id: userId,
+        pw: password,
       });
 
+      useAuthStore.getState().login(data);
       navigate("/", { replace: true });
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        const message =
-          typeof error.response?.data === "string"
-            ? error.response.data
-            : "아이디 또는 비밀번호가 잘못 되었습니다. 아이디와 비밀번호를 정확히 입력해 주세요..";
-
-        setLoginError(message);
-      } else {
-        setLoginError("로그인 중 알 수 없는 오류가 발생했습니다.");
-      }
-    }
-  };
-
-  const handlePasswordKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSubmit();
+    } catch (error) {
+      setLoginError("아이디 또는 비밀번호가 잘못되었습니다.");
     }
   };
 
   return (
-    <div className="flex flex-col min-w-full min-h-screen bg-[#c9c9c9] md:flex-row font-inter">
-      {/* 왼쪽 이미지 - 패딩 줄임 */}
-      <div className="hidden md:flex md:w-[55%] md:min-w-[55%] justify-center items-center pr-2">
-        <img
-          src={robotImage}
-          alt="robots"
-          className="w-[85%] h-auto object-contain max-h-[85vh] transition-opacity duration-300"
-          style={{ opacity: imageLoaded ? 1 : 0 }}
-        />
-      </div>
+    <div
+      className="min-h-screen flex items-center justify-center bg-[#c9c9c9]"
+    >
+      {/* ===== 중앙 고정 카드 ===== */}
+      <div className="w-[1000px] h-[500px] bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-2">
+        {/* ===== LEFT IMAGE ===== */}
+        <div className="flex items-center justify-center bg-gradient-to-br from-[#4A607A] to-[#324153]">
+          <img
+            src={robotImage}
+            alt="robot"
+            className="w-[500px] h-auto object-contain transition-opacity duration-300"
+            style={{ opacity: imageLoaded ? 1 : 0 }}
+          />
+        </div>
 
-      {/* 오른쪽 로그인 - 패딩 줄임 */}
-      <div className="w-full md:w-[45%] md:min-w-[45%] flex items-center justify-center pl-2 py-4 min-h-screen md:min-h-0">
-        <div className="w-full max-w-md min-w-[450px]">
-          {/* 제목 */}
+        {/* ===== RIGHT LOGIN ===== */}
+        <div className="flex flex-col justify-center px-10">
           <div className="mb-6 text-center">
-            <h1 className="mb-2 text-4xl font-extrabold text-white-800">
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-3">
               로그인
             </h1>
-
-            <div className="text-4xl font-bold">
-              <span className="text-gray-900">Inus</span>
-              <span className="text-red-600">tree</span>
-              <span className="ml-2 text-xl font-normal text-gray-500 whitespace-nowrap">
-                스마트 로봇 관리 플랫폼
-              </span>
-            </div>
+            <span className="text-black font-extrabold text-xl">Inu</span>
+            <span className="text-red-600 font-extrabold text-xl">fleet</span>&nbsp;
+            <span className="mt-1 text-sm text-gray-500 font-bold">
+              스마트 로봇 관리 플랫폼
+            </span>
           </div>
 
-          <div className="border-2 border-[#324153] rounded-xl shadow-2xl p-8 bg-white min-w-[400px]">
-            {/* 오류 메시지 */}
-            {loginError && (
-              <div className="flex items-center p-3 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50">
-                <XCircle className="flex-shrink-0 w-5 h-5 mr-2" />
-                <span className="whitespace-pre-line">{loginError}</span>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-4">
-              {/* 아이디 */}
-              <input
-                type="text"
-                placeholder="아이디를 입력하세요"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                className="w-full px-4 py-3 text-base text-gray-700 border border-gray-300 rounded-lg outline-none focus:border-[#324153] focus:shadow-md"
-              />
-
-              {/* 비밀번호 */}
-              <div className="relative w-full">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="비밀번호를 입력하세요"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyPress={handlePasswordKeyPress}
-                  className="w-full px-4 py-3 pr-12 text-gray-700 border border-gray-300 rounded-lg outline-none focus:border-[#324153] focus:shadow-md"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? <EyeOff /> : <Eye />}
-                </button>
-              </div>
-
-              {/* 버튼 */}
-              <button
-                onClick={handleSubmit}
-                className="w-full py-3 mt-4 text-lg font-semibold text-white bg-[#4A607A] hover:bg-[#324153] rounded-lg shadow-md "
-              >
-                로그인
-              </button>
+          {loginError && (
+            <div className="mb-4 flex items-center rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+              <XCircle className="mr-2 h-5 w-5" />
+              {loginError}
             </div>
+          )}
 
-            <p className="mt-6 text-xs text-center text-gray-400">
-              비밀번호를 잊어버렸다면
-              <br />
-              <span className="font-semibold text-[#d14e4e]">
-                관리자에게 문의
-              </span>
-              하여 재설정할 수 있습니다.
-            </p>
+          <input
+            type="text"
+            placeholder="아이디"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            className="mb-3 rounded-lg border px-4 py-3 outline-none focus:border-[#4A607A]"
+          />
+
+          <div className="relative mb-4">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="비밀번호"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+              className="w-full rounded-lg border px-4 py-3 pr-12 outline-none focus:border-[#4A607A]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            >
+              {showPassword ? <Eye/> : <EyeOff />}
+            </button>
           </div>
+
+          <button
+            onClick={handleSubmit}
+            className="rounded-lg bg-[#BA1E1E] py-3 font-semibold text-white hover:bg-[#324153]"
+          >
+            로그인
+          </button>
+
+          <p className="mt-6 text-center text-xs text-gray-400">
+            비밀번호를 잊어버렸다면 <br />
+            <span className="font-semibold text-red-500">
+              관리자에게 문의
+            </span>
+            하여 재설정할 수 있습니다.
+          </p>
         </div>
       </div>
+
+      {/* ===== 모바일 대응 ===== */}
+      <style>{`
+        @media (max-width: 768px) {
+          .grid {
+            grid-template-columns: 1fr !important;
+          }
+          .grid > div:first-child {
+            display: none;
+          }
+          .w-[900px] {
+            width: 90%;
+            height: auto;
+          }
+        }
+      `}</style>
     </div>
   );
 }
