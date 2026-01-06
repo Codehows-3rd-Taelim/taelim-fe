@@ -10,7 +10,7 @@ export async function postEmbedFile(
 ): Promise<EmbedFile> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("embedKey", embedKey); 
+  formData.append("embedKey", embedKey);
 
   const res = await axios.post<EmbedFile>(`${BASE_URL}/embed-files`, formData, {
     headers: {
@@ -30,4 +30,17 @@ export async function getEmbedFiles(): Promise<EmbedFile[]> {
 /** 파일 삭제 */
 export async function deleteEmbedFile(id: number) {
   await axios.delete(`${BASE_URL}/embed-files/${id}`);
+}
+
+//등록된 파일 다운
+export async function downloadEmbedFile(file: EmbedFile) {
+  const url = `${BASE_URL}/embed-files/${file.id}/download`;
+
+  const res = await axios.get(url, { responseType: "blob" });
+  const blob = new Blob([res.data]);
+  const link = document.createElement("a");
+  link.href = window.URL.createObjectURL(blob);
+  link.download = file.originalName;
+  link.click();
+  window.URL.revokeObjectURL(link.href);
 }

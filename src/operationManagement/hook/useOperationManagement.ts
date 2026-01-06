@@ -64,7 +64,7 @@ export default function useOperationManagement() {
     // 2.공통 데이터 로딩
   useEffect(() => {
     if (!jwtToken) return;
-// 페이지네이션 UI 없음 → 전체 목록 조회용
+
     const loadData = async () => {
         const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
         const page = 1;  // 첫 페이지
