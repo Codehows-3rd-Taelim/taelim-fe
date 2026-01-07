@@ -17,14 +17,19 @@ import AdminTaskStatusDonut from "../components/admin/AdminTaskStatusDonut";
 
 import useDashboardAdmin from "../hooks/useDashboardAdmin";
 
-import type { Report, Robot, Store, Industry, TaskStatusDonut } from "../../type";
+import type {
+  Report,
+  Robot,
+  Store,
+  Industry,
+  TaskStatusDonut,
+} from "../../type";
 import { getReportsforDashboard } from "../../report/api/ReportApi";
 import { getRobots } from "../../robot/api/RobotApi";
 import { getStores } from "../../operationManagement/api/StoreApi";
 import { getIndustry } from "../../operationManagement/api/StoreApi";
 
 export default function AdminDashboardPage() {
-  
   //  상태 정의
   const [stores, setStores] = useState<Store[]>([]);
   const [robots, setRobots] = useState<Robot[]>([]);
@@ -51,12 +56,13 @@ export default function AdminDashboardPage() {
         if (!start || !end) return;
 
         // API 병렬 호출
-        const [storesRes, robotsRes, reportsRes, industriesRes] = await Promise.all([
-          getStores(1, 100),
-          getRobots(),
-          getReportsforDashboard({ startDate: start, endDate: end }),
-          getIndustry(),
-        ]);
+        const [storesRes, robotsRes, reportsRes, industriesRes] =
+          await Promise.all([
+            getStores(1, 100),
+            getRobots(),
+            getReportsforDashboard({ startDate: start, endDate: end }),
+            getIndustry(),
+          ]);
 
         setStores(storesRes.content);
         setRobots(robotsRes);
@@ -103,7 +109,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="pt-6 pb-10 w-full max-w-[1400px] mx-auto px-4 lg:px-6 bg-gray-100 space-y-10 mt-2">
       {/* 제목 + 날짜 */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h3 className="text-3xl font-bold">관리자 대시보드</h3>
         <DateRangePicker value={range} onChange={setRange} />
       </div>
@@ -118,35 +124,43 @@ export default function AdminDashboardPage() {
           operationRateData={data.OperationRateScatterChart}
         />
         <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
-          <h2 className="text-xl font-semibold mb-4">매장별 가동률 분포</h2>
-          <AdminOperationRateScatterChart data={data.OperationRateScatterChart} />
+          <h2 className="mb-4 text-xl font-semibold">매장별 가동률 분포</h2>
+          <AdminOperationRateScatterChart
+            data={data.OperationRateScatterChart}
+          />
         </div>
       </section>
 
       {/* 작업량 분석 (청소 면적 + 상태) */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2 min-h-[420px]">
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex items-start justify-between mb-4">
             <h2 className="text-xl font-semibold">
               매장별 총 청소 면적
               <span className="ml-2 text-sm text-slate-400">(누적)</span>
             </h2>
-            <span className="text-xs text-slate-400">※ 청소 이력 있는 매장만 집계</span>
+            <span className="text-xs text-slate-400">
+              ※ 청소 이력 있는 매장만 집계
+            </span>
           </div>
           <AdminStoreCleanAreaChart data={data.storeCleanArea} />
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow min-h-[420px]">
-          <h2 className="text-lg font-semibold mb-4">
+          <h2 className="mb-4 text-lg font-semibold">
             {selectedStoreId
-              ? `${stores.find((s) => s.storeId === selectedStoreId)?.shopName} 작업 상태`
+              ? `${
+                  stores.find((s) => s.storeId === selectedStoreId)?.shopName
+                } 작업 상태`
               : "전체 매장 작업 상태"}
           </h2>
           <select
-            className="mb-4 w-fit border rounded px-3 py-1 text-sm"
+            className="px-3 py-1 mb-4 text-sm border rounded w-fit"
             value={selectedStoreId ?? ""}
             onChange={(e) =>
-              setSelectedStoreId(e.target.value === "" ? null : Number(e.target.value))
+              setSelectedStoreId(
+                e.target.value === "" ? null : Number(e.target.value)
+              )
             }
           >
             <option value="">전체</option>
@@ -168,33 +182,33 @@ export default function AdminDashboardPage() {
 
       {/* 매장 요약 정보 */}
       <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
-        <h2 className="text-xl font-semibold mb-4">매장 요약 정보</h2>
+        <h2 className="mb-4 text-xl font-semibold">매장 요약 정보</h2>
         <div className="flex-1 overflow-hidden">
           <AdminStoreTable stores={data.storeSummaries} />
         </div>
       </div>
 
       {/* 상세 관리 영역 */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
-          <h2 className="text-lg font-semibold mb-4">로봇 TOP 작업 시간</h2>
-          <div className="flex-1 flex items-center">
+          <h2 className="mb-4 text-lg font-semibold">로봇 TOP 작업 시간</h2>
+          <div className="flex items-center flex-1">
             <AdminRobotTopChart data={data.robotTopTime} />
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
-          <h2 className="text-lg font-semibold mb-4">산업별 매장 수</h2>
-          <div className="flex-1 flex items-center">
+          <h2 className="mb-4 text-lg font-semibold">산업별 매장 수</h2>
+          <div className="flex items-center flex-1">
             <AdminIndustryCompareChart data={data.industryStoreCount} />
           </div>
         </div>
       </section>
 
       {/* 산업별 일별 가동 시간 */}
-      <section className="space-y-6">
+      {/* <section className="space-y-6">
         <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
-          <h2 className="text-xl font-semibold mb-4">산업별 일별 가동 시간</h2>
+          <h2 className="mb-4 text-xl font-semibold">산업별 일별 가동 시간</h2>
           <AdminIndustryTimeChart data={data.industryOperationTime} />
         </div>
       </section> */}
