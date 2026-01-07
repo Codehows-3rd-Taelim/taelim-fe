@@ -26,17 +26,8 @@ export default function AIChat() {
 
   const select = async (id: string) => {
     setCurrentId(id);
-
-    const data: Message[] = await loadConversation(id);
-
-    // 히스토리는 전부 스트리밍 종료 상태
-    setMessages(
-      data.map((m) => ({
-        ...m,
-        isStreaming: false,
-      }))
-    );
-
+    const data = await loadConversation(id);
+    setMessages(data.map(m => ({ ...m, isStreaming: false })));
     setIsSidebarOpen(false);
   };
 
@@ -52,80 +43,33 @@ export default function AIChat() {
 
     const effectiveId = currentId ?? crypto.randomUUID();
 
-    setMessages((prev) => [
-      ...prev,{
+    // USER 메시지 즉시 추가
+    setMessages(prev => [
+      ...prev,
+      {
         id: crypto.randomUUID(),
         rawMessage: message,
         senderType: "USER",
-        isStreaming: false, 
+        isStreaming: false,
       },
-]);
-
+    ]);
 
     setInput("");
     setIsTyping(true);
 
-    const tempAiId = `temp-ai-${crypto.randomUUID()}`;
-
     try {
-      const res = await sendChatStream(message, effectiveId);
+      await sendChatStream(message, effectiveId);
+
       if (!currentId) setCurrentId(effectiveId);
 
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder("utf-8");
+      const finalMessages = await loadConversation(effectiveId);
 
-      // 스트리밍 메시지 시작
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: tempAiId,
-          rawMessage: "",
-          senderType: "AI",
-          isStreaming: true,
-        },
-      ]);
-
-      let buffer = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data:")) continue;
-
-          const payload = line.slice(5);
-          const token = payload === "" ? "\n\n" : payload.replace(/^ /, "");
-
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === tempAiId
-                ? { ...m, rawMessage: m.rawMessage + token }
-                : m
-            )
-          );
-        }
-      }
-
-      // 스트리밍 종료 → 최종 메시지로 교체
-      setMessages((prev) => {
-        const temp = prev.find((m) => m.id === tempAiId);
-        if (!temp) return prev;
-
-        return [
-          ...prev.filter((m) => m.id !== tempAiId),
-          {
-            id: crypto.randomUUID(),
-            rawMessage: temp.rawMessage,
-            senderType: "AI",
-            isStreaming: false,
-          },
-        ];
-      });
+      setMessages(
+        finalMessages.map(m => ({
+          ...m,
+          isStreaming: false,
+        }))
+      );
     } finally {
       setIsTyping(false);
       loadChatHistory().then(setChatList);

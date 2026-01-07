@@ -5,8 +5,10 @@ import {
   getEmbedFiles,
   postEmbedFile,
   deleteEmbedFile,
+  downloadEmbedFile,
 } from "../api/FileUploadApi";
 import axios from "axios";
+import { FaDownload } from "react-icons/fa";
 
 export default function FileUploadPage() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -120,7 +122,7 @@ export default function FileUploadPage() {
         newFiles.push(saved);
       }
 
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      setUploadedFiles((prev) => [...newFiles, ...prev]);
       setPendingFiles([]);
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
@@ -222,19 +224,26 @@ export default function FileUploadPage() {
           uploadedFiles.map((file) => (
             <div
               key={file.id}
-              className="bg-white rounded-lg px-4 py-3 flex justify-between items-center"
+              className="bg-white rounded-lg px-4 py-3 flex items-center justify-between"
             >
-              <div className="flex items-center gap-3">
+              {/* 왼쪽: 파일 아이콘 + 이름 */}
+              <div className="flex items-center gap-2">
                 {getFileIcon(file.originalName)}
                 <span>{file.originalName}</span>
               </div>
 
-              <button
-                onClick={() => handleDelete(file)}
-                className="bg-[#d14e4e] hover:bg-[#d11a1a] text-white px-3 py-1 rounded text-sm"
-              >
-                삭제
-              </button>
+              {/* 오른쪽: 삭제 버튼 + 다운로드 버튼 */}
+              <div className="flex items-center gap-2">
+                <button onClick={() => downloadEmbedFile(file)}>
+                  <FaDownload />
+                </button>
+                <button
+                  onClick={() => handleDelete(file)}
+                  className="bg-[#d14e4e] hover:bg-[#d11a1a] text-white px-3 py-1 rounded text-sm"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
           ))}
       </div>

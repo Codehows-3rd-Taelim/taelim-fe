@@ -1,5 +1,3 @@
-// AdminDashboardRanking.tsx
-
 import type {
   OperationRateScatterChartData,
   StoreSummary,
@@ -11,7 +9,7 @@ type Props = {
 };
 
 export default function AdminDashboardRanking({ operationRateData }: Props) {
-  // 2️ 가동률 최하위 5
+  // 가동률 최하위 5
   const avgRates = operationRateData.stores.map((store, idx) => {
     const totalRate = operationRateData.rates[idx].reduce((s, r) => s + r, 0);
     const avgRate = totalRate / (operationRateData.rates[idx].length || 1);
@@ -61,14 +59,12 @@ export default function AdminDashboardRanking({ operationRateData }: Props) {
         </ol>
       </div>
 
-      {/* 가동률 최하위 5 */}
+      {/* 가동률 최하위 TOP 5 */}
       <div className="bg-white p-6 rounded-xl shadow-xl">
         <h2 className="text-xl font-semibold mb-4">가동률 저조 매장</h2>
 
         <ol className="space-y-4">
           {bottomOperationRate.map((s, idx) => {
-            const dangerRate = Math.max(0, 100 - s.avgRate);
-
             return (
               <li key={s.store} className="space-y-2">
                 <div className="flex justify-between text-lg font-medium">
@@ -82,7 +78,7 @@ export default function AdminDashboardRanking({ operationRateData }: Props) {
                 <div className="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-500"
-                    style={{ width: `${dangerRate}%` }}
+                    style={{ width: `${Math.min(s.avgRate, 100)}%` }}
                   />
                 </div>
               </li>

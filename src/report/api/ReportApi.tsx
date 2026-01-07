@@ -31,6 +31,13 @@ export const getReports = async (
   return response.data;
 };
 
+export const getReportsforDashboard = async (
+  params: ReportQueryParams
+): Promise<Report[]> => {
+  const response = await axios.get(`${BASE_URL}/report/list`, { params });
+  return response.data;
+};
+
 // 특이사항
 export const updateReportRemark = async (
   reportId: number,
