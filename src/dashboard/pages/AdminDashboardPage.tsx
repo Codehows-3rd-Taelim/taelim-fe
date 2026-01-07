@@ -6,7 +6,8 @@ import type { DateRange } from "@mui/x-date-pickers-pro/models";
 
 import AdminKpiSection from "../components/admin/AdminKpiSection";
 import AdminStoreTable from "../components/admin/AdminStoreTable";
-import AdminIndustryTimeChart from "../components/admin/AdminIndustryTimeChart";
+// import AdminIndustryTimeChart from "../components/admin/AdminIndustryTimeChart";
+// import AdminStoreCleanTimeChart from "../components/admin/AdminStoreCleanTimeChart";
 import AdminStoreCleanAreaChart from "../components/admin/AdminStoreCleanAreaChart";
 import AdminOperationRateScatterChart from "../components/admin/AdminOperationRateScatterChart";
 import AdminDashboardRanking from "../components/admin/AdminDashboardRanking";
@@ -196,7 +197,7 @@ export default function AdminDashboardPage() {
           <h2 className="text-xl font-semibold mb-4">산업별 일별 가동 시간</h2>
           <AdminIndustryTimeChart data={data.industryOperationTime} />
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }
