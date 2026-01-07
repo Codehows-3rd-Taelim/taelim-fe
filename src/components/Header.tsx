@@ -83,7 +83,7 @@ export default function Header() {
       minRoleLevel: 1,
     },
     { name: "운영 관리", path: "/manage", icon: Users, minRoleLevel: 1 },
-    {name: "QNA", path: "/QNA", icon: HelpCircle, minRoleLevel: 1, maxRoleLevel: 2,},
+    {name: "QNA", path: "/qna", icon: HelpCircle, minRoleLevel: 1, maxRoleLevel: 2,},
     { name: "데이터 관리", path: "/data", icon: Database, minRoleLevel: 3 }, // 관리자만
   ];
 

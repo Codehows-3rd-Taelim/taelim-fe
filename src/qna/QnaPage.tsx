@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Qna } from "../../type";
-import {
-  applyQna,
-  deleteQna,
-  getQnaAll,
-  getQnaResolved,
-  getQnaUnresolved,
-} from "../api/qnaEmbeddingApi";
+
+
 
 type Filter = "ALL" | "UNRESOLVED" | "RESOLVED";
+import type { Qna } from "../type";
+import { applyQna, deleteQna, getQnaAll, getQnaResolved, getQnaUnresolved } from "./api/qnaApi";
 
 export default function QnaPage() {
-  /** ---------------- QAPage 로직 ---------------- */
   const [qnas, setQnas] = useState<Qna[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("UNRESOLVED");
@@ -77,7 +72,6 @@ export default function QnaPage() {
 
   if (loading) return <div className="p-6">로딩중...</div>;
 
-  /** ---------------- EmbeddingPage 레이아웃 ---------------- */
   return (
     <div className="w-full h-full flex justify-center bg-gray-100 pb-6">
       <div className="w-full max-w-[1400px] flex flex-col px-4 pt-2 pb-0">
@@ -95,26 +89,49 @@ export default function QnaPage() {
         <div className="flex-1 border border-gray-300 border-t-0 p-4 bg-white overflow-auto min-h-[400px]">
           <h2 className="font-bold text-lg my-5 ml-6">QnA 관리</h2>
 
+
           {/* 필터 */}
-          <div className="flex gap-1 ml-6 mb-5">
-            {[
-              { key: "ALL", label: "전체" },
-              { key: "UNRESOLVED", label: "미처리" },
-              { key: "RESOLVED", label: "처리완료" },
-            ].map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key as Filter)}
-                className={`px-3 py-1 rounded text-sm ${
-                  filter === f.key
-                    ? "bg-[#4A607A] text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          <div className="flex items-center justify-between ml-6 mb-5 mr-6">
+            {/* 왼쪽: 필터 */}
+            <div className="flex gap-1">
+                {[
+                { key: "ALL", label: "전체" },
+                { key: "UNRESOLVED", label: "미처리" },
+                { key: "RESOLVED", label: "처리완료" },
+                ].map((f) => (
+                <button
+                    key={f.key}
+                    onClick={() => setFilter(f.key as Filter)}
+                    className={`px-3 py-1 rounded text-sm ${
+                    filter === f.key
+                        ? "bg-[#4A607A] text-white"
+                        : "bg-gray-200 text-gray-700"
+                    }`}
+                >
+                    {f.label}
+                </button>
+                ))}
+            </div>
+
+            {/* 오른쪽: 질문 등록 */}
+            <button
+                onClick={() => {
+                // TODO: 질문 등록 모달 / 페이지 연결
+                alert("질문 등록");
+                }}
+                className="
+                px-4 py-1.5
+                text-sm font-semibold
+                text-white
+                bg-[#4A607A]
+                rounded-lg
+                hover:bg-[#324153]
+                transition
+                "
+            >
+                + 질문 등록
+            </button>
+            </div>
 
           {/* 리스트 */}
           <div className="px-6 space-y-3">

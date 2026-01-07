@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Qna } from "../../type";
+import type { Qna } from "../type";
 import {
   applyQna,
   deleteQna,
   getQnaAll,
   getQnaResolved,
   getQnaUnresolved,
-} from "../api/qnaEmbeddingApi";
+} from "./api/qnaApi";
 
 type Filter = "ALL" | "UNRESOLVED" | "RESOLVED";
 
