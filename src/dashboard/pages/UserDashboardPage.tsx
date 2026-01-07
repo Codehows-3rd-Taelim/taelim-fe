@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../../store";
-import { useDataStore } from "../../dataStore";
+import { getReportsforDashboard } from "../../report/api/ReportApi";
+import { getRobots } from "../../robot/api/RobotApi";
+import { getStores } from "../../operationManagement/api/StoreApi";
 import DateRangePicker from "../../components/DateRangePicker";
 import dayjs, { Dayjs } from "dayjs";
 import type { DateRange } from "@mui/x-date-pickers-pro/models";
@@ -15,63 +17,91 @@ import TaskStatusChart from "../components/user/TaskStatusChart";
 import CompletionRateChart from "../components/user/CompletionRateChart";
 import useDashboard from "../hooks/useDashboard";
 
+import type { Report, Robot, Store } from "../../type";
+
 export default function UserDashboardPage() {
+
+  //  상태
+  const [reports, setReports] = useState<Report[]>([]);
+  const [robots, setRobots] = useState<Robot[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const storeId = useAuthStore((s) => s.storeId ?? undefined);
 
-  const { stores, reports, robots, fetchReports, fetchRobots, fetchStores } =
-    useDataStore();
-
-  const storeName =
-    stores.find((store) => store.storeId === storeId)?.shopName ?? "매장";
-
-  // ReportPage와 동일한 DateRange 타입 사용
+  //  날짜 범위
   const [range, setRange] = useState<DateRange<Dayjs>>([
     dayjs().subtract(7, "day"),
     dayjs(),
   ]);
 
+  //  매장명
+  const storeName =
+    stores.find((s) => s.storeId === storeId)?.shopName ?? "매장";
+
+  //  대시보드 가공 데이터
   const { data, hourlyWage, setHourlyWage } = useDashboard(reports, robots);
 
-  // 최초 stores가 비어있을 수 있으므로 보장해줌
+  //  데이터 로딩
   useEffect(() => {
-    fetchStores();
-  }, []);
+    const loadData = async () => {
+      if (!storeId || !range[0] || !range[1]) return;
 
-  // 날짜 변경 시 데이터 호출
-  useEffect(() => {
-    if (!storeId || !range[0] || !range[1]) return;
+      try {
+        setLoading(true);
 
-    const start = range[0].startOf("day").format("YYYY-MM-DD");
-    const end = range[1].endOf("day").format("YYYY-MM-DD");
+        const start = range[0].startOf("day").format("YYYY-MM-DD");
+        const end = range[1].endOf("day").format("YYYY-MM-DD");
 
-    fetchReports({ storeId, startDate: start, endDate: end });
-    fetchRobots(storeId);
-  }, [storeId, range, fetchReports, fetchRobots]);
+        const [storeRes, robotRes, reportRes] = await Promise.all([
+          getStores(1, 100), // 매장 정보
+          getRobots(storeId), // 해당 매장 로봇
+          getReportsforDashboard({
+            storeId,
+            startDate: start,
+            endDate: end,
+          }), // 리포트
+        ]);
 
-  if (!data) return <div className="p-6">데이터 로딩 중...</div>;
+        setStores(storeRes.content);
+        setRobots(robotRes);
+        setReports(reportRes);
+      } catch (err) {
+        console.error("대시보드 데이터 로딩 실패", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    loadData();
+  }, [storeId, range]);
+
+  //  로딩 처리
+  if (loading || !data) {
+    return <div className="p-6">데이터 로딩 중...</div>;
+  }
+
+  //  렌더링
   return (
-    <div className="w-full max-w-7xl pb-6 mx-auto px-4 lg:px-6 space-y-6 bg-gray-100">
+    <div className="w-full max-w-7xl pb-6 mx-auto px-4 lg:px-6 space-y-6 bg-gray-100 mt-5">
       {/* 상단 헤더 */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{storeName} 대시보드</h2>
-
-        {/* ReportPage 방식의 DateRangePicker 그대로 사용 */}
         <DateRangePicker value={range} onChange={setRange} />
       </div>
 
-      {/* KPI - 전체 performance 객체 전달 */}
+      {/* KPI */}
       <KpiSection performance={data.performance} />
 
-      {/* 그래프 & 테이블 */}
+      {/* 그래프 & 성과 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="col-span-1 bg-white p-4 rounded-xl shadow-lg min-w-[350px] text-center text-xl">
+        <div className="bg-white p-4 rounded-xl shadow-lg text-center">
           <h3 className="font-semibold mb-4">로봇 상태 현황</h3>
           <RobotDonutChart data={data.robotStatus} />
         </div>
 
-        <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow-lg text-center text-xl">
-          <h3 className="font-semibold mb-4">작업 성과</h3>
+        <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow-lg">
+          <h3 className="font-semibold mb-4 text-center">작업 성과</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
             <PerformanceCards
               performance={data.performance}
@@ -85,9 +115,9 @@ export default function UserDashboardPage() {
       {/* 로봇 목록 */}
       <div className="bg-white p-4 rounded-xl shadow-lg overflow-x-auto">
         <h3 className="font-semibold mb-4 text-xl">
-          로봇 목록 ({robots?.length ?? 0}대)
+          로봇 목록 ({robots.length}대)
         </h3>
-        <RobotTable robots={robots ?? []} />
+        <RobotTable robots={robots} />
       </div>
 
       {/* 하단 차트 */}

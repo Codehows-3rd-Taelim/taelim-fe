@@ -1,5 +1,3 @@
-// AdminDashboardRanking.tsx
-
 import type {
   OperationRateScatterChartData,
   StoreSummary,
@@ -11,7 +9,7 @@ type Props = {
 };
 
 export default function AdminDashboardRanking({ operationRateData }: Props) {
-  // 2️ 가동률 최하위 5
+  // 가동률 최하위 5
   const avgRates = operationRateData.stores.map((store, idx) => {
     const totalRate = operationRateData.rates[idx].reduce((s, r) => s + r, 0);
     const avgRate = totalRate / (operationRateData.rates[idx].length || 1);
@@ -61,7 +59,7 @@ export default function AdminDashboardRanking({ operationRateData }: Props) {
         </ol>
       </div>
 
-      {/* 가동률 최하위 5 */}
+      {/* 가동률 최하위 TOP 5 */}
       <div className="bg-white p-6 rounded-xl shadow-xl">
         <h2 className="text-xl font-semibold mb-4">가동률 저조 매장</h2>
 
