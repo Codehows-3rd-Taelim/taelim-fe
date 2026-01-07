@@ -169,13 +169,15 @@ export default function Header() {
           <div className="items-center hidden lg:flex">
             {/* 로고 */}
             <div
-              className="text-xl font-bold tracking-wide text-white cursor-pointer whitespace-nowrap"
+              className="text-4xl font-bold tracking-wide cursor-pointer whitespace-nowrap font-sans"
               onClick={() => navigate("/")}
             >
-              <img
+              {/* <img
                 className="w-auto h-[clamp(8px,5vw,45px)]"
                 src="src\assets\inufleet_logo_w.png"
-              />
+              /> */}
+              <span className="text-white">Inu</span>
+              <span className="text-red-600">fleet</span>
             </div>
           </div>
 

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type { Message } from "../type";
 import ChatInput from "./ChatInput";
 import ReactMarkdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
 
 interface Props {
   messages: Message[];
@@ -26,7 +25,6 @@ export default function ChatWindow({
   const handleScroll = () => {
     const el = scrollAreaRef.current;
     if (!el) return;
-
     setIsAtBottom(
       el.scrollTop + el.clientHeight >= el.scrollHeight - 16
     );
@@ -46,28 +44,31 @@ export default function ChatWindow({
         className="flex-1 overflow-y-auto pb-[88px]"
       >
         <div className="flex flex-col gap-3 w-full max-w-[900px] px-4 mx-auto">
-          {messages.map((m) => (
+          {messages.map((m, idx) => (
             <div
-              key={m.id}
-              className={`p-3 rounded-xl max-w-[900px] whitespace-pre-wrap ${
+              key={`${m.id}-${idx}`}
+              className={`p-3 rounded-xl max-w-[900px] ${
                 m.senderType === "USER"
-                  ? "bg-orange-500 text-white self-end"
+                  ? "bg-orange-500 text-white self-end whitespace-pre-wrap"
                   : "bg-white border border-gray-300 self-start"
               }`}
             >
-              {m.senderType === "AI" && m.isStreaming ? (
-
+              {m.senderType === "USER" ? (
                 <span className="whitespace-pre-wrap">
                   {m.rawMessage}
                 </span>
               ) : (
-          
-                <ReactMarkdown
-                  key={m.id + "-final"}
-                  remarkPlugins={[remarkBreaks]}
-                >
-                  {m.rawMessage}
-                </ReactMarkdown>
+           <ReactMarkdown
+            components={{
+              p: ({ children }) => (
+                <p className="leading-relaxed mb-4 last:mb-0">
+                  {children}
+                </p>
+              ),
+            }}
+          >
+            {m.rawMessage}
+          </ReactMarkdown>
               )}
             </div>
           ))}
