@@ -5,7 +5,6 @@ import { getAuthToken } from "../api/LoginApi";
 import { useNavigate } from "react-router-dom";
 import { XCircle, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "../../store";
-import axios from "axios";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -50,13 +49,13 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center bg-[#c9c9c9]"
     >
       {/* ===== 중앙 고정 카드 ===== */}
-      <div className="w-[1000px] h-[500px] bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-2">
+      <div className="w-[1100px] h-[500px] bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-2">
         {/* ===== LEFT IMAGE ===== */}
-        <div className="flex items-center justify-center bg-gradient-to-br from-[#4A607A] to-[#324153]">
+        <div className="flex items-center justify-center bg-gradient-to-br from-[#15191B] to-[#15191B]">
           <img
             src={robotImage}
             alt="robot"
-            className="w-[500px] h-auto object-contain transition-opacity duration-300"
+            className="w-[600px] h-auto object-contain transition-opacity duration-300 bg-inherit"
             style={{ opacity: imageLoaded ? 1 : 0 }}
           />
         </div>
@@ -126,14 +125,14 @@ export default function LoginPage() {
 
       {/* ===== 모바일 대응 ===== */}
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 880px) {
           .grid {
             grid-template-columns: 1fr !important;
           }
           .grid > div:first-child {
             display: none;
           }
-          .w-[900px] {
+          .w-[600px] {
             width: 90%;
             height: auto;
           }

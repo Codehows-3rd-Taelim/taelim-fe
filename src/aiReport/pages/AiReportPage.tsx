@@ -541,20 +541,30 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <span className="text-gray-500">보고서 기간:</span>
-                  <span>
-                    {r.startTime
-                      ? dayjs(r.startTime).format("YYYY-MM-DD")
-                      : "-"}{" "}
-                    ~ {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
-                  </span>
-                  <span className="text-gray-400 mx-1">|</span>
-                  <span className="text-gray-500">생성일자:</span>
-                  <span>{dayjs(r.createdAt).format("YYYY-MM-DD")}</span>
-                  <span className="text-gray-400 mx-1">|</span>
-                  <span className="text-gray-500">작성자:</span>
-                  <span>{r.name}</span>
+                <div className="flex flex-col gap-1 text-xs text-gray-600">
+                  {/* 보고서 기간 - 단독 한 줄 */}
+                  <p>
+                    <span className="text-gray-500">보고서 기간: </span>
+                    <span>
+                      {r.startTime
+                        ? dayjs(r.startTime).format("YYYY-MM-DD")
+                        : "-"}{" "}
+                      ~ {r.endTime ? dayjs(r.endTime).format("YYYY-MM-DD") : "-"}
+                    </span>
+                  </p>
+
+                  {/* 생성일자 + 작성자 - 같은 줄 */}
+                  <div className="flex gap-3">
+                    <p>
+                      <span className="text-gray-500">생성일자: </span>
+                      <span>{dayjs(r.createdAt).format("YYYY-MM-DD")}</span>
+                    </p>
+                    <span className="text-gray-400">|</span>
+                    <p>
+                      <span className="text-gray-500"> 작성자: </span>
+                      <span>{r.name}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
 

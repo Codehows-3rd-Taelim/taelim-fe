@@ -586,8 +586,8 @@ export default function EmployeePage(props: EmployeePageProps) {
           <div className="hidden sm:block">
             <div className="bg-white rounded-xl shadow overflow-x-auto">
               <table className="w-full ">
-                <thead className="bg-gray-100">
-                  <tr className="h-12 text-center">
+                <thead className="bg-slate-500">
+                  <tr className="h-12 text-cente text-gray-100">
                     <th className="px-4 py-3">이름</th>
                     <th className="px-4 py-3">ID</th>
                     {isEditMode && <th className="px-4 py-3">비밀번호</th>}
@@ -754,7 +754,7 @@ export default function EmployeePage(props: EmployeePageProps) {
                             <button
                               onClick={() => handleDelete(u.userId)}
                               disabled={deletingUserId === u.userId}
-                              className=" text-white px-4 py-1.5 rounded bg-[#d14e4e] hover:bg-[#d11a1a] disabled:bg-gray-400"
+                              className=" text-white px-4 py-1.5 rounded bg-[#BA1E1E] hover:bg-[#db1d1d] disabled:bg-gray-400"
                             >
                               삭제
                             </button>
