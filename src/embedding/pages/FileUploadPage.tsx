@@ -122,7 +122,7 @@ export default function FileUploadPage() {
         newFiles.push(saved);
       }
 
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      setUploadedFiles((prev) => [...newFiles, ...prev]);
       setPendingFiles([]);
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
