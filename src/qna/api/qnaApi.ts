@@ -45,10 +45,68 @@ export const getQnaApplied = async (): Promise<Qna[]> => {
   );
 };
 
-// qna 삭제 (Embed + Milvus 포함)
+// qna 삭제 
 export const deleteQna = async (qnaId: number): Promise<void> => {
   await axios.delete(
     `${BASE_URL}/qna/${qnaId}`,
     getAxiosConfig()
   );
 };
+
+
+
+//  비활성 질문 목록 (추가)
+export const getQnaInactive = async (): Promise<Qna[]> => {
+  const res = await axios.get(`${BASE_URL}/qna/inactive`, getAxiosConfig());
+  return res.data;
+};
+
+export const saveDisplayAnswer = async (qnaId: number,answer: string): Promise<void> => {
+  await axios.post(`${BASE_URL}/qna/${qnaId}/display-answer`,{ answer }, getAxiosConfig());
+};
+
+export const updateDisplayAnswer = async (qnaId: number, answer: string): Promise<void> => {
+  await axios.put(`${BASE_URL}/qna/${qnaId}/display-answer`, { answer }, getAxiosConfig());
+};
+
+export const deleteDisplayAnswer = async (qnaId: number): Promise<void> => {
+  await axios.delete(
+    `${BASE_URL}/qna/${qnaId}/display-answer`,
+    getAxiosConfig()
+  );
+};
+
+export const deleteAppliedAnswer = async (qnaId: number): Promise<void> => {
+  await axios.delete(
+    `${BASE_URL}/qna/${qnaId}/applied-answer`,
+    getAxiosConfig()
+  );
+};
+
+//  비활성 질문 완전 삭제
+export const deleteInactiveQna = async (qnaId: number): Promise<void> => {
+  await axios.delete(
+    `${BASE_URL}/qna/${qnaId}/hard`,
+    getAxiosConfig()
+  );
+};
+
+//  복구
+export const restoreQna = async (qnaId: number): Promise<void> => {
+  await axios.post(
+    `${BASE_URL}/qna/${qnaId}/restore`,
+    {},
+    getAxiosConfig()
+  );
+};
+
+// 질문 생성 
+export const createQna = async (questionText: string): Promise<number> => {
+  const res = await axios.post(
+    `${BASE_URL}/qna`,
+    { questionText },
+    getAxiosConfig()
+  );
+  return res.data;
+};
+
