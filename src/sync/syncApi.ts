@@ -39,5 +39,28 @@ export const getLastSyncTime = async (): Promise<SyncRecordDTO> => {
   return res.json();
 };
 
+// 전체 매장 6개월 데이터 동기화
+export async function syncAllStoresFullHistorical(): Promise<string> {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) throw new Error("로그인이 필요합니다.");
+
+  const res = await fetch(
+    `${BASE_URL}/report/sync/all-stores/full-historical`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "전체 매장 동기화 실패");
+  }
+
+  return res.text(); 
+}
+
 
 
