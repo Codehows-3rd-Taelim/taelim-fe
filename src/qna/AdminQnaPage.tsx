@@ -18,7 +18,7 @@ import {
 type Tab = "ALL" | "UNRESOLVED" | "RESOLVED" | "INACTIVE";
 type ResolvedView = "ALL" | "APPLIED" | "NOT_APPLIED";
 
-export default function QAPage() {
+export default function AdminQnaPage() {
   const [tab, setTab] = useState<Tab>("UNRESOLVED");
   const [resolvedView, setResolvedView] =
     useState<ResolvedView>("ALL");

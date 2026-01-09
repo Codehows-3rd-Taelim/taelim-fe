@@ -1,7 +1,7 @@
 import { useState } from "react";
 import FileUploadPage from "./FileUploadPage";
-import QAPage from "../../qna/QAPage";
 import SyncData from "../../sync/SyncData";
+import AdminQnaPage from "../../qna/AdminQnaPage";
 
 export default function EmbeddingPage() {
   const [tab, setTab] = useState<"file" | "qa" | "data">("file");
@@ -52,7 +52,7 @@ export default function EmbeddingPage() {
         {/* 콘텐츠 영역 */}
         <div className="flex-1 border border-gray-300 border-t-0 p-4 bg-white overflow-auto min-h-[400px]">
           {tab === "file" && <FileUploadPage />}
-          {tab === "qa" && <QAPage />}
+          {tab === "qa" && <AdminQnaPage />}
           {tab === "data" && <SyncData />}
         </div>
       </div>

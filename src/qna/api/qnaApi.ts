@@ -61,14 +61,17 @@ export const getQnaInactive = async (): Promise<Qna[]> => {
   return res.data;
 };
 
+// 표시 답변 저장
 export const saveDisplayAnswer = async (qnaId: number,answer: string): Promise<void> => {
   await axios.post(`${BASE_URL}/qna/${qnaId}/display-answer`,{ answer }, getAxiosConfig());
 };
 
+// 표시 답변 수정
 export const updateDisplayAnswer = async (qnaId: number, answer: string): Promise<void> => {
   await axios.put(`${BASE_URL}/qna/${qnaId}/display-answer`, { answer }, getAxiosConfig());
 };
 
+// 표시 답변 삭제
 export const deleteDisplayAnswer = async (qnaId: number): Promise<void> => {
   await axios.delete(
     `${BASE_URL}/qna/${qnaId}/display-answer`,
@@ -109,4 +112,7 @@ export const createQna = async (questionText: string): Promise<number> => {
   );
   return res.data;
 };
+
+// 유저 질문 수정 (표시답변 달린거 없을때만)
+// 유저 질문 삭제 (표시 답변 달린거 없을때만)
 

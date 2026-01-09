@@ -11,7 +11,7 @@ import {
 
 type Filter = "ALL" | "UNRESOLVED" | "RESOLVED";
 
-export default function QnaPage() {
+export default function UserQnaPage() {
   const [qnas, setQnas] = useState<Qna[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("UNRESOLVED");
@@ -23,15 +23,6 @@ export default function QnaPage() {
   // 질문 등록 모달
   const [createOpen, setCreateOpen] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
-
-  const statusMap: Record<
-    "APPLIED" | "FAILED" | "NONE",
-    { label: string; color: string }
-  > = {
-    NONE: { label: "미처리", color: "bg-gray-400" },
-    APPLIED: { label: "완료", color: "bg-green-500" },
-    FAILED: { label: "실패", color: "bg-red-500" },
-  };
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -73,10 +64,7 @@ export default function QnaPage() {
     setOpenId((prev) => (prev === q.id ? null : q.id));
     setAnswers((prev) => ({
       ...prev,
-      [q.id]:
-        q.status === "FAILED"
-          ? q.editingAnswer ?? ""
-          : q.appliedAnswer ?? "",
+      [q.id]: q.displayAnswer ?? "",
     }));
   };
 
@@ -124,8 +112,11 @@ export default function QnaPage() {
         {/* 리스트 */}
         <div className="px-6 space-y-3">
           {qnas.map((q) => {
-            const isResolved = q.resolved === true;
-            const status = statusMap[q.status ?? "NONE"];
+            const hasAnswer = Boolean(q.displayAnswer?.trim());
+
+            const badge = hasAnswer
+              ? { label: "답변 완료", color: "bg-green-500" }
+              : { label: "처리중", color: "bg-gray-400" };
 
             return (
               <div key={q.id} className="bg-white rounded-lg border">
@@ -135,7 +126,7 @@ export default function QnaPage() {
                 >
                   <div className="text-xs text-gray-500 mb-1">
                     질문: {formatDate(q.createdAt)}
-                    {isResolved && q.updatedAt && (
+                    {hasAnswer && q.updatedAt && (
                       <span className="ml-4">
                         답변: {formatDate(q.updatedAt)}
                       </span>
@@ -146,9 +137,9 @@ export default function QnaPage() {
                     <span className="text-xs flex items-center gap-1">
                       [
                       <span
-                        className={`w-2 h-2 rounded-full ${status.color}`}
+                        className={`w-2 h-2 rounded-full ${badge.color}`}
                       />
-                      {status.label}]
+                      {badge.label}]
                     </span>
                     <span>{q.questionText}</span>
                   </div>
