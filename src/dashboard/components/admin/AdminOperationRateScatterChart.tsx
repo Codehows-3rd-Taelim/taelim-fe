@@ -24,28 +24,52 @@ export default function AdminOperationRateLineChart({ data }: Props) {
 
   const { stores, dates, rates } = data;
 
+  // 데이터가 있는 매장만 필터링 (모든 날짜가 0이 아닌 매장)
+  const storesWithData = stores.filter((store, sIdx) => {
+    return rates[sIdx].some((rate) => rate > 0);
+  });
+
+  const ratesWithData = rates.filter((rateArray) => {
+    return rateArray.some((rate) => rate > 0);
+  });
+
+  // 데이터가 있는 매장이 없으면 안내 메시지
+  if (storesWithData.length === 0) {
+    return (
+      <div className="h-72 flex items-center justify-center text-gray-400">
+        가동률 데이터 없음
+      </div>
+    );
+  }
+
+  // LineChart용 데이터 변환
   const chartData = dates.map((date, idx) => {
     const obj: Record<string, string | number> = { date };
-    stores.forEach((store, sIdx) => {
-      obj[store] = rates[sIdx][idx] ?? 0;
+    storesWithData.forEach((store, sIdx) => {
+      obj[store] = ratesWithData[sIdx][idx] ?? 0;
     });
     return obj;
   });
 
   const colorsArr = [
-    "#9467BD",
-    "#8C564B",
-    "#E377C2",
-    "#7F7F7F",
-    "#BCBD22",
-    "#17BECF",
-    "#1F77B4",
-    "#FF7F0E",
-    "#2CA02C",
-    "#D62728",
+    "#FF6B6B", // 강렬한 레드
+    "#4ECDC4", // 밝은 터키색
+    "#FFE66D", // 밝은 노랑
+    "#A8E6CF", // 민트그린
+    "#FF8B94", // 코랄핑크
+    "#95E1D3", // 아쿠아민트
+    "#F38181", // 연어색
+    "#AA96DA", // 밝은 퍼플
+    "#FCBAD3", // 핫핑크
+    "#A8D8EA", // 스카이블루
+    "#FD79A8", // 마젠타핑크
+    "#74B9FF", // 밝은 블루
+    "#55EFC4", // 네온민트
+    "#FDCB6E", // 골든옐로우
+    "#6C5CE7", // 바이올렛
   ];
   const colors: Record<string, string> = {};
-  stores.forEach((store, idx) => {
+  storesWithData.forEach((store, idx) => {
     colors[store] = colorsArr[idx % colorsArr.length];
   });
 
@@ -64,7 +88,7 @@ export default function AdminOperationRateLineChart({ data }: Props) {
               <YAxis unit="%" />
               <Tooltip formatter={(value: number) => `${value}%`} />
 
-              {stores.map((store) => (
+              {storesWithData.map((store) => (
                 <Line
                   key={store}
                   type="monotone"
@@ -82,7 +106,7 @@ export default function AdminOperationRateLineChart({ data }: Props) {
 
         {/* 범례 영역 */}
         <div className="flex flex-col justify-center gap-2 pr-4">
-          {stores.map((store) => (
+          {storesWithData.map((store) => (
             <div key={store} className="flex items-center gap-2">
               <div
                 className="w-3 h-3 rounded-full"
