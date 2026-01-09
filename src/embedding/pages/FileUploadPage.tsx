@@ -21,13 +21,31 @@ export default function FileUploadPage() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const hasEmbedding = uploadedFiles.some(
+    (file) => file.status === "EMBEDDING"
+  );
+
+  useEffect(() => {
+    if (!hasEmbedding) return; // 임베딩 중 없으면 종료
+
+    const interval = setInterval(() => {
+      getEmbedFiles()
+        .then(setUploadedFiles)
+        .catch(() => {
+          console.error("파일 상태 갱신 실패");
+        });
+    }, 2000); // 2초 권장
+
+    return () => clearInterval(interval);
+  }, [hasEmbedding]);
+
+  const alertedRef = useRef(false);
+
   useEffect(() => {
     getEmbedFiles()
       .then((files) => setUploadedFiles(Array.isArray(files) ? files : []))
       .catch(() => alert("파일 목록 불러오기 실패"));
   }, []);
-
-  const alertedRef = useRef(false);
 
   useEffect(() => {
     if (duplicateNames.length > 0 && !alertedRef.current) {
@@ -39,6 +57,33 @@ export default function FileUploadPage() {
       alertedRef.current = false;
     }
   }, [duplicateNames]);
+
+  const failedAlertedRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const failedFiles = uploadedFiles.filter(
+      (file) => file.status === "FAILED"
+    );
+
+    failedFiles.forEach(async (file) => {
+      // 이미 알림 띄운 파일이면 스킵
+      if (failedAlertedRef.current.has(file.id)) return;
+
+      failedAlertedRef.current.add(file.id);
+
+      alert(`임베딩 실패: ${file.originalName}`);
+
+      try {
+        await deleteEmbedFile(file.id);
+
+        // 화면에서도 제거
+        setUploadedFiles((prev) => prev.filter((f) => f.id !== file.id));
+      } catch {
+        console.error("FAILED 파일 삭제 실패", file.id);
+      }
+    });
+  }, [uploadedFiles]);
+
   //파일 중복 방지
   const isDuplicate = (filename: string) => {
     return (
@@ -136,15 +181,33 @@ export default function FileUploadPage() {
   };
 
   const handleDelete = async (file: EmbedFile) => {
+    if (file.status === "EMBEDDING") {
+      alert("임베딩 중인 파일은 삭제할 수 없습니다.");
+      return;
+    }
+
     if (!confirm(`${file.originalName} 파일을 삭제할까요?`)) return;
 
     try {
       await deleteEmbedFile(file.id);
-
-      // 화면에서도 제거
       setUploadedFiles((prev) => prev.filter((f) => f.id !== file.id));
     } catch {
       alert("파일 삭제 실패");
+    }
+  };
+
+  const renderStatus = (status: string) => {
+    switch (status) {
+      case "EMBEDDING":
+        return (
+          <span className="text-blue-500 animate-pulse">임베딩 중...</span>
+        );
+      case "DONE":
+        return <span className="text-green-600">완료</span>;
+      case "FAILED":
+        return <span className="text-red-500">실패</span>;
+      default:
+        return null;
     }
   };
 
@@ -230,16 +293,31 @@ export default function FileUploadPage() {
               <div className="flex items-center gap-2">
                 {getFileIcon(file.originalName)}
                 <span>{file.originalName}</span>
+                {renderStatus(file.status)}
               </div>
 
               {/* 오른쪽: 삭제 버튼 + 다운로드 버튼 */}
               <div className="flex items-center gap-2">
-                <button onClick={() => downloadEmbedFile(file)}>
+                <button
+                  onClick={() => downloadEmbedFile(file)}
+                  disabled={file.status === "EMBEDDING"}
+                  className={
+                    file.status === "EMBEDDING"
+                      ? "opacity-30 cursor-not-allowed"
+                      : ""
+                  }
+                >
                   <FaDownload />
                 </button>
                 <button
                   onClick={() => handleDelete(file)}
-                  className="bg-[#d14e4e] hover:bg-[#d11a1a] text-white px-3 py-1 rounded text-sm"
+                  disabled={file.status === "EMBEDDING"}
+                  className={`px-3 py-1 rounded text-sm text-white
+    ${
+      file.status === "EMBEDDING"
+        ? "bg-gray-300 cursor-not-allowed"
+        : "bg-[#d14e4e] hover:bg-[#d11a1a]"
+    }`}
                 >
                   삭제
                 </button>
