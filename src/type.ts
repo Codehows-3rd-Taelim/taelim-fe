@@ -301,10 +301,12 @@ export interface Qna {
   questionText: string;
   appliedAnswer: string | null;
   editingAnswer: string | null;
+  displayAnswer: string | null;
   status: "APPLIED" | "FAILED" | null;
   resolved: boolean;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string;
 }
 
 export interface EmbedFile {

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import FileUploadPage from "./FileUploadPage";
-
+import QAPage from "../../qna/QAPage";
 import SyncData from "../../sync/SyncData";
-import QAPage from "./QAPage";
 
 export default function EmbeddingPage() {
   const [tab, setTab] = useState<"file" | "qa" | "data">("file");
