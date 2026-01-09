@@ -52,16 +52,21 @@ export default function AdminOperationRateLineChart({ data }: Props) {
   });
 
   const colorsArr = [
-    "#9467BD",
-    "#8C564B",
-    "#E377C2",
-    "#7F7F7F",
-    "#BCBD22",
-    "#17BECF",
-    "#1F77B4",
-    "#FF7F0E",
-    "#2CA02C",
-    "#D62728",
+    "#FF6B6B", // 강렬한 레드
+    "#4ECDC4", // 밝은 터키색
+    "#FFE66D", // 밝은 노랑
+    "#A8E6CF", // 민트그린
+    "#FF8B94", // 코랄핑크
+    "#95E1D3", // 아쿠아민트
+    "#F38181", // 연어색
+    "#AA96DA", // 밝은 퍼플
+    "#FCBAD3", // 핫핑크
+    "#A8D8EA", // 스카이블루
+    "#FD79A8", // 마젠타핑크
+    "#74B9FF", // 밝은 블루
+    "#55EFC4", // 네온민트
+    "#FDCB6E", // 골든옐로우
+    "#6C5CE7", // 바이올렛
   ];
   const colors: Record<string, string> = {};
   storesWithData.forEach((store, idx) => {
