@@ -24,10 +24,29 @@ export default function AdminOperationRateLineChart({ data }: Props) {
 
   const { stores, dates, rates } = data;
 
+  // 데이터가 있는 매장만 필터링 (모든 날짜가 0이 아닌 매장)
+  const storesWithData = stores.filter((store, sIdx) => {
+    return rates[sIdx].some((rate) => rate > 0);
+  });
+
+  const ratesWithData = rates.filter((rateArray) => {
+    return rateArray.some((rate) => rate > 0);
+  });
+
+  // 데이터가 있는 매장이 없으면 안내 메시지
+  if (storesWithData.length === 0) {
+    return (
+      <div className="h-72 flex items-center justify-center text-gray-400">
+        가동률 데이터 없음
+      </div>
+    );
+  }
+
+  // LineChart용 데이터 변환
   const chartData = dates.map((date, idx) => {
     const obj: Record<string, string | number> = { date };
-    stores.forEach((store, sIdx) => {
-      obj[store] = rates[sIdx][idx] ?? 0;
+    storesWithData.forEach((store, sIdx) => {
+      obj[store] = ratesWithData[sIdx][idx] ?? 0;
     });
     return obj;
   });
@@ -45,7 +64,7 @@ export default function AdminOperationRateLineChart({ data }: Props) {
     "#D62728",
   ];
   const colors: Record<string, string> = {};
-  stores.forEach((store, idx) => {
+  storesWithData.forEach((store, idx) => {
     colors[store] = colorsArr[idx % colorsArr.length];
   });
 
@@ -64,7 +83,7 @@ export default function AdminOperationRateLineChart({ data }: Props) {
               <YAxis unit="%" />
               <Tooltip formatter={(value: number) => `${value}%`} />
 
-              {stores.map((store) => (
+              {storesWithData.map((store) => (
                 <Line
                   key={store}
                   type="monotone"
@@ -82,7 +101,7 @@ export default function AdminOperationRateLineChart({ data }: Props) {
 
         {/* 범례 영역 */}
         <div className="flex flex-col justify-center gap-2 pr-4">
-          {stores.map((store) => (
+          {storesWithData.map((store) => (
             <div key={store} className="flex items-center gap-2">
               <div
                 className="w-3 h-3 rounded-full"
