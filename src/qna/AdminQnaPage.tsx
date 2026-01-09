@@ -29,7 +29,6 @@ export default function AdminQnaPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-
   // 조회
   const fetchQna = useCallback(async () => {
     setLoading(true);
@@ -61,8 +60,7 @@ export default function AdminQnaPage() {
     setOpenId(null);
   }, [fetchQna]);
 
-
-  // 상태 배지 (디자인 핵심)
+  // 상태 배지
   const getStatusBadge = (q: Qna) => {
     if (q.status === "FAILED") {
       return { label: "답변 적용 실패", color: "bg-red-500" };
@@ -87,7 +85,6 @@ export default function AdminQnaPage() {
         "",
     }));
   };
-
 
   const handleApply = async (q: Qna) => {
     if (!confirm("챗봇에 답변을 적용하시겠습니까?")) return;
@@ -136,7 +133,6 @@ export default function AdminQnaPage() {
   };
 
   if (loading) return <div className="p-6">로딩중...</div>;
-
 
   return (
     <div className="p-6 bg-gray-100 h-full">
@@ -221,7 +217,8 @@ export default function AdminQnaPage() {
                         [q.id]: e.target.value,
                       }))
                     }
-                    readOnly={q.deletedAt !== null}
+                   
+                    readOnly={Boolean(q.deletedAt)}
                   />
 
                   {!q.deletedAt && (
