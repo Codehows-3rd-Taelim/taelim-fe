@@ -120,7 +120,6 @@ export default function AdminDashboardPage() {
       {/* 가동률 핵심 요약 */}
       <section className="space-y-6">
         <AdminDashboardRanking
-          storeSummaries={data.storeSummaries}
           operationRateData={data.OperationRateScatterChart}
         />
         <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
