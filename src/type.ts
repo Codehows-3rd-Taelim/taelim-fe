@@ -299,13 +299,23 @@ export type PaginationResponse<T> = {
 export interface Qna {
   id: number;
   questionText: string;
+  title: string;
   appliedAnswer: string | null;
   editingAnswer: string | null;
+  displayAnswer: string | null;
   status: "APPLIED" | "FAILED" | null;
   resolved: boolean;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string;
 }
+
+export interface QnaRequest {
+  title: string;
+  questionText: string;
+}
+
+
 
 export interface EmbedFile {
   id: number;

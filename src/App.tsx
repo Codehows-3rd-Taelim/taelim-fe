@@ -12,6 +12,7 @@ import AuthProvider from "./AuthProvider";
 import Header from "./components/Header";
 import EmbeddingPage from "./embedding/pages/EmbeddingPage";
 import DashboardPage from "./dashboard/pages/DashboardPage";
+import UserQnaPage from "./qna/UserQnaPage";
 
 function App() {
   const location = useLocation();
@@ -97,6 +98,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <EmbeddingPage />
+                  </PrivateRoute>
+                }
+              />
+               <Route
+                path="/qna"
+                element={
+                  <PrivateRoute>
+                    <UserQnaPage />
                   </PrivateRoute>
                 }
               />
