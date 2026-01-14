@@ -1,7 +1,7 @@
 import { useState } from "react";
 import FileUploadPage from "./FileUploadPage";
 import SyncData from "../../sync/SyncData";
-import AdminQnaPage from "../../qna/AdminQnaPage";
+import AdminQnaPage from "../../qna/page/AdminQnaPage";
 
 export default function EmbeddingPage() {
   const [tab, setTab] = useState<"file" | "qa" | "data">("file");

@@ -310,6 +310,12 @@ export interface Qna {
   deletedAt: string;
 }
 
+export type QnaViewType =
+  | "ALL"
+  | "UNRESOLVED"
+  | "RESOLVED"
+  | "INACTIVE";
+
 export interface QnaRequest {
   title: string;
   questionText: string;

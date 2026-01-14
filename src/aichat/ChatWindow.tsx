@@ -78,7 +78,7 @@ export default function ChatWindow({
                 )}
               </div>
 
-              {/* ===== AI 메시지 하단 아이콘 + 호버 텍스트 ===== */}
+        
               {m.senderType === "AI" && (
                 <div className="flex gap-1.5 mt-0.5 self-start">
                   {/* 복사 */}
@@ -122,7 +122,7 @@ export default function ChatWindow({
                       <HelpCircle size={15} />
                     </button>
 
-                    {/* hover text */}
+            
                     <div
                       className="
                         absolute -top-9 left-1/2 -translate-x-1/2
@@ -134,7 +134,7 @@ export default function ChatWindow({
                         text-center
                       "
                     >
-                      <div>답변이 마음에 안 드시나요?</div>
+                      <div>AI 챗봇 답변이 도움 안 되었나요?</div>
                       <div className="mt-0.5">
                         QnA에 질문을 등록 하시겠습니까?
                       </div>
