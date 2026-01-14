@@ -14,7 +14,6 @@ import Pagination from "../../components/Pagination";
 export default function FileUploadPage() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<EmbedFile[]>([]);
-  const [duplicateNames, setDuplicateNames] = useState<string[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -54,18 +53,6 @@ export default function FileUploadPage() {
       .catch(() => alert("파일 목록 불러오기 실패"));
   }, [page]);
 
-  /** 중복 파일 알림 */
-  const alertedRef = useRef(false);
-  useEffect(() => {
-    if (duplicateNames.length > 0 && !alertedRef.current) {
-      alert("이미 등록된 파일이 있습니다.");
-      alertedRef.current = true;
-    }
-    if (duplicateNames.length === 0) {
-      alertedRef.current = false;
-    }
-  }, [duplicateNames]);
-
   /** FAILED 파일 알림 + 자동 삭제 */
   const failedAlertedRef = useRef<Set<number>>(new Set());
 
@@ -91,8 +78,7 @@ export default function FileUploadPage() {
 
   /** 파일 중복 체크 */
   const isDuplicate = (filename: string) =>
-    pendingFiles.some((f) => f.name === filename) ||
-    uploadedFiles.some((f) => f.originalName === filename);
+    pendingFiles.some((f) => f.name === filename);
 
   const isAllowedFile = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase();
@@ -104,33 +90,44 @@ export default function FileUploadPage() {
     if (!e.target.files) return;
 
     const files = Array.from(e.target.files);
-    const allowed: File[] = [];
-    const duplicates: string[] = [];
 
-    files.forEach((file) => {
-      if (!isAllowedFile(file.name)) return;
-      if (isDuplicate(file.name)) duplicates.push(file.name);
-      else allowed.push(file);
+    const duplicates: string[] = [];
+    const allowed = files.filter((file) => {
+      if (!isAllowedFile(file.name)) return false;
+      if (isDuplicate(file.name)) {
+        duplicates.push(file.name);
+        return false;
+      }
+      return true;
     });
 
-    setDuplicateNames(duplicates);
-    setPendingFiles((prev) => [...prev, ...allowed]);
+    if (allowed.length > 0) {
+      setPendingFiles((prev) => [...prev, ...allowed]);
+    }
+
+    // 같은 파일 다시 선택 가능하게
+    e.target.value = "";
   };
 
   /** 드래그 앤 드롭 */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    const droppedFiles = Array.from(e.dataTransfer.files).filter(
-      (f) => isAllowedFile(f.name) && !isDuplicate(f.name)
-    );
+    const files = Array.from(e.dataTransfer.files);
 
-    if (droppedFiles.length === 0) {
-      alert("이미 추가된 파일이거나 허용되지 않은 파일입니다.");
-      return;
+    const duplicates: string[] = [];
+    const allowed = files.filter((file) => {
+      if (!isAllowedFile(file.name)) return false;
+      if (isDuplicate(file.name)) {
+        duplicates.push(file.name);
+        return false;
+      }
+      return true;
+    });
+
+    if (allowed.length > 0) {
+      setPendingFiles((prev) => [...prev, ...allowed]);
     }
-
-    setPendingFiles((prev) => [...prev, ...droppedFiles]);
   };
 
   /** 해시 키 생성 */
@@ -159,8 +156,18 @@ export default function FileUploadPage() {
       setUploadedFiles((prev) => [...newFiles, ...prev]);
       setPendingFiles([]);
     } catch (e) {
-      if (axios.isAxiosError(e)) alert(e.response?.data || e.message);
-      else alert("업로드 중 오류 발생");
+      if (axios.isAxiosError(e)) {
+        console.log("🔥 error.response.data", e.response?.data);
+        if (e.response?.status === 409) {
+          const msg =
+            typeof e.response.data === "string"
+              ? e.response.data
+              : e.response.data?.message ?? "이미 등록된 파일입니다.";
+          alert(msg);
+        } else {
+          alert("업로드 중 오류가 발생했습니다.");
+        }
+      }
     }
   };
 
@@ -174,13 +181,25 @@ export default function FileUploadPage() {
     if (!confirm(`${file.originalName} 파일을 삭제할까요?`)) return;
 
     await deleteEmbedFile(file.id);
-    setUploadedFiles((prev) => prev.filter((f) => f.id !== file.id));
+
+    // 삭제 후 최신 데이터 다시 조회
+    const res = await getEmbedFiles(page - 1, PAGE_SIZE);
+
+    // 만약 현재 페이지가 사라졌다면 이전 페이지로
+    if (res.totalPages > 0 && page > res.totalPages) {
+      setPage(res.totalPages);
+    } else {
+      setUploadedFiles(res.content);
+      setTotalPages(res.totalPages);
+    }
   };
 
   /** 상태 렌더링 */
   const renderStatus = (status: string) => {
     if (status === "EMBEDDING")
-      return <span className="text-blue-500 animate-pulse ml-2">임베딩 중...</span>;
+      return (
+        <span className="text-blue-500 animate-pulse ml-2">임베딩 중...</span>
+      );
     if (status === "DONE")
       return <span className="text-green-600 ml-2">완료</span>;
     if (status === "FAILED")
@@ -211,8 +230,7 @@ export default function FileUploadPage() {
           className="bg-[#4A607A] hover:bg-[#324153] rounded-xl h-32 flex flex-col items-center justify-center text-white text-4xl cursor-pointer"
           onClick={() => inputRef.current?.click()}
         >
-          +
-          <span className="text-sm mt-2">클릭하거나 파일을 드래그하세요</span>
+          +<span className="text-sm mt-2">클릭하거나 파일을 드래그하세요</span>
           <span className="text-sm mt-2">
             (pdf, csv 파일만 등록 가능합니다.)
           </span>
@@ -226,11 +244,13 @@ export default function FileUploadPage() {
                   {getFileIcon(file.name)}
                   <span>{file.name}</span>
                 </div>
-                <button onClick={() =>
-                  setPendingFiles((prev) =>
-                    prev.filter((f) => f.name !== file.name)
-                  )
-                }>
+                <button
+                  onClick={() =>
+                    setPendingFiles((prev) =>
+                      prev.filter((f) => f.name !== file.name)
+                    )
+                  }
+                >
                   ×
                 </button>
               </div>
@@ -283,10 +303,10 @@ export default function FileUploadPage() {
 
       {/* 페이지네이션 */}
       <Pagination
-  page={page}
-  totalPages={totalPages}
-  onPageChange={(p) => setPage(p)}
-/>
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+      />
     </div>
   );
 }

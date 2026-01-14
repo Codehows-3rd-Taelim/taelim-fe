@@ -110,7 +110,13 @@ export default function AdminDashboardPage() {
     <div className="pt-6 pb-10 w-full max-w-[1400px] mx-auto px-4 lg:px-6 bg-gray-100 space-y-10 mt-2">
       {/* 제목 + 날짜 */}
       <div className="flex items-center justify-between">
-        <h3 className="text-3xl font-bold">관리자 대시보드</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-3xl font-bold">관리자 대시보드</h3>
+          <span className="text-sm text-gray-500">
+            (로봇 수는 CC1, MT1 만 표시됩니다.)
+          </span>
+        </div>
+
         <DateRangePicker value={range} onChange={setRange} />
       </div>
 

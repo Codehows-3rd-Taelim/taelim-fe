@@ -3,11 +3,12 @@ import type { PaginationProps } from "../type";
 
 // Pagination 컴포넌트 정의
 export default function Pagination({
-  page,          // 현재 페이지 번호
-  totalPages,    // 전체 페이지 수
-  onPageChange,  // 페이지 바뀔 때 호출할 함수
-  maxButtons = 5 // 한 번에 보여줄 페이지 버튼 개수
+  page, // 현재 페이지 번호
+  totalPages, // 전체 페이지 수
+  onPageChange, // 페이지 바뀔 때 호출할 함수
+  maxButtons = 5, // 한 번에 보여줄 페이지 버튼 개수
 }: PaginationProps) {
+  if (totalPages <= 1) return null;
   const pageButtons = []; // 페이지 버튼들을 담을 배열
 
   // 시작 페이지 번호 계산 (현재 페이지 기준으로 버튼 중앙 배치)
