@@ -8,7 +8,7 @@ interface Props {
 
 export default function EmptyState({ input, setInput, send }: Props) {
   const suggestions = [
-    "CC1 뜨거운 물 써도 되나요?",
+    "CC1 청소할 때 뜨거운 물 사용 가능하나요?",
     "MT1 물 웅덩이 청소 가능한가요?",
     "청소 보고서를 얼마나 자주 업로드하나요?",
     "CC1 시간당 청소효율 궁금해요.",
