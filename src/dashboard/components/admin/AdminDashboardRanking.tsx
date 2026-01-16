@@ -1,89 +1,123 @@
-import type {
-  OperationRateScatterChartData,
-  StoreSummary,
-} from "../../../type";
+import type { OperationRateScatterChartData } from "../../../type";
 
 type Props = {
-  storeSummaries: StoreSummary[];
   operationRateData: OperationRateScatterChartData;
 };
 
+const DAY_MINUTES = 1440;
+
 export default function AdminDashboardRanking({ operationRateData }: Props) {
-  // 가동률 최하위 5
-  const avgRates = operationRateData.stores.map((store, idx) => {
-    const totalRate = operationRateData.rates[idx].reduce((s, r) => s + r, 0);
-    const avgRate = totalRate / (operationRateData.rates[idx].length || 1);
-    return { store, avgRate };
+  // ✅ 매장별 평균 청소 시간 & 24시간 대비 가동률
+  const usageRates = operationRateData.stores.map((store, idx) => {
+    const dailyCleanMinutes = operationRateData.rates[idx] || [];
+    const totalDays = dailyCleanMinutes.length || 1;
+
+    const avgCleanMinutes =
+      dailyCleanMinutes.reduce((sum, m) => sum + m, 0) / totalDays;
+
+    const usageRate = (avgCleanMinutes / DAY_MINUTES) * 100;
+
+    return {
+      store,
+      avgCleanMinutes,
+      usageRate,
+    };
   });
-  const bottomOperationRate = avgRates
-    .sort((a, b) => a.avgRate - b.avgRate)
+
+  const topUsage = [...usageRates]
+    .sort((a, b) => b.avgCleanMinutes - a.avgCleanMinutes)
     .slice(0, 5);
+
+  const bottomUsage = [...usageRates]
+    .sort((a, b) => a.avgCleanMinutes - b.avgCleanMinutes)
+    .slice(0, 5);
+
+  const renderTimeline = (
+    minutes: number,
+    color: "blue" | "rose" = "blue"
+  ) => {
+    const widthPercent = Math.min((minutes / DAY_MINUTES) * 100, 100);
+
+    return (
+      <div className="w-full">
+        <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className={`h-full ${
+              color === "blue"
+                ? "bg-gradient-to-r from-blue-500 to-blue-400"
+                : "bg-gradient-to-r from-rose-500 to-rose-400"
+            }`}
+            style={{ width: `${widthPercent}%` }}
+          />
+        </div>
+
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <span>0h</span>
+          <span>24h</span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* 가동률 TOP 5 */}
+      {/* ✅ 평균 청소시간 우수 매장 */}
       <div className="bg-white p-6 rounded-xl shadow-xl">
-        <h2 className="text-xl font-semibold mb-4">가동률 우수 매장</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          평균 청소시간 우수 매장
+        </h2>
 
-        <ol className="space-y-4">
-          {operationRateData.stores
-            .map((store, idx) => {
-              const totalRate = operationRateData.rates[idx].reduce(
-                (s, r) => s + r,
-                0
-              );
-              const avgRate =
-                totalRate / (operationRateData.rates[idx].length || 1);
-              return { store, avgRate };
-            })
-            .sort((a, b) => b.avgRate - a.avgRate)
-            .slice(0, 5)
-            .map((s, idx) => (
-              <li key={s.store} className="space-y-2">
-                <div className="flex justify-between text-lg font-medium">
-                  <span>
-                    {idx + 1}. {s.store}
-                  </span>
-                  <span>{s.avgRate.toFixed(1)}%</span>
-                </div>
+        <ol className="space-y-5">
+          {topUsage.map((s, idx) => (
+            <li key={s.store} className="space-y-2">
+              <div className="flex justify-between items-end">
+                <span className="font-medium text-lg">
+                  {idx + 1}. {s.store}
+                </span>
 
-                {/* progress bar */}
-                <div className="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(s.avgRate, 100)}%` }}
-                  />
+                <div className="text-right">
+                  <div className="font-semibold">
+                    {(s.avgCleanMinutes / 60).toFixed(1)}시간 / 일
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    24시간 기준 {s.usageRate.toFixed(1)}%
+                  </div>
                 </div>
-              </li>
-            ))}
+              </div>
+
+              {renderTimeline(s.avgCleanMinutes, "blue")}
+            </li>
+          ))}
         </ol>
       </div>
 
-      {/* 가동률 최하위 TOP 5 */}
+      {/* ✅ 평균 청소시간 저조 매장 */}
       <div className="bg-white p-6 rounded-xl shadow-xl">
-        <h2 className="text-xl font-semibold mb-4">가동률 저조 매장</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          평균 청소시간 저조 매장
+        </h2>
 
-        <ol className="space-y-4">
-          {bottomOperationRate.map((s, idx) => {
-            return (
-              <li key={s.store} className="space-y-2">
-                <div className="flex justify-between text-lg font-medium">
-                  <span>
-                    {idx + 1}. {s.store}
-                  </span>
-                  <span>{s.avgRate.toFixed(1)}%</span>
-                </div>
+        <ol className="space-y-5">
+          {bottomUsage.map((s, idx) => (
+            <li key={s.store} className="space-y-2">
+              <div className="flex justify-between items-end">
+                <span className="font-medium text-lg">
+                  {idx + 1}. {s.store}
+                </span>
 
-                {/* inverted progress bar */}
-                <div className="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(s.avgRate, 100)}%` }}
-                  />
+                <div className="text-right">
+                  <div className="font-semibold">
+                    {(s.avgCleanMinutes / 60).toFixed(1)}시간 / 일
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    24시간 기준 {s.usageRate.toFixed(1)}%
+                  </div>
                 </div>
-              </li>
-            );
-          })}
+              </div>
+
+              {renderTimeline(s.avgCleanMinutes, "rose")}
+            </li>
+          ))}
         </ol>
       </div>
     </div>

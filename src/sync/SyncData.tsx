@@ -10,7 +10,7 @@ export default function SyncData() {
     <div className="w-full h-full flex justify-center bg-gray-100 pb-6">
       <div className="w-full max-w-[1400px] flex flex-col px-4 pt-2">
         {/* 헤더 */}
-        <h2 className="font-bold text-lg my-5 ml-6">데이터 동기화</h2>
+        <h2 className="font-bold text-lg my-5 ml-6">전체 매장 6개월 보고서 데이터 동기화</h2>
 
         {/* 콘텐츠 */}
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
@@ -19,7 +19,7 @@ export default function SyncData() {
             onClick={async () => {
               if (
                 !confirm(
-                  "전체 매장 데이터를 최대 6개월치까지 동기화합니다.\n시간이 오래 걸릴 수 있습니다.\n계속하시겠습니까?"
+                  "전체 매장 보고서 데이터를 최대 6개월치까지 동기화합니다.\n시간이 오래 걸릴 수 있습니다.\n계속하시겠습니까?"
                 )
               ) {
                 return;
@@ -49,7 +49,7 @@ export default function SyncData() {
               }
             `}
           >
-            {loading ? "동기화 진행 중..." : "6개월 데이터 동기화"}
+            {loading ? "동기화 진행 중..." : "6개월 보고서 데이터 동기화"}
           </button>
 
           {message && (
