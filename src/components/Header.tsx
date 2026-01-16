@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Database,
+  HelpCircle
 } from "lucide-react";
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
 import type { SyncRecordDTO, User as UserType } from "../type";
@@ -82,15 +83,19 @@ export default function Header() {
       minRoleLevel: 1,
     },
     { name: "운영 관리", path: "/manage", icon: Users, minRoleLevel: 1 },
+    {name: "QNA", path: "/qna", icon: HelpCircle, minRoleLevel: 1, maxRoleLevel: 2,},
     { name: "데이터 관리", path: "/data", icon: Database, minRoleLevel: 3 }, // 관리자만
   ];
 
   /* roleLevel 기준 필터링 메뉴 생성 */
   const safeRoleLevel = roleLevel ?? 0;
 
-  const visibleNavItems = navItems.filter(
-    (item) => safeRoleLevel >= item.minRoleLevel
-  );
+  const visibleNavItems = navItems.filter((item) => {
+    const min = item.minRoleLevel ?? 1;
+    const max = item.maxRoleLevel ?? Infinity;
+
+    return safeRoleLevel >= min && safeRoleLevel <= max;
+  });
 
   useEffect(() => {
     loadLastSync();
