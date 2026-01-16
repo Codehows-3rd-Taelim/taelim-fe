@@ -9,55 +9,51 @@ import {
 } from "../api/FileUploadApi";
 import axios from "axios";
 import { FaDownload } from "react-icons/fa";
+import Pagination from "../../components/Pagination";
 
 export default function FileUploadPage() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-
   const [uploadedFiles, setUploadedFiles] = useState<EmbedFile[]>([]);
-
-  const [duplicateError] = useState<string | null>(null);
-
-  const [duplicateNames, setDuplicateNames] = useState<string[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  /** pagination */
+  const [page, setPage] = useState(1); // 화면용 (1부터)
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 10;
+
+  /** 임베딩 중 여부 */
   const hasEmbedding = uploadedFiles.some(
     (file) => file.status === "EMBEDDING"
   );
 
+  /** 임베딩 중일 때 상태 폴링 */
   useEffect(() => {
-    if (!hasEmbedding) return; // 임베딩 중 없으면 종료
+    if (!hasEmbedding) return;
 
     const interval = setInterval(() => {
-      getEmbedFiles()
-        .then(setUploadedFiles)
-        .catch(() => {
-          console.error("파일 상태 갱신 실패");
-        });
-    }, 2000); // 2초 권장
+      getEmbedFiles(page - 1, PAGE_SIZE)
+        .then((res) => {
+          setUploadedFiles(res.content);
+          setTotalPages(res.totalPages);
+        })
+        .catch(() => console.error("파일 상태 갱신 실패"));
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [hasEmbedding]);
+  }, [hasEmbedding, page]);
 
-  const alertedRef = useRef(false);
-
+  /** 페이지 변경 시 목록 조회 */
   useEffect(() => {
-    getEmbedFiles()
-      .then((files) => setUploadedFiles(Array.isArray(files) ? files : []))
+    getEmbedFiles(page - 1, PAGE_SIZE)
+      .then((res) => {
+        setUploadedFiles(res.content);
+        setTotalPages(res.totalPages);
+      })
       .catch(() => alert("파일 목록 불러오기 실패"));
-  }, []);
+  }, [page]);
 
-  useEffect(() => {
-    if (duplicateNames.length > 0 && !alertedRef.current) {
-      alert("이미 등록된 파일이 있습니다.");
-      alertedRef.current = true;
-    }
-
-    if (duplicateNames.length === 0) {
-      alertedRef.current = false;
-    }
-  }, [duplicateNames]);
-
+  /** FAILED 파일 알림 + 자동 삭제 */
   const failedAlertedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
@@ -66,17 +62,13 @@ export default function FileUploadPage() {
     );
 
     failedFiles.forEach(async (file) => {
-      // 이미 알림 띄운 파일이면 스킵
       if (failedAlertedRef.current.has(file.id)) return;
 
       failedAlertedRef.current.add(file.id);
-
       alert(`임베딩 실패: ${file.originalName}`);
 
       try {
         await deleteEmbedFile(file.id);
-
-        // 화면에서도 제거
         setUploadedFiles((prev) => prev.filter((f) => f.id !== file.id));
       } catch {
         console.error("FAILED 파일 삭제 실패", file.id);
@@ -84,67 +76,61 @@ export default function FileUploadPage() {
     });
   }, [uploadedFiles]);
 
-  //파일 중복 방지
-  const isDuplicate = (filename: string) => {
-    return (
-      pendingFiles.some((f) => f.name === filename) ||
-      uploadedFiles.some((f) => f.originalName === filename)
-    );
-  };
-
-  const removePendingFile = (name: string) => {
-    setPendingFiles((prev) => prev.filter((f) => f.name !== name));
-  };
+  /** 파일 중복 체크 */
+  const isDuplicate = (filename: string) =>
+    pendingFiles.some((f) => f.name === filename);
 
   const isAllowedFile = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase();
     return ext === "pdf" || ext === "csv";
   };
 
-  /* 파일 선택 */
+  /** 파일 선택 */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
 
     const files = Array.from(e.target.files);
 
-    const allowed: File[] = [];
     const duplicates: string[] = [];
-
-    files.forEach((file) => {
-      if (!isAllowedFile(file.name)) return;
-
+    const allowed = files.filter((file) => {
+      if (!isAllowedFile(file.name)) return false;
       if (isDuplicate(file.name)) {
         duplicates.push(file.name);
-      } else {
-        allowed.push(file);
+        return false;
       }
+      return true;
     });
 
-    if (duplicates.length > 0) {
-      setDuplicateNames(duplicates);
-    } else {
-      setDuplicateNames([]);
+    if (allowed.length > 0) {
+      setPendingFiles((prev) => [...prev, ...allowed]);
     }
 
-    setPendingFiles((prev) => [...prev, ...allowed]);
+    // 같은 파일 다시 선택 가능하게
+    e.target.value = "";
   };
 
-  /* 드래그 앤 드롭 */
+  /** 드래그 앤 드롭 */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    const droppedFiles = Array.from(e.dataTransfer.files).filter(
-      (f) => isAllowedFile(f.name) && !isDuplicate(f.name)
-    );
+    const files = Array.from(e.dataTransfer.files);
 
-    if (droppedFiles.length === 0) {
-      alert("이미 추가된 파일이거나 허용되지 않은 파일입니다.");
-      return;
+    const duplicates: string[] = [];
+    const allowed = files.filter((file) => {
+      if (!isAllowedFile(file.name)) return false;
+      if (isDuplicate(file.name)) {
+        duplicates.push(file.name);
+        return false;
+      }
+      return true;
+    });
+
+    if (allowed.length > 0) {
+      setPendingFiles((prev) => [...prev, ...allowed]);
     }
-
-    setPendingFiles((prev) => [...prev, ...droppedFiles]);
   };
 
+  /** 해시 키 생성 */
   const generateEmbedKey = async (file: File): Promise<string> => {
     const buffer = await file.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
@@ -154,7 +140,7 @@ export default function FileUploadPage() {
       .join("");
   };
 
-  // 등록 버튼
+  /** 등록 */
   const handleRegister = async () => {
     if (pendingFiles.length === 0) return;
 
@@ -169,17 +155,23 @@ export default function FileUploadPage() {
 
       setUploadedFiles((prev) => [...newFiles, ...prev]);
       setPendingFiles([]);
-    } catch (e: unknown) {
+    } catch (e) {
       if (axios.isAxiosError(e)) {
-        alert(e.response?.data || e.message);
-      } else if (e instanceof Error) {
-        alert(e.message);
-      } else {
-        alert("업로드 중 알 수 없는 오류 발생");
+        console.log("🔥 error.response.data", e.response?.data);
+        if (e.response?.status === 409) {
+          const msg =
+            typeof e.response.data === "string"
+              ? e.response.data
+              : e.response.data?.message ?? "이미 등록된 파일입니다.";
+          alert(msg);
+        } else {
+          alert("업로드 중 오류가 발생했습니다.");
+        }
       }
     }
   };
 
+  /** 삭제 */
   const handleDelete = async (file: EmbedFile) => {
     if (file.status === "EMBEDDING") {
       alert("임베딩 중인 파일은 삭제할 수 없습니다.");
@@ -188,35 +180,43 @@ export default function FileUploadPage() {
 
     if (!confirm(`${file.originalName} 파일을 삭제할까요?`)) return;
 
-    try {
-      await deleteEmbedFile(file.id);
-      setUploadedFiles((prev) => prev.filter((f) => f.id !== file.id));
-    } catch {
-      alert("파일 삭제 실패");
+    await deleteEmbedFile(file.id);
+
+    // 삭제 후 최신 데이터 다시 조회
+    const res = await getEmbedFiles(page - 1, PAGE_SIZE);
+
+    // 만약 현재 페이지가 사라졌다면 이전 페이지로
+    if (res.totalPages > 0 && page > res.totalPages) {
+      setPage(res.totalPages);
+    } else {
+      setUploadedFiles(res.content);
+      setTotalPages(res.totalPages);
     }
   };
 
+  /** 상태 렌더링 */
   const renderStatus = (status: string) => {
-    switch (status) {
-      case "EMBEDDING":
-        return (
-          <span className="text-blue-500 animate-pulse">임베딩 중...</span>
-        );
-      case "DONE":
-        return <span className="text-green-600">완료</span>;
-      case "FAILED":
-        return <span className="text-red-500">실패</span>;
-      default:
-        return null;
-    }
+    if (status === "EMBEDDING")
+      return (
+        <span className="text-blue-500 animate-pulse ml-2">임베딩 중...</span>
+      );
+    if (status === "DONE")
+      return <span className="text-green-600 ml-2">완료</span>;
+    if (status === "FAILED")
+      return <span className="text-red-500 ml-2">실패</span>;
+    return null;
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-100 ">
+    <div className="flex flex-col h-full bg-gray-100">
       <h2 className="font-bold text-lg ml-10 mt-5 mb-5">파일 업로드</h2>
 
       {/* 업로드 박스 */}
-      <div className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300 mr-10 ml-10">
+      <div
+        className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300 mx-10"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+      >
         <input
           ref={inputRef}
           type="file"
@@ -226,39 +226,32 @@ export default function FileUploadPage() {
           onChange={handleFileChange}
         />
 
-        {/* + 업로드 영역 (항상 보임) */}
         <div
-          className="bg-[#4A607A] hover:bg-[#324153] rounded-xl h-35 pb-7 pt-2 flex flex-col items-center justify-center text-white text-4xl mb-4  cursor-pointer"
+          className="bg-[#4A607A] hover:bg-[#324153] rounded-xl h-32 flex flex-col items-center justify-center text-white text-4xl cursor-pointer"
           onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
         >
           +<span className="text-sm mt-2">클릭하거나 파일을 드래그하세요</span>
           <span className="text-sm mt-2">
             (pdf, csv 파일만 등록 가능합니다.)
           </span>
         </div>
-        {duplicateError && (
-          <p className="text-sm text-red-500 mt-2">{duplicateError}</p>
-        )}
-        {/* 선택된 파일 미리보기 */}
+
         {pendingFiles.length > 0 && (
-          <div className="bg-white rounded-xl p-1 mb-4 space-y-2">
+          <div className="bg-white rounded-xl p-3 mt-4 space-y-2">
             {pendingFiles.map((file) => (
-              <div
-                key={file.name}
-                className="flex items-center justify-between text-sm"
-              >
-                <div className="flex items-center gap-3">
+              <div key={file.name} className="flex justify-between">
+                <div className="flex items-center gap-2">
                   {getFileIcon(file.name)}
                   <span>{file.name}</span>
                 </div>
-
                 <button
-                  type="button"
-                  onClick={() => removePendingFile(file.name)}
+                  onClick={() =>
+                    setPendingFiles((prev) =>
+                      prev.filter((f) => f.name !== file.name)
+                    )
+                  }
                 >
-                  <span className="text-3xl">×</span>
+                  ×
                 </button>
               </div>
             ))}
@@ -266,65 +259,54 @@ export default function FileUploadPage() {
         )}
 
         <button
-          type="button"
           onClick={handleRegister}
           disabled={pendingFiles.length === 0}
-          className="w-full bg-[#324153] hover:bg-[#4A607A] text-white py-2 rounded font-semibold"
+          className="w-full bg-[#324153] text-white py-2 rounded mt-4"
         >
           등록
         </button>
-        {duplicateNames.length > 0 && (
-          <p className="text-l text-red-500 mt-6 ">
-            이미 등록된 파일 : {duplicateNames.join(", ")}
-          </p>
-        )}
       </div>
 
-      {/* 학습된 파일 */}
+      {/* 파일 목록 */}
       <h2 className="font-bold mt-8 mb-2 ml-10">학습된 파일</h2>
-      <div className="bg-gray-100 rounded-xl p-4 space-y-3 mr-5 ml-5">
-        {Array.isArray(uploadedFiles) &&
-          uploadedFiles.map((file) => (
-            <div
-              key={file.id}
-              className="bg-white rounded-lg px-4 py-3 flex items-center justify-between"
-            >
-              {/* 왼쪽: 파일 아이콘 + 이름 */}
-              <div className="flex items-center gap-2">
-                {getFileIcon(file.originalName)}
-                <span>{file.originalName}</span>
-                {renderStatus(file.status)}
-              </div>
 
-              {/* 오른쪽: 삭제 버튼 + 다운로드 버튼 */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => downloadEmbedFile(file)}
-                  disabled={file.status === "EMBEDDING"}
-                  className={
-                    file.status === "EMBEDDING"
-                      ? "opacity-30 cursor-not-allowed"
-                      : ""
-                  }
-                >
-                  <FaDownload />
-                </button>
-                <button
-                  onClick={() => handleDelete(file)}
-                  disabled={file.status === "EMBEDDING"}
-                  className={`px-3 py-1 rounded text-sm text-white
-    ${
-      file.status === "EMBEDDING"
-        ? "bg-gray-300 cursor-not-allowed"
-        : "bg-[#d14e4e] hover:bg-[#d11a1a]"
-    }`}
-                >
-                  삭제
-                </button>
-              </div>
+      <div className="space-y-3 mx-10">
+        {uploadedFiles.map((file) => (
+          <div
+            key={file.id}
+            className="bg-white rounded-lg px-4 py-3 flex justify-between"
+          >
+            <div className="flex items-center gap-2">
+              {getFileIcon(file.originalName)}
+              <span>{file.originalName}</span>
+              {renderStatus(file.status)}
             </div>
-          ))}
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => downloadEmbedFile(file)}
+                disabled={file.status === "EMBEDDING"}
+              >
+                <FaDownload />
+              </button>
+              <button
+                onClick={() => handleDelete(file)}
+                disabled={file.status === "EMBEDDING"}
+                className="bg-red-500 text-white px-3 py-1 rounded"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
+
+      {/* 페이지네이션 */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+      />
     </div>
   );
 }
