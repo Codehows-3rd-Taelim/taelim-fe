@@ -1,5 +1,5 @@
 import axios, { type AxiosRequestConfig } from "axios";
-import type { Qna, QnaRequest } from "../../type";
+import type { PaginationResponse, Qna, QnaRequest, QnaViewType } from "../../type";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -12,30 +12,21 @@ const getAxiosConfig = (): AxiosRequestConfig => {
   };
 };
 
-
-// qna 전체 조회
-export const getQnaAll = async (): Promise<Qna[]> => {
-  const res = await axios.get(`${BASE_URL}/qna`, getAxiosConfig());
+export const getQnaPage = async (
+  viewType: QnaViewType,
+  page: number,
+  size: number
+): Promise<PaginationResponse<Qna>> => {
+  const res = await axios.get(
+    `${BASE_URL}/qna?viewType=${viewType}&page=${page}&size=${size}`,
+    getAxiosConfig()
+  );
   return res.data;
 };
 
-// qna 미처리만 조회
-export const getQnaUnresolved = async (): Promise<Qna[]> => {
-  const res = await axios.get(`${BASE_URL}/qna/unresolved`, getAxiosConfig());
-  return res.data;
-};
 
-// qna 처리된것만 조회
-export const getQnaResolved = async (): Promise<Qna[]> => {
-  const res = await axios.get(`${BASE_URL}/qna/resolved`, getAxiosConfig());
-  return res.data;
-};
 
-// 임베딩 적용된것만 조회
-export const getQnaApplied = async (): Promise<Qna[]> => {
-  const res = await axios.get(`${BASE_URL}/qna/applied`, getAxiosConfig());
-  return res.data;
-};
+
 
 
 // 임베딩 적용
@@ -55,11 +46,6 @@ export const deleteQna = async (qnaId: number): Promise<void> => {
 
 
 
-//  비활성 질문 목록
-export const getQnaInactive = async (): Promise<Qna[]> => {
-  const res = await axios.get(`${BASE_URL}/qna/inactive`, getAxiosConfig());
-  return res.data;
-};
 
 // 표시 답변 저장
 export const saveDisplayAnswer = async (qnaId: number,answer: string): Promise<void> => {
@@ -126,4 +112,6 @@ export const updateUserQuestion = async (
 export const deleteUserQuestion = async (qnaId: number): Promise<void> => {
   await axios.delete(`${BASE_URL}/qna/${qnaId}/question`,getAxiosConfig());
 };
+
+
 

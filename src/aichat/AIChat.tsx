@@ -42,13 +42,13 @@ export default function AIChat() {
     setIsSidebarOpen(false);
   };
 
-  /* ===== QnA 모달 열기 ===== */
+  // QnA 모달 열기
   const openQnaModal = (aiIndex: number) => {
     for (let i = aiIndex - 1; i >= 0; i--) {
       const m = messages[i];
       if (m.senderType === "USER") {
         setQnaTitle("");
-        setQnaQuestion(m.rawMessage); // 초기값
+        setQnaQuestion(m.rawMessage); 
         setQnaOpen(true);
         return;
       }
@@ -129,7 +129,13 @@ export default function AIChat() {
 
         <div className="flex flex-col flex-1 pt-[var(--header-height)]">
           {messages.length === 0 ? (
-            <EmptyState input={input} setInput={setInput} send={send} />
+            <div className="flex flex-1 items-center justify-center">
+              <EmptyState
+                input={input}
+                setInput={setInput}
+                send={send}
+              />
+            </div>
           ) : (
             <ChatWindow
               messages={messages}
