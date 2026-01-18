@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { EmbedFile } from "../../type";
+import type { EmbedFile, PaginationResponse } from "../../type";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -22,8 +22,13 @@ export async function postEmbedFile(
 }
 
 /** 파일 목록 조회 */
-export async function getEmbedFiles(): Promise<EmbedFile[]> {
-  const res = await axios.get<EmbedFile[]>(`${BASE_URL}/embed-files`);
+export async function getEmbedFiles(
+  page: number,
+  size: number
+): Promise<PaginationResponse<EmbedFile>> {
+  const res = await axios.get(`${BASE_URL}/embed-files`, {
+    params: { page, size },
+  });
   return res.data;
 }
 

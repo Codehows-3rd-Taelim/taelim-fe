@@ -8,11 +8,11 @@ interface Props {
 
 export default function EmptyState({ input, setInput, send }: Props) {
   const suggestions = [
-    "브러시가 작동이 안돼",
-    "회사 정보 알려줘",
-    "로봇 크기와 무게가 어떻게 되나요?",
-    "소모품은 어디서 구입하나요?",
-    "사용 방법이 궁금해",
+    "CC1 뜨거운 물 써도 되나요?",
+    "MT1 물 웅덩이 청소 가능한가요?",
+    "청소 보고서를 얼마나 자주 업로드하나요?",
+    "CC1 시간당 청소효율 궁금해요.",
+    "MT1 소모품에 대해서 알려주세요.",
   ];
 
   return (
