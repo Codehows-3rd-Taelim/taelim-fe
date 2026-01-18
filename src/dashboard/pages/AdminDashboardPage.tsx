@@ -123,7 +123,7 @@ export default function AdminDashboardPage() {
       {/* KPI */}
       <AdminKpiSection data={data} />
 
-      {/* 가동률 핵심 요약 */}
+      {/* 가동률 핵심 요약
       <section className="space-y-6">
         <AdminDashboardRanking
           operationRateData={data.OperationRateScatterChart}
@@ -134,7 +134,7 @@ export default function AdminDashboardPage() {
             data={data.OperationRateScatterChart}
           />
         </div>
-      </section>
+      </section> */}
 
       {/* 작업량 분석 (청소 면적 + 상태) */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
