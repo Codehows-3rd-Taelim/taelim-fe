@@ -111,8 +111,12 @@ export default function AdminQnaPage() {
     setDisplayAnswers((p) => ({ ...p, [q.id]: q.displayAnswer ?? "" }));
     setChatbotAnswers((p) => ({
       ...p,
-      [q.id]: q.appliedAnswer ?? q.editingAnswer ?? "",
+      [q.id]:
+        q.status === "FAILED"
+          ? q.editingAnswer ?? ""
+          : q.appliedAnswer ?? "",
     }));
+
     setEditingDisplay((p) => ({ ...p, [q.id]: false }));
     setEditingChatbot((p) => ({ ...p, [q.id]: false }));
   };
@@ -172,10 +176,14 @@ export default function AdminQnaPage() {
 
             const displayValue =
               displayAnswers[q.id] ?? q.displayAnswer ?? "";
+
             const chatbotValue =
-              chatbotAnswers[q.id] ??
-              q.appliedAnswer ??
-              q.editingAnswer ?? "";
+            chatbotAnswers[q.id] ??
+           (q.status === "FAILED"
+            ? q.editingAnswer ?? ""
+            : q.appliedAnswer ?? "");
+
+
 
       const isEditingDisplay = editingDisplay[q.id];
       const isEditingChatbot = editingChatbot[q.id];
@@ -215,16 +223,7 @@ export default function AdminQnaPage() {
                       />
                     </div>
 
-                  {q.appliedAnswer && (  
-                    <div className="space-y-1">
-                      <div className="text-sm font-semibold">챗봇 적용 답변</div>
-                      <textarea
-                        className={textareaClass(false)}
-                        value={chatbotValue}
-                        readOnly
-                      />
-                    </div>
-                  )}
+              
 
                     <div className="flex gap-2 flex-wrap max-w-full">
                       <button
@@ -301,7 +300,15 @@ export default function AdminQnaPage() {
                   {/* 3) 챗봇 적용 답변 */}
                   {!isUnresolved && (
                     <div className="space-y-1">
-                      <div className="text-sm font-semibold">챗봇 적용 답변</div>
+                     <div
+                      className={`text-sm font-semibold ${
+                        q.status === "FAILED" ? "text-red-600" : ""
+                      }`}
+                    >
+                      {q.status === "FAILED"
+                        ? "마지막 시도한 챗봇 답변 (챗봇 적용 실패 - 다시 시도해주세요)"
+                        : "챗봇 적용 답변"}
+                    </div>
                       <textarea
                         className={textareaClass(isEditingChatbot)}
                         value={chatbotValue}
@@ -362,6 +369,34 @@ export default function AdminQnaPage() {
                             답변 수정
                           </button>
 
+                          {q.status === "FAILED" && (
+                          <button
+                            className={`${btn} bg-yellow-400 hover:bg-yellow-500 text-black`}
+                            onClick={async () => {
+                              const retryAnswer = chatbotValue.trim();
+
+                              if (!retryAnswer) {
+                                alert("재적용할 챗봇 답변이 없습니다.");
+                                return;
+                              }
+
+                              if (!confirm("이 답변을 다시 챗봇에 적용하시겠습니까?")) return;
+
+                              try {
+                                await applyQna(q.id, retryAnswer);
+                                toastMsg("챗봇 답변 재적용 요청됨");
+                                await refetch();
+                              } catch {
+                                toastMsg("챗봇 답변 재적용 실패");
+                              }
+                            }}
+                          >
+                            챗봇 답변 재적용
+                          </button>
+                        )}
+
+
+                        
                           <button
                             className={`${btn} bg-indigo-600`}
                             onClick={() =>
@@ -373,6 +408,8 @@ export default function AdminQnaPage() {
                           >
                             챗봇 답변 수정
                           </button>
+                        
+
 
                           <button
                             disabled={!q.appliedAnswer}
@@ -384,6 +421,11 @@ export default function AdminQnaPage() {
                             onClick={async () => {
                               if (!confirm("챗봇 답변을 삭제하시겠습니까?")) return;
                               await deleteAppliedAnswer(q.id);
+                              setChatbotAnswers((p) => {
+                              const next = { ...p };
+                              delete next[q.id];
+                              return next;
+                            });
                               toastMsg("챗봇 답변 삭제됨");
                               await refetch();
                             }}
