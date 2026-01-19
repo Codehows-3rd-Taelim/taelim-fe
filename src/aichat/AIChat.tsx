@@ -9,7 +9,6 @@ import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import { ChevronRight } from "lucide-react";
 import type { AiChatDTO, Message } from "../type";
-import { fetchUndeliveredNotifications } from "../notificationApi";
 import { createQna } from "../qna/api/qnaApi";
 
 export default function AIChat() {
@@ -102,7 +101,6 @@ export default function AIChat() {
     } finally {
       setIsTyping(false);
       loadChatHistory().then(setChatList);
-      setTimeout(fetchUndeliveredNotifications, 300);
     }
   };
 
@@ -116,6 +114,18 @@ export default function AIChat() {
           newChat={newChat}
         />
       </div>
+
+      {isSidebarOpen && (
+        <div className="md:hidden">
+          <ChatSidebar
+            chatList={chatList}
+            currentId={currentId}
+            select={select}
+            newChat={newChat}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+        </div>
+      )}
 
       <main className="relative flex h-full overflow-auto md:pl-80">
         {!isSidebarOpen && (

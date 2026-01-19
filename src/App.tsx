@@ -8,7 +8,6 @@ import { Container, Box } from "@mui/material";
 import ReportPage from "./report/pages/ReportPage";
 import AIChat from "./aichat/AIChat";
 import Footer from "./components/Footer";
-import AuthProvider from "./AuthProvider";
 import Header from "./components/Header";
 import EmbeddingPage from "./embedding/pages/EmbeddingPage";
 import DashboardPage from "./dashboard/pages/DashboardPage";
@@ -19,7 +18,6 @@ function App() {
   const isLoginPage = location.pathname === "/login";
 
   return (
-    <AuthProvider>
       <Box
         sx={{
           display: "flex",
@@ -119,7 +117,6 @@ function App() {
               </Box>
             )}
       </Box>
-    </AuthProvider>
   );
 }
 

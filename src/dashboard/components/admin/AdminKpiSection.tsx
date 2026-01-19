@@ -8,7 +8,7 @@ export default function AdminKpiSection({
   const box = "p-4 bg-white shadow-xl rounded-xl text-center";
 
   return (
-    <div className="grid grid-cols-6 gap-4">
+    <div className="grid grid-cols-5 gap-4">
       <div className={box}>
         <div className="font-bold">총 매장 수</div>
         <div className="text-3xl font-bold">{data.totalStores}</div>
@@ -26,12 +26,12 @@ export default function AdminKpiSection({
         </div>
       </div>
 
-      <div className={box}>
+      {/* <div className={box}>
         <div className="font-bold">가동</div>
         <div className="text-3xl font-bold text-blue-600">
           {data.totalWorking}
         </div>
-      </div>
+      </div> */}
 
       <div className={box}>
         <div className="font-bold">충전</div>
