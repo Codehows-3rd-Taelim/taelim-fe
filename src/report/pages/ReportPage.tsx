@@ -228,7 +228,7 @@ export default function ReportPage() {
   };
   
   return (
-    <div className="w-full h-full max-w-[1400px] mx-auto pt-1 px-4 lg:px-6 space-y-6 bg-gray-100">
+    <div className="w-full h-full max-w-[1600px] mx-auto pt-1 px-4 lg:px-6 space-y-6 bg-gray-100">
 
       {/* ================= 모바일 전용 정렬 ================= */}
       <div className="lg:hidden flex gap-2">
@@ -333,7 +333,7 @@ export default function ReportPage() {
         </div>
 
         {/* 테이블 */}
-        <div className="overflow-x-auto rounded-xl shadow-xl bg-white">
+        <div className="overflow-x-auto rounded-xl shadow-xl bg-white text-nowrap">
           <table className="min-w-full border-collapse">
             <thead className="bg-gray-50">
               <tr>
@@ -384,22 +384,22 @@ export default function ReportPage() {
                   onClick={() => handleRowClick(r)}
                   className="cursor-pointer hover:bg-gray-100"
                 >
-                  <td className="px-4 py-2 text-center">{getRowIndex(idx)}</td>
-                  <td className="px-4 py-2 text-center">{r.sn}</td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-4 py-4 text-center align-middle">{getRowIndex(idx)}</td>
+                  <td className="px-4 py-4 text-center align-middle">{r.sn}</td>
+                  <td className="px-4 py-4 text-center align-middle">
                     {getStoreName(r.storeId)}
                   </td>
-                  <td className="px-4 py-2 text-center">{r.mapName}</td>
-                  <td className="px-4 py-2 text-center">{r.startTime}</td>
-                  <td className="px-4 py-2 text-center">{r.endTime}</td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-4 py-4 text-center align-middle">{r.mapName}</td>
+                  <td className="px-4 py-4 text-center align-middle">{r.startTime}</td>
+                  <td className="px-4 py-4 text-center align-middle">{r.endTime}</td>
+                  <td className="px-4 py-4 text-center align-middle">
                     {formatDynamicTime(r.cleanTime)}
                   </td>
-                  <td className="px-4 py-2 text-center">{r.cleanArea ?? "-"}</td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-4 py-4 text-center align-middle">{r.cleanArea ?? "-"}</td>
+                  <td className="px-4 py-4 text-center align-middle">
                     {Math.round(r.costBattery * 1.3 * 100) / 10000}
                   </td>
-                  <td className="px-4 py-2 text-center">{r.costWater}</td>
+                  <td className="px-4 py-4 text-center align-middle">{r.costWater}</td>
                 </tr>
               ))}
             </tbody>
