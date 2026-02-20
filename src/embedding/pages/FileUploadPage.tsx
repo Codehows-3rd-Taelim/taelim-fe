@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { usePagination } from "../../hooks/usePagination";
 import getFileIcon from "../components/getFileIcon";
 import type { EmbedFile } from "../../type";
 import {
@@ -18,8 +19,7 @@ export default function FileUploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   /** pagination */
-  const [page, setPage] = useState(1); // 화면용 (1부터)
-  const [totalPages, setTotalPages] = useState(1);
+  const { page, totalPages, setPage, setTotalPages, adjustAfterDelete } = usePagination();
   const PAGE_SIZE = 10;
 
   /** 임베딩 중 여부 */
@@ -157,7 +157,6 @@ export default function FileUploadPage() {
       setPendingFiles([]);
     } catch (e) {
       if (axios.isAxiosError(e)) {
-        console.log("🔥 error.response.data", e.response?.data);
         if (e.response?.status === 409) {
           const msg =
             typeof e.response.data === "string"
@@ -184,14 +183,9 @@ export default function FileUploadPage() {
 
     // 삭제 후 최신 데이터 다시 조회
     const res = await getEmbedFiles(page - 1, PAGE_SIZE);
-
-    // 만약 현재 페이지가 사라졌다면 이전 페이지로
-    if (res.totalPages > 0 && page > res.totalPages) {
-      setPage(res.totalPages);
-    } else {
-      setUploadedFiles(res.content);
-      setTotalPages(res.totalPages);
-    }
+    setUploadedFiles(res.content);
+    setTotalPages(res.totalPages);
+    adjustAfterDelete(res.totalElements, PAGE_SIZE);
   };
 
   /** 상태 렌더링 */
@@ -208,12 +202,12 @@ export default function FileUploadPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-100">
-      <h2 className="font-bold text-lg ml-10 mt-5 mb-5">파일 업로드</h2>
+    <div className="flex flex-col h-full bg-gray-100 px-4 md:px-6">
+      <h2 className="font-bold text-lg mt-5 mb-5">파일 업로드</h2>
 
       {/* 업로드 박스 */}
       <div
-        className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300 mx-10"
+        className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300"
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
@@ -268,9 +262,9 @@ export default function FileUploadPage() {
       </div>
 
       {/* 파일 목록 */}
-      <h2 className="font-bold mt-8 mb-2 ml-10">학습된 파일</h2>
+      <h2 className="font-bold mt-8 mb-2">학습된 파일</h2>
 
-      <div className="space-y-3 mx-10">
+      <div className="space-y-3">
         {uploadedFiles.map((file) => (
           <div
             key={file.id}

@@ -38,29 +38,26 @@ export default function OperationDesktopLayout(
         {/* 관리자(roleLevel === 3)만 탭 표시 */}
         {roleLevel === 3 && (
           <>
-            <div className="flex  px-4 pt-6  bg-gray-100 border-b-2 border-gray-400 sm:px-6">
-              <button
-                onClick={() => setActiveTab("employee")}
-                className={`px-4 py-3 font-bold transition-colors text-sm sm:text-base ${
-                  activeTab === "employee"
-                    ? "bg-[#4A607A] text-white border-[#4A607A]"
-                    : "bg-gray-300 text-gray-700 hover:bg-gray-300"
-                }`}
-                style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
-              >
-                직원 관리
-              </button>
-              <button
-                onClick={() => setActiveTab("store")}
-                className={`px-4 py-3 font-bold transition-colors text-sm sm:text-base ${
-                  activeTab === "store"
-                    ? "bg-[#4A607A] text-white border-[#4A607A]"
-                    : "bg-gray-300 text-gray-700 hover:bg-gray-300"
-                }`}
-                style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
-              >
-                매장 관리
-              </button>
+            <div className="flex gap-0.5 px-4 pt-6 bg-gray-100 border-b-2 border-gray-400 sm:px-6">
+              {(
+                [
+                  { key: "employee", label: "직원 관리" },
+                  { key: "store",    label: "매장 관리" },
+                ] as const
+              ).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={`px-4 py-2 font-semibold transition border border-b-0 text-sm sm:text-base ${
+                    activeTab === key
+                      ? "bg-[#4A607A] text-white border-[#4A607A]"
+                      : "bg-gray-300 text-gray-600 border-gray-300 hover:bg-gray-200"
+                  }`}
+                  style={{ borderRadius: "0.5rem 0.5rem 0 0" }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             {/* 탭 콘텐츠 */}

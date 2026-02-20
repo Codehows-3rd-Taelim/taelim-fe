@@ -17,7 +17,7 @@ export default function ChatSidebar({
   onClose,
 }: Props) {
   return (
-    <aside className="absolute inset-y-0 left-0 w-80 bg-[#fcfcfc] border-r px-3 py-5 overflow-y-auto z-20">
+    <aside className="absolute inset-y-0 left-0 w-64 lg:w-80 bg-[#fcfcfc] border-r px-3 py-5 overflow-y-auto z-20">
       {/* 상단 */}
       <div className="flex items-center justify-between pr-1">
         <button
@@ -25,7 +25,7 @@ export default function ChatSidebar({
           className="flex items-center px-4 py-2 rounded-lg hover:bg-[#4A607A]"
         >
           <FileText size={22} className="mr-2" />
-          <span className="text-[22px] font-bold leading-none">새 채팅</span>
+          <span className="text-xl font-bold leading-none">새 채팅</span>
         </button>
 
         {onClose && (
@@ -39,7 +39,7 @@ export default function ChatSidebar({
       </div>
 
       <div className="mt-10 mb-4">
-        <h2 className="ml-2 text-[30px] font-bold text-gray-700">내 채팅</h2>
+        <h2 className="ml-2 text-2xl md:text-3xl font-bold text-gray-700">내 채팅</h2>
       </div>
 
       <div className="flex flex-col gap-1">

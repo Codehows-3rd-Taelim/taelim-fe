@@ -2,12 +2,8 @@ export type Store = {
     storeId: number;
     shopId: number;
     shopName: string;
-    delYn?: string;
     industryId?: number;
-    // industry?: {
-    //     industryId: number;
-    //     industryName: string;
-    // };
+    industryName?: string;
 }
 
 export type Industry = {
@@ -17,12 +13,12 @@ export type Industry = {
 
 export type User = {
     userId: number;
-    id: string;
-    pw: string;
+    loginId: string;
+    password?: string;  // 응답에는 없음, 요청에만 사용
     name: string;
     phone: string;
     email: string;
-    role: "MANAGER" | "USER" | "ADMIN";
+    role: "USER" | "MANAGER" | "ADMIN";
     storeId: number;
 }
 
@@ -31,8 +27,8 @@ export type ApiFormUser= Omit<User, "userId">;
 
 /* ======= 인증 / 로그인 ======= */
 export type LoginRequest = {
-    id: string;
-    pw: string;
+    loginId: string;
+    password: string;
 };
 
 export type LoginResponse = {
@@ -48,7 +44,6 @@ export type Robot = {
     sn: string;
     mac: string;
     productCode: string;
-    softVersion: string;
     status: number;
     nickname: string;
     battery: number;
@@ -67,14 +62,14 @@ export type Report = {
   cleanTime: number;
   taskArea: number;
   cleanArea: number;
-  mode: 1 | 2;
+  mode: number;
   costBattery: number;
   costWater: number;
   mapName: string;
   mapUrl: string;
   storeId: number;
   robotId: number;
-  sn:number;
+  sn: string;
   remark: string;
 }
 
@@ -125,21 +120,21 @@ export interface ChatPromptRequest {
   conversationId: string | null; // 새 대화 시작 시 null
 }
 
-export interface ChatMessage {
-    id: string; 
-    conversationId: string;
-    senderType: SenderType;
-    content: string;
-    timestamp: string;
-    isPending: boolean; // 
+export interface ChatSource {
+  sourceType: "FILE" | "QNA";
+  fileName?: string;      // FILE 타입
+  extension?: string;     // FILE 타입
+  chunk?: number;
+  qnaId?: number;         // QNA 타입
 }
 
-// SSE나 유저가 즉석에서 생성한 임시 메시지 
+// SSE나 유저가 즉석에서 생성한 임시 메시지
 export interface Message {
   id: string;
   rawMessage: string;
   senderType: SenderType;
   isStreaming: boolean;
+  sources?: ChatSource[];
 }
 
 /*  ======= 날짜 ======= */
@@ -257,8 +252,7 @@ export interface AdminDashboardData {
   storeStatusCount: StoreStatusCount[];
   industryCompare: IndustryCompare[];
   industryStoreCount: IndustryStoreCount[];
-  OperationRateScatterChart: OperationRateScatterChartData;
-  taskStatusDonut: TaskStatusDonut[];
+  operationRateScatterChart: OperationRateScatterChartData;
 }
 
 export interface RobotTopTime {
@@ -288,11 +282,10 @@ export type IndustryStoreCount = {
 
 export type PaginationResponse<T> = {
   content: T[];
-  page: number;
+  number: number;      // 0-based page number (Spring Page)
   size: number;
   totalPages: number;
   totalElements: number;
-  
 };
 
 

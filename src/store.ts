@@ -66,12 +66,22 @@ export const useAuthStore = create<AuthStore>((set) => ({
       userId: null,
       isAuthenticated: false,
     });
-
-    if (window.location.pathname !== "/login") {
-      window.location.replace("/login");
-    }
+    // 리다이렉트는 PrivateRoute의 <Navigate to="/login"> 또는 호출 측에서 처리
   },
 }));
+
+// fetch용 인증 래퍼 (SSE 등 axios를 쓰지 않는 API용)
+export async function fetchWithAuth(input: RequestInfo, init?: RequestInit): Promise<Response> {
+  const token = localStorage.getItem("jwtToken");
+  const headers = new Headers(init?.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(input, { ...init, headers });
+  if (res.status === 401 || res.status === 403) {
+    useAuthStore.getState().logout();
+    throw new Error("인증이 만료되었습니다.");
+  }
+  return res;
+}
 
 // Axios 인터셉터
 axios.interceptors.request.use(

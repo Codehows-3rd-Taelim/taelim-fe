@@ -27,8 +27,8 @@ function getStatusLabel(robot: Robot) {
 
 export default function RobotTable({ robots }: { robots: Robot[] }) {
   return (
-    <div className="min-w-[900px]">
-      <table className="w-full text-ml">
+    <div className="overflow-x-auto w-full">
+      <table className="min-w-max w-full text-ml">
         <thead className="text-gray-600">
           <tr>
             <th className="py-2 px-4 text-center">모델</th>

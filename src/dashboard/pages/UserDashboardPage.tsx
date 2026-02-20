@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import axios from "axios";
 import { useAuthStore } from "../../store";
-import { getReportsforDashboard } from "../../report/api/ReportApi";
+import { getReportsForDashboard } from "../../report/api/ReportApi";
 import { getRobots } from "../../robot/api/RobotApi";
 import { getStores } from "../../operationManagement/api/StoreApi";
+import { MAX_STORE_FETCH } from "../../lib/constants";
 import DateRangePicker from "../../components/DateRangePicker";
 import dayjs, { Dayjs } from "dayjs";
 import type { DateRange } from "@mui/x-date-pickers-pro/models";
@@ -43,7 +45,14 @@ export default function UserDashboardPage() {
   const { data, hourlyWage, setHourlyWage } = useDashboard(reports, robots);
 
   //  데이터 로딩
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    let cancelled = false;
+
     const loadData = async () => {
       if (!storeId || !range[0] || !range[1]) return;
 
@@ -54,26 +63,32 @@ export default function UserDashboardPage() {
         const end = range[1].endOf("day").format("YYYY-MM-DD");
 
         const [storeRes, robotRes, reportRes] = await Promise.all([
-          getStores(1, 100), // 매장 정보
-          getRobots(storeId), // 해당 매장 로봇
-          getReportsforDashboard({
+          getStores(1, MAX_STORE_FETCH, controller.signal), // 매장 정보
+          getRobots(storeId, controller.signal), // 해당 매장 로봇
+          getReportsForDashboard({
             storeId,
             startDate: start,
             endDate: end,
-          }), // 리포트
+          }, controller.signal), // 리포트
         ]);
 
+        if (cancelled) return;
         setStores(storeRes.content);
         setRobots(robotRes);
         setReports(reportRes);
       } catch (err) {
+        if (cancelled || axios.isCancel(err)) return;
         console.error("대시보드 데이터 로딩 실패", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadData();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [storeId, range]);
 
   //  로딩 처리
@@ -83,7 +98,7 @@ export default function UserDashboardPage() {
 
   //  렌더링
   return (
-    <div className="w-full max-w-7xl pb-6 mx-auto px-4 lg:px-6 space-y-6 bg-gray-100 mt-5">
+    <div className="w-full max-w-[1400px] pb-6 mx-auto px-4 lg:px-6 space-y-6 bg-gray-100 mt-5">
       {/* 상단 헤더 */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{storeName} 대시보드</h2>
@@ -94,7 +109,7 @@ export default function UserDashboardPage() {
       <KpiSection performance={data.performance} />
 
       {/* 그래프 & 성과 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-white p-4 rounded-xl shadow-lg text-center">
           <h3 className="font-semibold mb-4">로봇 상태 현황</h3>
           <RobotDonutChart data={data.robotStatus} />
@@ -121,7 +136,7 @@ export default function UserDashboardPage() {
       </div>
 
       {/* 하단 차트 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="bg-white p-4 rounded-xl shadow-lg">
           <h4 className="font-semibold mb-3 text-center">구역별 청소 횟수</h4>
           <AreaCleanCountChart data={data.areaCleanCount} />

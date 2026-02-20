@@ -1,14 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import type { User, Store, ApiFormUser } from "../../type";
 import { getStores } from "../api/StoreApi";
 import { checkDuplicateId, getUsers, registerEmployee } from "../api/EmployeeApi";
+import { useAuthStore } from "../../store";
+import { ROLE_LEVEL, MAX_STORE_FETCH } from "../../lib/constants";
 
 type LocalUserForm = ApiFormUser & { pwCheck: string };
 
 export default function useOperationManagement() {
-    const navigate = useNavigate();
-
     // 탭
     const [activeTab, setActiveTab] = useState<'employee' | 'store'>('employee');
 
@@ -16,18 +15,13 @@ export default function useOperationManagement() {
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordCheck, setShowPasswordCheck] = useState(false);
 
-    // 인증 및 사용자 정보 
-    const jwtToken = localStorage.getItem("jwtToken"); // JWT 토큰 확인
-    
-    // roleLevel, storeId는 인증된 사용자 정보의 일부로 간주합니다.
-    const rawRoleLevel = localStorage.getItem("roleLevel");
-    const roleLevel = rawRoleLevel ? Number(rawRoleLevel) : -1;
-
-    const rawStoreId = localStorage.getItem("storeId");
-    const userStoreId = rawStoreId ? Number(rawStoreId) : 0;
+    // 인증 및 사용자 정보
+    const { jwtToken, roleLevel: rawRoleLevel, storeId: rawStoreId, isAuthenticated } = useAuthStore();
+    const roleLevel = rawRoleLevel ?? -1;
+    const userStoreId = rawStoreId ?? 0;
     
     // 인증 상태를 나타내는 user 객체 (여기서는 단순히 인증 여부 판단용)
-    const user = jwtToken ? { roleLevel, storeId: userStoreId } : null; 
+    const user = isAuthenticated ? { roleLevel, storeId: userStoreId } : null;
 
     // 매장/직원 목록
     const [allStores, setAllStores] = useState<Store[]>([]);
@@ -46,32 +40,21 @@ export default function useOperationManagement() {
         name: "",
         phone: "",
         email: "",
-        role: roleLevel === 2 ? "USER" : "MANAGER", // 매장 담당자(2)는 등록 시 USER가 디폴트, 관리자(3)는 MANAGER가 디폴트
-        storeId: roleLevel === 3 ? 0 : userStoreId,
+        role: roleLevel === ROLE_LEVEL.MANAGER ? "USER" : "MANAGER", // 매장 담당자(2)는 등록 시 USER가 디폴트, 관리자(3)는 MANAGER가 디폴트
+        storeId: roleLevel === ROLE_LEVEL.ADMIN ? 0 : userStoreId,
     });
 
     const [form, setForm] = useState<LocalUserForm>(getInitialForm());
 
-    // 1.인증 확인 및 리디렉션
-    useEffect(() => {
-        if (!jwtToken) {
-            // 토큰이 없으면 로그인 페이지로 이동
-            navigate("/login", { replace: true });
-        }
-    }, [jwtToken, navigate]);
-
-
-    // 2.공통 데이터 로딩
+    // 공통 데이터 로딩
   useEffect(() => {
-    if (!jwtToken) return;
+    if (!isAuthenticated) return;
 
     const loadData = async () => {
-        const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
-        const page = 1;  // 첫 페이지
-        const size = 100; // 원하는 사이즈
+        const storeIdToFetch = roleLevel === ROLE_LEVEL.ADMIN ? undefined : userStoreId;
 
         try {
-            const response = await getStores(page, size); //  page, size 인자 필수
+            const response = await getStores(1, MAX_STORE_FETCH);
             setAllStores(response.content); // PaginationDTO.content 사용
         } catch (err) {
             console.error("매장 목록 로드 실패", err);
@@ -83,10 +66,10 @@ export default function useOperationManagement() {
         // 직원 목록
         try {
             const users = await getUsers({
-  page: 1,
-  size: 100,
-  storeId: storeIdToFetch,
-});
+              page: 1,
+              size: MAX_STORE_FETCH,
+              storeId: storeIdToFetch,
+            });
             setList(users.content);
         } catch (err) {
             console.error("직원 목록 로드 실패", err);
@@ -97,7 +80,7 @@ export default function useOperationManagement() {
     };
 
     loadData();
-}, [roleLevel, userStoreId, jwtToken]);
+}, [roleLevel, userStoreId, isAuthenticated]);
 
 
     const currentStoreName = useMemo(() => {
@@ -105,7 +88,7 @@ export default function useOperationManagement() {
         if (loadingStores) return "매장 정보 로딩 중...";
 
         // 2. 관리자(roleLevel 3)일 경우
-        if (roleLevel === 3) return "통합 관리자";
+        if (roleLevel === ROLE_LEVEL.ADMIN) return "통합 관리자";
 
         // 3. 일반 사용자/매니저일 경우, allStores에서 userStoreId와 일치하는 매장 찾기
         const store = allStores.find(s => s.storeId === userStoreId);
@@ -147,7 +130,7 @@ export default function useOperationManagement() {
     const isFormFilled = Boolean(form.id && form.pw && form.name && form.email && form.storeId);
 
     const isRegisterButtonEnabled =
-        roleLevel !== 1 &&
+        roleLevel !== ROLE_LEVEL.USER &&
         isIdChecked &&
         isPasswordValid &&
         isFormFilled;
@@ -166,13 +149,13 @@ export default function useOperationManagement() {
             setForm(getInitialForm());
             setIsIdChecked(false);
 
-            const storeIdToFetch = roleLevel === 3 ? undefined : userStoreId;
+            const storeIdToFetch = roleLevel === ROLE_LEVEL.ADMIN ? undefined : userStoreId;
             const updated = await getUsers({
-  page: 1,
-  size: 100,
-  storeId: storeIdToFetch,
-});
-setList(updated.content);
+              page: 1,
+              size: MAX_STORE_FETCH,
+              storeId: storeIdToFetch,
+            });
+            setList(updated.content);
             // 성공 시 에러를 던지지 않음
         } catch (err) {
             console.error(err);
@@ -182,12 +165,7 @@ setList(updated.content);
     };
 
     const handleLogout = () => {
-        // 모든 인증 정보 삭제
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("roleLevel");
-        localStorage.removeItem("storeId");
-        // 리디렉션
-        navigate("/login", { replace: true });
+        useAuthStore.getState().logout();
     };
 
     const getStoreName = (storeId: number) =>

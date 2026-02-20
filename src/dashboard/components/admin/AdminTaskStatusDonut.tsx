@@ -41,7 +41,14 @@ function renderPercentLabel({
   innerRadius,
   outerRadius,
   percent,
-}: any) {
+}: {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+}) {
   if (!percent || percent === 0) return null;
 
   // 중앙 쪽으로 더 당김

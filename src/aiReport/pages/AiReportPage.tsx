@@ -8,14 +8,16 @@ import { ChevronDown, ChevronUp, Search, Loader2, X } from "lucide-react";
 import type { DateRange } from "@mui/x-date-pickers-pro";
 import DateRangePicker from "../../components/DateRangePicker";
 import Pagination from "../../components/Pagination";
+import { usePagination } from "../../hooks/usePagination";
 import type { AiReport } from "../../type";
 import {
   getAiReport,
   getRawReport,
-  createAiReport,
-  subscribeAiReport,
+  deleteAiReport,
+  createReportStream,
 } from "../api/AiReportApi";
 import AiReportDetail from "./AiReportDetail";
+import { readSseStream } from "../../lib/sseStream";
 
 type LoadingReport = AiReport & { rawReport: "loading" };
 type ReportWithLoading = AiReport | LoadingReport;
@@ -27,6 +29,7 @@ function isLoadingReport(report: ReportWithLoading): report is LoadingReport {
 export default function AiReportPage() {
   const queryRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [dateRangeInput, setDateRangeInput] = useState<DateRange<Dayjs>>([
     null,
     null,
@@ -35,111 +38,22 @@ export default function AiReportPage() {
   const [dateRange, setDateRange] = useState<DateRange<Dayjs>>([null, null]);
   const [aiReportData, setAiReportData] = useState<ReportWithLoading[]>([]);
   const [openRow, setOpenRow] = useState<number | null>(null);
-  const [page, setPage] = useState(1);
+  const { page, setPage, resetPage } = usePagination();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
   const prefetchedRef = useRef<Set<number>>(new Set());
 
   const [startDate, endDate] = dateRange;
 
-  const shouldAutoOpenRef = useRef(false);
-
-  // ------------------ localStorage 관련 ------------------
-  const savePendingReport = (report: LoadingReport) => {
-    const pending = JSON.parse(localStorage.getItem("pendingReports") || "[]");
-    pending.unshift({
-      aiReportId: report.aiReportId,
-      conversationId: report.conversationId,
-      rawMessage: report.rawMessage,
-      createdAt: report.createdAt,
-    });
-    localStorage.setItem("pendingReports", JSON.stringify(pending));
-  };
-
-  const clearPendingReport = (conversationId: string) => {
-    const pending = JSON.parse(localStorage.getItem("pendingReports") || "[]");
-    const filtered = pending.filter(
-      (p: any) => p.conversationId !== conversationId
-    );
-    localStorage.setItem("pendingReports", JSON.stringify(filtered));
-  };
-
-  const restorePendingReports = () => {
-    const pending = JSON.parse(localStorage.getItem("pendingReports") || "[]");
-    if (pending.length === 0) return [];
-
-    const restored: LoadingReport[] = pending.map((p: any) => ({
-      ...p,
-      rawReport: "loading",
-      startTime: "",
-      endTime: "",
-      userId: -1,
-      name: "생성중...",
-    }));
-    setAiReportData((prev) => [...restored, ...prev]);
-
-    return restored;
-  };
-
   // ------------------ 초기 데이터 로드 ------------------
   useEffect(() => {
-    const restored = restorePendingReports();
-
-    // 생성 중 보고서가 있었던 경우만 자동 오픈 허용
-    if (restored.length > 0) {
-      shouldAutoOpenRef.current = true;
-    }
-    // 서버 보고서 로드
     getAiReport()
-      .then((reports) => {
-        // 서버 상태를 진실로 사용
-        setAiReportData(reports);
-
-        // 서버에 이미 존재하는 conversationId 제거
-        const serverConversationIds = new Set(
-          reports.map((r) => r.conversationId)
-        );
-
-        const pending = JSON.parse(
-          localStorage.getItem("pendingReports") || "[]"
-        );
-
-        const cleaned = pending.filter(
-          (p: any) => !serverConversationIds.has(p.conversationId)
-        );
-
-        localStorage.setItem("pendingReports", JSON.stringify(cleaned));
-
-        // 정리된 pending 기준으로만 SSE 재연결
-        restored
-          .filter((r) =>
-            cleaned.some((p: any) => p.conversationId === r.conversationId)
-          )
-          .forEach((report) => {
-            eventSourceRef.current = subscribeAiReport(
-              report.conversationId,
-              async () => {
-                const latest = await getAiReport();
-                setAiReportData(latest);
-                clearPendingReport(report.conversationId);
-                eventSourceRef.current?.close();
-                eventSourceRef.current = null;
-              },
-              (msg) => {
-                clearPendingReport(report.conversationId);
-                setError(msg || "보고서 생성 실패");
-                eventSourceRef.current?.close();
-                eventSourceRef.current = null;
-              }
-            );
-          });
-      })
+      .then(setAiReportData)
       .catch(() => setError("보고서 목록 로드 실패"));
 
     return () => {
-      eventSourceRef.current?.close();
+      abortControllerRef.current?.abort();
     };
   }, []);
 
@@ -150,6 +64,10 @@ export default function AiReportPage() {
       setError("질문 내용을 입력해주세요.");
       return;
     }
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const conversationId = `report-${crypto.randomUUID()}`;
     setIsLoading(true);
@@ -168,48 +86,43 @@ export default function AiReportPage() {
     };
 
     setAiReportData((prev) => [tempReport, ...prev]);
-    savePendingReport(tempReport);
     setOpenRow(tempReport.aiReportId);
-    setPage(1);
+    resetPage();
 
     try {
-      eventSourceRef.current = subscribeAiReport(
-        conversationId,
-        async () => {
+      const response = await createReportStream(conversationId, query, controller.signal);
+      if (queryRef.current) queryRef.current.value = "";
+
+      for await (const { event, data } of readSseStream(response)) {
+        if (event === "savedReport") {
           try {
+            const saved: AiReport = JSON.parse(data);
+            setAiReportData((prev) =>
+              prev.map((r) => r.conversationId === conversationId ? saved : r)
+            );
+            setOpenRow(saved.aiReportId);
+          } catch {
             const reports = await getAiReport();
-
-            // 기존 상태를 버리고 서버 상태로 완전 교체
             setAiReportData(reports);
-
             setOpenRow(reports[0]?.aiReportId ?? null);
-          } finally {
-            setIsLoading(false);
-            clearPendingReport(conversationId);
-            eventSourceRef.current?.close();
-            eventSourceRef.current = null;
           }
-        },
-        (msg) => {
+        } else if (event === "fail") {
+          let msg = "보고서 생성 실패\n매장명, 조회기간(년월/년월일)을 알맞게 입력 후 다시 시도해주세요.";
+          try { msg = JSON.parse(data).message ?? msg; } catch {}
+          setError(msg);
           setAiReportData((prev) =>
             prev.filter((r) => r.conversationId !== conversationId)
           );
-          clearPendingReport(conversationId);
-          setError(msg || "보고서 생성 실패");
-          setIsLoading(false);
-          eventSourceRef.current?.close();
-          eventSourceRef.current = null;
         }
-      );
-
-      await createAiReport(conversationId, query);
-      if (queryRef.current) queryRef.current.value = "";
+      }
     } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") return;
       setError("보고서 생성 요청 실패");
+      setAiReportData((prev) =>
+        prev.filter((r) => r.conversationId !== conversationId)
+      );
+    } finally {
       setIsLoading(false);
-      clearPendingReport(conversationId);
-      eventSourceRef.current?.close();
-      eventSourceRef.current = null;
     }
   };
 
@@ -291,7 +204,7 @@ export default function AiReportPage() {
             ref={queryRef}
             placeholder="생성하고 싶은 보고서의 기간을 입력해 주세요.
 ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
-            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-[D3AC2B] text-sm sm:text-base"
+            className="w-full p-3 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-[#D3AC2B] text-sm sm:text-base"
             rows={2}
             disabled={isLoading}
             onKeyDown={(e) => {
@@ -361,7 +274,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
               onClick={() => {
                 setSearchText(searchInputRef.current?.value ?? "");
                 setDateRange(dateRangeInput);
-                setPage(1);
+                resetPage();
                 setShowFilters(false);
               }}
               className="flex-1 sm:flex-none min-w-[56px] p-2 bg-[#333D51] text-white rounded hover:bg-slate-500 transition-colors mr-1"
@@ -376,7 +289,7 @@ ex) 25년 11월 1일 ~ 25년 11월 15일 청소 보고서"
                 if (searchInputRef.current) {
                   searchInputRef.current.value = "";
                 }
-                setPage(1);
+                resetPage();
                 setShowFilters(false);
               }}
               className="flex-1 sm:flex-none min-w-[80px] px-1 py-1 bg-[#CBD0D8] text-black rounded hover:bg-slate-300 transition-colors text-ml"

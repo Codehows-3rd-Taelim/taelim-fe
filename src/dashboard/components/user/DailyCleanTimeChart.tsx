@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import type { DailyChartData } from "../../../type";
 
-export default function AdminIndustryTimeChart({
+export default function DailyCleanTimeChart({
   data,
 }: {
   data: DailyChartData;

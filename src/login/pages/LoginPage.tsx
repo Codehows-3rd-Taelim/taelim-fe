@@ -49,13 +49,13 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center bg-[#c9c9c9]"
     >
       {/* ===== 중앙 고정 카드 ===== */}
-      <div className="w-[1100px] h-[500px] bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-2">
+      <div className="w-[90%] md:w-[1100px] min-h-[500px] bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
         {/* ===== LEFT IMAGE ===== */}
-        <div className="flex items-center justify-center bg-gradient-to-br from-[#15191B] to-[#15191B]">
+        <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-[#15191B] to-[#15191B]">
           <img
             src={robotImage}
             alt="robot"
-            className="w-[600px] h-auto object-contain transition-opacity duration-300 bg-inherit"
+            className="w-full max-w-[600px] h-auto object-contain transition-opacity duration-300 bg-inherit"
             style={{ opacity: imageLoaded ? 1 : 0 }}
           />
         </div>
@@ -94,7 +94,7 @@ export default function LoginPage() {
               placeholder="비밀번호"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               className="w-full rounded-lg border px-4 py-3 pr-12 outline-none focus:border-[#4A607A]"
             />
             <button
@@ -123,21 +123,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ===== 모바일 대응 ===== */}
-      <style>{`
-        @media (max-width: 880px) {
-          .grid {
-            grid-template-columns: 1fr !important;
-          }
-          .grid > div:first-child {
-            display: none;
-          }
-          .w-[600px] {
-            width: 90%;
-            height: auto;
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store";
+import { ROLE_LEVEL } from "../lib/constants";
 import {
   Home,
   FileText,
@@ -17,7 +18,7 @@ import {
 } from "lucide-react";
 import useOperationManagement from "../operationManagement/hook/useOperationManagement";
 import type { SyncRecordDTO, User as UserType } from "../type";
-import { getLastSyncTime, syncNow } from "../sync/syncApi";
+import { getLastSyncTime, syncNow } from "../sync";
 import { useLocation } from "react-router-dom";
 
 export default function Header() {
@@ -57,7 +58,7 @@ export default function Header() {
 
   /** roleLevel에 따라 헤더 상단 메인 표시 텍스트 결정 */
   const getUserDisplayText = () => {
-    if (roleLevel === 3) {
+    if (roleLevel === ROLE_LEVEL.ADMIN) {
       return "관리자";
     } else {
       return getStoreName(storeId!); // 매장 이름 표시
@@ -66,7 +67,7 @@ export default function Header() {
 
   /** roleLevel에 따라 서브 텍스트 표시 */
   const getUserSubText = () => {
-    if (roleLevel !== 3) {
+    if (roleLevel !== ROLE_LEVEL.ADMIN) {
       return getUserName(userId!); // 사용자 이름 표시
     }
     return null;
@@ -113,7 +114,7 @@ export default function Header() {
 
   const formatSyncTime = () => {
     // 관리자: 항상 globalSyncTime 기준
-    if (roleLevel === 3) {
+    if (roleLevel === ROLE_LEVEL.ADMIN) {
       if (globalSync)
         return `마지막 동기화: ${new Date(globalSync).toLocaleString()}`;
       return "동기화 정보 없음";
@@ -177,11 +178,7 @@ export default function Header() {
               className="text-4xl font-bold tracking-wide cursor-pointer whitespace-nowrap font-sans"
               onClick={() => navigate("/")}
             >
-              {/* <img
-                className="w-auto h-[clamp(8px,5vw,45px)]"
-                src="src\assets\inufleet_logo_w.png"
-              /> */}
-              <span className="text-white">Inu</span>
+                <span className="text-white">Inu</span>
               <span className="text-red-600">fleet</span>
             </div>
           </div>
@@ -201,7 +198,7 @@ export default function Header() {
                       ${
                         isActive(item.path)
                           ? "text-[#B9FF5E] transition-none"
-                          : "text-white hover:text-[#B9FF5E] transition-colors duration-50"
+                          : "text-white hover:text-[#B9FF5E] transition-colors duration-200"
                       }
                     `}
                     title={item.name}
@@ -225,7 +222,7 @@ export default function Header() {
                       ${
                         isActive(item.path)
                           ? "text-[#B9FF5E] transition-none"
-                          : "text-white hover:text-[#B9FF5E] transition-colors duration-50"
+                          : "text-white hover:text-[#B9FF5E] transition-colors duration-200"
                       }
                     `}
                   >

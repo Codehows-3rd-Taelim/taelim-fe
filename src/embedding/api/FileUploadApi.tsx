@@ -1,7 +1,6 @@
 import axios from "axios";
 import type { EmbedFile, PaginationResponse } from "../../type";
-
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { endpoints } from "../../api/endpoints";
 
 /** 파일 업로드 */
 export async function postEmbedFile(
@@ -12,7 +11,7 @@ export async function postEmbedFile(
   formData.append("file", file);
   formData.append("embedKey", embedKey);
 
-  const res = await axios.post<EmbedFile>(`${BASE_URL}/embed-files`, formData, {
+  const res = await axios.post<EmbedFile>(endpoints.embeddings.files, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -26,7 +25,7 @@ export async function getEmbedFiles(
   page: number,
   size: number
 ): Promise<PaginationResponse<EmbedFile>> {
-  const res = await axios.get(`${BASE_URL}/embed-files`, {
+  const res = await axios.get<PaginationResponse<EmbedFile>>(endpoints.embeddings.files, {
     params: { page, size },
   });
   return res.data;
@@ -34,14 +33,12 @@ export async function getEmbedFiles(
 
 /** 파일 삭제 */
 export async function deleteEmbedFile(id: number) {
-  await axios.delete(`${BASE_URL}/embed-files/${id}`);
+  await axios.delete(endpoints.embeddings.fileById(id));
 }
 
 //등록된 파일 다운
 export async function downloadEmbedFile(file: EmbedFile) {
-  const url = `${BASE_URL}/embed-files/${file.id}/download`;
-
-  const res = await axios.get(url, { responseType: "blob" });
+  const res = await axios.get(endpoints.embeddings.download(file.id), { responseType: "blob" });
   const blob = new Blob([res.data]);
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
