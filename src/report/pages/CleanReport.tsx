@@ -14,6 +14,8 @@ import { handlePrint } from "../../components/Print";
 import { Pencil, Save, X } from "lucide-react";
 
 import { updateReportRemark } from "../api/ReportApi";
+import { batteryToKwh } from "../../lib/constants";
+import { formatCleanDuration } from "../../lib/formatters";
 
 interface CleanReportProps {
   open: boolean;
@@ -53,15 +55,6 @@ export default function CleanReport({
 
   if (!report) return null;
 
-  const formatCleanTime = (cleanTimeSeconds: number) => {
-    const totalSeconds = Math.floor(cleanTimeSeconds);
-    if (totalSeconds === 0) return "-";
-
-    const totalMinutes = Math.floor(totalSeconds / 60);
-
-    return `${totalMinutes} min`;
-  };
-
   const getModeText = (mode: number) => {
     if (mode === 1) return "스크러빙 모드";
     if (mode === 2) return "스위핑 모드";
@@ -69,16 +62,11 @@ export default function CleanReport({
   };
 
   const formatBatteryConsumption = (costBattery: number) => {
-    return `${Math.round(costBattery * 1.3 * 100) / 10000} kwh`;
+    return `${batteryToKwh(costBattery)} kwh`;
   };
 
   const formatWaterConsumption = (costWater: number) => {
     return `${costWater} ㎖`;
-  };
-
-  const rollbackRemark = () => {
-    setRemark(originalRemark);
-    setIsEditingRemark(false);
   };
 
   const handleClose = () => {
@@ -89,7 +77,7 @@ export default function CleanReport({
 
       if (!confirmClose) return;
 
-      rollbackRemark(); // 롤백
+      cancelEditRemark();
     }
 
     onClose();
@@ -119,9 +107,6 @@ export default function CleanReport({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          {/* <span style={{ fontSize: "24px", fontWeight: "bold" }}>
-            청소 보고서
-          </span> */}
           <Button
             variant="contained"
             startIcon={<PrintIcon />}
@@ -231,7 +216,7 @@ export default function CleanReport({
             >
               <Box sx={{ flex: 1, color: "#666", fontSize: "16px" }}>청소 시간</Box>
               <Box sx={{ flex: 1, fontWeight: "500", fontSize: "16px" }}>
-                {formatCleanTime(report.cleanTime)}
+                {formatCleanDuration(report.cleanTime)}
               </Box>
             </Box>
 

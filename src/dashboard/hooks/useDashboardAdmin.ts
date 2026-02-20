@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { DAY_MINUTES } from "../../lib/constants";
 import type {
   Store,
   Robot,
@@ -12,12 +13,16 @@ import type {
   IndustryCompare,
   IndustryStoreCount,
   OperationRateScatterChartData,
-  TaskStatusDonut,
 } from "../../type";
 
 // industryId 추출 헬퍼 함수
 function getIndustryId(store: Store): number | null {
   return store.industryId ?? null;
+}
+
+// 특정 매장의 리포트만 필터링
+function getStoreReports(reports: Report[], storeId: number): Report[] {
+  return reports.filter((r) => r.storeId === storeId);
 }
 
 // industryName 추출 헬퍼 함수
@@ -51,7 +56,7 @@ export default function useDashboardAdmin(
   const storeSummaries: StoreSummary[] = useMemo(() => {
     return stores.map((store) => {
       const storeRobots = robots.filter((r) => r.storeId === store.storeId);
-      const storeReports = reports.filter((rp) => rp.storeId === store.storeId);
+      const storeReports = getStoreReports(reports, store.storeId);
 
       const cleanTimeTotal = storeReports.reduce((s, r) => s + r.cleanTime, 0);
       const areaCleanedTotal = storeReports.reduce((s, r) => s + r.cleanArea, 0);
@@ -115,7 +120,7 @@ export default function useDashboardAdmin(
 
       const industryName = getIndustryName(store, industries);
 
-      const storeReports = reports.filter((r) => r.storeId === store.storeId);
+      const storeReports = getStoreReports(reports, store.storeId);
 
       const totalTime = storeReports.reduce((s, r) => s + r.cleanTime, 0);
       const totalArea = storeReports.reduce((s, r) => s + r.cleanArea, 0);
@@ -145,16 +150,11 @@ export default function useDashboardAdmin(
   const industryStoreCount: IndustryStoreCount[] = useMemo(() => {
     if (!stores || stores.length === 0) return [];
 
-    console.log('stores:', stores); // 디버깅용
-    console.log('industries:', industries); // 디버깅용
-
     // 1) 매장 수 집계
     const countMap = new Map<number, { name: string; count: number }>();
     
     stores.forEach((store) => {
       const industryId = getIndustryId(store);
-      console.log('store:', store.shopName, 'industryId:', industryId); // 디버깅용
-      
       if (industryId === null) return;
 
       const industryName = getIndustryName(store, industries);
@@ -167,16 +167,12 @@ export default function useDashboardAdmin(
       }
     });
 
-    console.log('countMap:', Array.from(countMap.entries())); // 디버깅용
-
     // 2) 결과 배열 생성
     const result = Array.from(countMap.entries()).map(([industryId, data]) => ({
       industryId,
       industryName: data.name,
       storeCount: data.count,
     }));
-
-    console.log('industryStoreCount result:', result); // 디버깅용
 
     return result;
   }, [stores, industries]);
@@ -210,8 +206,7 @@ export default function useDashboardAdmin(
     const times: number[] = [];
 
     stores.forEach((store) => {
-      const totalTime = reports
-        .filter((r) => r.storeId === store.storeId)
+      const totalTime = getStoreReports(reports, store.storeId)
         .reduce((s, r) => s + r.cleanTime, 0);
 
       labels.push(store.shopName);
@@ -227,8 +222,7 @@ export default function useDashboardAdmin(
     const areas: number[] = [];
 
     stores.forEach((store) => {
-      const totalArea = reports
-        .filter((r) => r.storeId === store.storeId)
+      const totalArea = getStoreReports(reports, store.storeId)
         .reduce((s, r) => s + r.cleanArea, 0);
 
       labels.push(store.shopName);
@@ -239,7 +233,7 @@ export default function useDashboardAdmin(
   }, [stores, reports]);
 
 // 9) 매장별 가동률 히트맵
-const OperationRateScatterChart: OperationRateScatterChartData = useMemo(() => {
+const operationRateScatterChart: OperationRateScatterChartData = useMemo(() => {
   if (!stores.length || !reports.length) {
     return { stores: [], dates: [], rates: [] };
   }
@@ -249,40 +243,16 @@ const OperationRateScatterChart: OperationRateScatterChartData = useMemo(() => {
 
   const rates = stores.map(store => {
     return dates.map(date => {
-      const dayReports = reports.filter(
-        r => r.storeId === store.storeId && r.startTime.startsWith(date)
+      const dayReports = getStoreReports(reports, store.storeId).filter(
+        r => r.startTime.startsWith(date)
       );
       const totalMinutes = dayReports.reduce((sum, r) => sum + r.cleanTime, 0);
-      const MAX_MINUTES_PER_DAY = 1440;
-      return Math.min(Math.round((totalMinutes / MAX_MINUTES_PER_DAY) * 100), 100);
+      return Math.min(Math.round((totalMinutes / DAY_MINUTES) * 100), 100);
     });
   });
 
   return { stores: storesNames, dates, rates };
 }, [stores, reports]);
-
-  // 10) 작업 이력 상태 (전체 or 매장별 공용)
-  const taskStatusDonut = useMemo(() => {
-    const result = {
-      FINISH: 0,
-      INTERRUPT: 0,
-      CANCEL: 0,
-    };
-
-    reports.forEach((r) => {
-      if (r.status === 0) result.CANCEL++;
-      else if (r.status === 1 || r.status === 4) result.FINISH++;
-      else result.INTERRUPT++;
-    });
-
-    const taskStatusDonut: TaskStatusDonut[] = [
-      { status: "FINISH", count: result.FINISH },
-      { status: "INTERRUPT", count: result.INTERRUPT },
-      { status: "CANCEL", count: result.CANCEL },
-    ];
-
-    return taskStatusDonut;
-  }, [reports]);
 
   return {
     totalStores,
@@ -299,7 +269,6 @@ const OperationRateScatterChart: OperationRateScatterChartData = useMemo(() => {
     storeStatusCount,
     industryCompare,
     industryStoreCount,
-    OperationRateScatterChart,
-    taskStatusDonut,
+    operationRateScatterChart,
   };
 }

@@ -10,6 +10,7 @@ import type {
   RobotStatus,
   Performance,
 } from "../../type";
+import { BATTERY_TO_KWH_FACTOR, DEFAULT_HOURLY_WAGE, CO2_PER_KWH, CO2_PER_1000L } from "../../lib/constants";
 
 /* 특정 날짜에서 yyyy-mm-dd만 추출 */
 function formatDate(dt: string) {
@@ -50,7 +51,7 @@ export default function useDashboard(
   reports: Report[] | null | undefined,
   robots: Robot[] | null | undefined
 ) {
-  const [hourlyWage, setHourlyWage] = useState<number>(13000);
+  const [hourlyWage, setHourlyWage] = useState<number>(DEFAULT_HOURLY_WAGE);
 
   const data = useMemo<UserDashboardData | null>(() => {
     if (!reports || !robots) return null;
@@ -71,7 +72,7 @@ export default function useDashboard(
           ⟶ 공식: kWh = (costBattery / 100) * 1.3
        ------------------------------------------------------------ */
     const totalPowerKwh = reports.reduce(
-      (sum, r) => sum + ((r.costBattery ?? 0) / 100) * 1.3,
+      (sum, r) => sum + ((r.costBattery ?? 0) / 100) * BATTERY_TO_KWH_FACTOR,
       0
     );
 
@@ -96,13 +97,8 @@ export default function useDashboard(
     const savedPowerKwh = baselinePower - totalPowerKwh;
     const savedWaterL = baselineWaterL - totalWaterL;
 
-    /* ------------------------------------------------------------
-       5) 탄소 절감량
-          전력 1kWh → 0.466 kg CO2
-          물 1000L → 0.344 kg CO2
-       ------------------------------------------------------------ */
     const co2ReductionKg =
-      savedPowerKwh * 0.466 + (savedWaterL / 1000) * 0.344;
+      savedPowerKwh * CO2_PER_KWH + (savedWaterL / 1000) * CO2_PER_1000L;
 
     /* ------------------------------------------------------------
        6) 작업 상태 분류 (success / manual / fail)

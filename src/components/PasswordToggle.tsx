@@ -24,7 +24,7 @@ export default function PasswordToggle({
         placeholder={placeholder}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyPress}
         className="w-full px-4 py-3 pr-12 text-gray-700 transition border border-gray-300 rounded-md outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 focus:ring-opacity-50"
         tabIndex={tabIndex}
       />

@@ -8,7 +8,7 @@ export default function AdminKpiSection({
   const box = "p-4 bg-white shadow-xl rounded-xl text-center";
 
   return (
-    <div className="grid grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
       <div className={box}>
         <div className="font-bold">총 매장 수</div>
         <div className="text-3xl font-bold">{data.totalStores}</div>

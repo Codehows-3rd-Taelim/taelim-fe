@@ -9,10 +9,14 @@ export default function Pagination({
   maxButtons = 5, // 한 번에 보여줄 페이지 버튼 개수
 }: PaginationProps) {
   if (totalPages <= 1) return null;
+
+  // 방어 클램프: 부모가 잘못된 page 전달해도 깨지지 않음
+  const safePage = Math.min(Math.max(1, page), totalPages);
+
   const pageButtons = []; // 페이지 버튼들을 담을 배열
 
   // 시작 페이지 번호 계산 (현재 페이지 기준으로 버튼 중앙 배치)
-  let start = Math.max(1, page - Math.floor(maxButtons / 2));
+  let start = Math.max(1, safePage - Math.floor(maxButtons / 2));
   // 끝 페이지 번호 계산
   let end = start + maxButtons - 1;
 
@@ -28,17 +32,19 @@ export default function Pagination({
       <Button
         key={i}
         // 현재 페이지는 "contained"(채워진 버튼), 나머지는 "outlined"(테두리 버튼)
-        variant={page === i ? "contained" : "outlined"}
+        variant={safePage === i ? "contained" : "outlined"}
+        aria-label={`${i}페이지`}
+        aria-current={safePage === i ? "page" : undefined}
         onClick={() => {
-          if (page !== i) onPageChange(i);
+          if (safePage !== i) onPageChange(i);
         }}
         sx={{
           minWidth: 36, // 버튼 최소 너비
-          color: page === i ? "white" : "black", // 현재 페이지는 흰 글씨
+          color: safePage === i ? "white" : "black", // 현재 페이지는 흰 글씨
           borderColor: "black", // 테두리 색상
-          bgcolor: page === i ? "black" : "transparent", // 현재 페이지는 검은 배경
+          bgcolor: safePage === i ? "black" : "transparent", // 현재 페이지는 검은 배경
           "&:hover": {
-            bgcolor: page === i ? "black" : "#f0f0f0", // hover 시 색상 변경
+            bgcolor: safePage === i ? "black" : "#f0f0f0", // hover 시 색상 변경
             borderColor: "black", // hover 시 테두리 유지
           },
         }}
@@ -50,11 +56,13 @@ export default function Pagination({
 
   return (
     <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 1 }}>
-      {/* Prev 버튼 (첫 페이지에서는 비활성화) */}
+      {/* 이전 버튼 (첫 페이지에서는 비활성화) */}
       <Button
         variant="outlined"
-        disabled={page === 1} // 첫 페이지일 때 비활성화
-        onClick={() => onPageChange(page - 1)} // 이전 페이지로 이동
+        disabled={safePage === 1} // 첫 페이지일 때 비활성화
+        aria-label="이전 페이지"
+        aria-disabled={safePage === 1}
+        onClick={() => onPageChange(safePage - 1)} // 이전 페이지로 이동
         sx={{
           minWidth: 36,
           color: "black",
@@ -65,17 +73,19 @@ export default function Pagination({
           },
         }}
       >
-        &lt; {/* "<" 기호 */}
+        ‹
       </Button>
 
       {/* 페이지 번호 버튼들 */}
       {pageButtons}
 
-      {/* Next 버튼 (마지막 페이지에서는 비활성화) */}
+      {/* 다음 버튼 (마지막 페이지에서는 비활성화) */}
       <Button
         variant="outlined"
-        disabled={page === totalPages} // 마지막 페이지일 때 비활성화
-        onClick={() => onPageChange(page + 1)} // 다음 페이지로 이동
+        disabled={safePage === totalPages} // 마지막 페이지일 때 비활성화
+        aria-label="다음 페이지"
+        aria-disabled={safePage === totalPages}
+        onClick={() => onPageChange(safePage + 1)} // 다음 페이지로 이동
         sx={{
           minWidth: 36,
           color: "black",
@@ -86,7 +96,7 @@ export default function Pagination({
           },
         }}
       >
-        &gt; {/* ">" 기호 */}
+        ›
       </Button>
     </Box>
   );

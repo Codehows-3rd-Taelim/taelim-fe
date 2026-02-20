@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { usePagination } from "../../hooks/usePagination";
 import { getStores, getIndustry, updateStore } from "../api/StoreApi";
 import type { Store, Industry } from "../../type";
 import Pagination from "../../components/Pagination";
@@ -17,8 +18,7 @@ export default function StorePage() {
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [totalItems, setTotalItems] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const { page: currentPage, totalPages, setPage: setCurrentPage, setTotalPages } = usePagination();
 
   const normalizeStores = (apiStores: Store[]): StoreForEdit[] =>
     apiStores.map((store) => ({
@@ -26,22 +26,22 @@ export default function StorePage() {
       industryId: store.industryId ?? 0,
     }));
 
-  const fetchStoresPage = useCallback(async (page: number) => {
+  const fetchStoresPage = useCallback(async (newPage: number) => {
     setLoading(true);
     try {
-      const response = await getStores(page, itemsPerPage);
+      const response = await getStores(newPage, itemsPerPage);
       const normalized = normalizeStores(response.content);
 
       setStores(normalized);
       setEditableStores(normalized);
-      setTotalItems(response.totalElements);
-      setCurrentPage(page);
+      setCurrentPage(newPage);
+      setTotalPages(Math.ceil(response.totalElements / itemsPerPage));
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setCurrentPage, setTotalPages]);
 
   useEffect(() => {
     fetchStoresPage(1);
@@ -115,8 +115,6 @@ export default function StorePage() {
       setTimeout(() => setUpdateStatus(null), 3000);
     }
   };
-
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
     <div className="w-full h-full flex flex-col px-6 py-4 bg-gray-100">

@@ -1,10 +1,9 @@
 import type { OperationRateScatterChartData } from "../../../type";
+import { DAY_MINUTES } from "../../../lib/constants";
 
 type Props = {
   operationRateData: OperationRateScatterChartData;
 };
-
-const DAY_MINUTES = 1440;
 
 export default function AdminDashboardRanking({ operationRateData }: Props) {
   // ✅ 매장별 평균 청소 시간 & 24시간 대비 가동률

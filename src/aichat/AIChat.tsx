@@ -8,8 +8,10 @@ import ChatSidebar from "./ChatSidebar";
 import EmptyState from "./EmptyState";
 import ChatWindow from "./ChatWindow";
 import { ChevronRight } from "lucide-react";
-import type { AiChatDTO, Message } from "../type";
+import type { AiChatDTO, Message, ChatSource } from "../type";
 import { createQna } from "../qna/api/qnaApi";
+import QnaCreateModal from "../qna/components/QnaCreateModal";
+import { readSseStream } from "../lib/sseStream";
 
 export default function AIChat() {
   const [chatList, setChatList] = useState<AiChatDTO[]>([]);
@@ -21,7 +23,6 @@ export default function AIChat() {
 
   /* ===== QnA 모달 상태 ===== */
   const [qnaOpen, setQnaOpen] = useState(false);
-  const [qnaTitle, setQnaTitle] = useState("");
   const [qnaQuestion, setQnaQuestion] = useState("");
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function AIChat() {
   const select = async (id: string) => {
     setCurrentId(id);
     const data = await loadConversation(id);
-    setMessages(data.map((m) => ({ ...m, isStreaming: false })));
+    setMessages(data.map((m: AiChatDTO) => ({ ...m, isStreaming: false })));
     setIsSidebarOpen(false);
   };
 
@@ -46,8 +47,7 @@ export default function AIChat() {
     for (let i = aiIndex - 1; i >= 0; i--) {
       const m = messages[i];
       if (m.senderType === "USER") {
-        setQnaTitle("");
-        setQnaQuestion(m.rawMessage); 
+        setQnaQuestion(m.rawMessage);
         setQnaOpen(true);
         return;
       }
@@ -55,19 +55,9 @@ export default function AIChat() {
     alert("연결된 사용자 질문을 찾을 수 없습니다.");
   };
 
-  const submitQna = async () => {
-    if (!qnaTitle.trim()) {
-      alert("제목을 입력하세요");
-      return;
-    }
-
-    await createQna({
-      title: qnaTitle,
-      questionText: qnaQuestion,
-    });
-
+  const handleQnaSubmit = async (title: string, questionText: string) => {
+    await createQna({ title, questionText });
     setQnaOpen(false);
-    setQnaTitle("");
     setQnaQuestion("");
     alert("QnA로 등록되었습니다.");
   };
@@ -77,30 +67,78 @@ export default function AIChat() {
     if (!message.trim() || isTyping) return;
 
     const effectiveId = currentId ?? crypto.randomUUID();
+    const streamingMessageId = crypto.randomUUID();
 
+    // 새 대화 시작 시 사이드바에 낙관적 추가
+    if (!currentId) {
+      setChatList((prev) => [
+        {
+          conversationId: effectiveId,
+          rawMessage: message,
+          aiChatId: 0,
+          senderType: "USER" as const,
+          createdAt: new Date().toISOString(),
+          messageIndex: 0,
+          userId: 0,
+          userName: "",
+        },
+        ...prev,
+      ]);
+      setCurrentId(effectiveId);
+    }
+
+    // 사용자 메시지 + AI 스트리밍 플레이스홀더 동시 추가
     setMessages((prev) => [
       ...prev,
-      {
-        id: crypto.randomUUID(),
-        rawMessage: message,
-        senderType: "USER",
-        isStreaming: false,
-      },
+      { id: crypto.randomUUID(), rawMessage: message, senderType: "USER", isStreaming: false },
+      { id: streamingMessageId, rawMessage: "", senderType: "AI", isStreaming: true },
     ]);
-
     setInput("");
     setIsTyping(true);
 
     try {
-      await sendChatStream(message, effectiveId);
+      const response = await sendChatStream(message, effectiveId);
 
-      if (!currentId) setCurrentId(effectiveId);
+      let firstToken = true;
 
-      const finalMessages = await loadConversation(effectiveId);
-      setMessages(finalMessages.map((m) => ({ ...m, isStreaming: false })));
+      for await (const { event, data } of readSseStream(response)) {
+        if (event === "token") {
+          if (firstToken) {
+            setIsTyping(false);  // 첫 토큰 도착 → 로딩 인디케이터 숨김
+            firstToken = false;
+          }
+          // 백엔드에서 SSE 안전 전송을 위해 \n을 이스케이프했으므로 복원
+          const decodedToken = data.replace(/\\n/g, "\n");
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === streamingMessageId
+                ? { ...m, rawMessage: m.rawMessage + decodedToken }
+                : m
+            )
+          );
+        } else if (event === "sources") {
+          try {
+            const sources: ChatSource[] = JSON.parse(data);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === streamingMessageId ? { ...m, sources } : m
+              )
+            );
+          } catch { /* 파싱 실패 시 출처 없이 진행 */ }
+        } else if (event === "done") {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === streamingMessageId ? { ...m, isStreaming: false } : m
+            )
+          );
+        }
+      }
+
+    } catch (e) {
+      console.error("스트리밍 오류", e);
+      setMessages((prev) => prev.filter((m) => m.id !== streamingMessageId));
     } finally {
       setIsTyping(false);
-      loadChatHistory().then(setChatList);
     }
   };
 
@@ -127,7 +165,7 @@ export default function AIChat() {
         </div>
       )}
 
-      <main className="relative flex h-full overflow-auto md:pl-80">
+      <main className="relative flex h-full overflow-auto md:pl-64 lg:pl-80">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -153,51 +191,19 @@ export default function AIChat() {
               setInput={setInput}
               send={send}
               isTyping={isTyping}
-              onCopyAi={(text) =>
-                navigator.clipboard.writeText(text)
-              }
               onRequestQna={openQnaModal}
             />
           )}
         </div>
       </main>
 
-      {/* ===== QnA 등록 모달 ===== */}
-      {qnaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white w-full max-w-lg rounded-xl p-6 space-y-4">
-            <h3 className="text-lg font-bold">QnA 등록</h3>
-
-            <input
-              value={qnaTitle}
-              onChange={(e) => setQnaTitle(e.target.value)}
-              placeholder="제목을 입력하세요"
-              className="w-full border rounded px-3 py-2"
-            />
-
-            <textarea
-              value={qnaQuestion}
-              onChange={(e) => setQnaQuestion(e.target.value)}
-              className="w-full border rounded px-3 py-2 min-h-[120px]"
-            />
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setQnaOpen(false)}
-                className="px-4 py-1.5 rounded bg-gray-200"
-              >
-                취소
-              </button>
-              <button
-                onClick={submitQna}
-                className="px-4 py-1.5 rounded bg-slate-700 text-white"
-              >
-                등록
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <QnaCreateModal
+        open={qnaOpen}
+        onClose={() => setQnaOpen(false)}
+        onSubmit={handleQnaSubmit}
+        initialQuestion={qnaQuestion}
+        variant="compact"
+      />
     </div>
   );
 }

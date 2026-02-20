@@ -11,7 +11,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import EmbeddingPage from "./embedding/pages/EmbeddingPage";
 import DashboardPage from "./dashboard/pages/DashboardPage";
-import UserQnaPage from "./qna/page/UserQnaPage";
+import UserQnaPage from "./qna/pages/UserQnaPage";
 
 function App() {
   const location = useLocation();

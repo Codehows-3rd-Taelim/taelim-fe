@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePagination } from "../../hooks/usePagination";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/ko";
 import isBetween from "dayjs/plugin/isBetween";
@@ -12,12 +13,65 @@ import Pagination from "../../components/Pagination";
 import CleanReport from "./CleanReport";
 import type { Report, Robot } from "../../type";
 import { useAuthStore } from "../../store";
+import { ROLE_LEVEL, batteryToKwh } from "../../lib/constants";
 import useOperationManagement from "../../operationManagement/hook/useOperationManagement";
 import { getRobots } from "../../robot/api/RobotApi";
 import { getReports } from "../api/ReportApi";
+import { formatCleanDuration } from "../../lib/formatters";
 
-type SortKey = "sn" | "storeName" | "mapName" | "startTime";
+type SortKey = "sn" | "storeId" | "mapName" | "startTime";
 type SortOrder = "asc" | "desc";
+
+function MobileReportCard({
+  report,
+  index,
+  onRowClick,
+  getRowIndex,
+  getStoreName,
+}: {
+  report: Report;
+  index: number;
+  onRowClick: (report: Report) => void;
+  getRowIndex: (index: number) => number;
+  getStoreName: (storeId: number) => string;
+}) {
+  return (
+    <div
+      onClick={() => onRowClick(report)}
+      className="bg-white rounded-xl shadow-md p-4 space-y-2 cursor-pointer active:scale-[0.98] transition"
+    >
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-500">
+          No. {getRowIndex(index)}
+        </span>
+        <span className="text-sm font-semibold text-gray-700">
+          {getStoreName(report.storeId)}
+        </span>
+      </div>
+
+      <div className="text-sm">
+        <span className="font-medium">구역: </span> {report.mapName}
+      </div>
+
+      <div className="text-sm">
+        <span className="font-medium">시작: </span> {report.startTime}
+      </div>
+
+      <div className="text-sm">
+        <span className="font-medium">종료: </span> {report.endTime}
+      </div>
+
+      <div className="flex justify-between text-sm pt-2 border-t">
+        <div>
+          ⏱ {formatCleanDuration(report.cleanTime)}
+        </div>
+        <div>
+          📐 {report.cleanArea ?? "-"}㎡
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ReportPage() {
   const { roleLevel, storeId } = useAuthStore();
@@ -28,7 +82,7 @@ export default function ReportPage() {
 
   const [selectedSnInput, setSelectedSnInput] = useState("");
   const [selectedStoreIdInput, setSelectedStoreIdInput] = useState(
-    roleLevel === 3 ? 0 : storeId || 0
+    roleLevel === ROLE_LEVEL.ADMIN ? 0 : storeId || 0
   );
 
   const [dateRangeInput, setDateRangeInput] = useState<
@@ -37,39 +91,54 @@ export default function ReportPage() {
 
   const [selectedSn, setSelectedSn] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState(
-    roleLevel === 3 ? 0 : storeId || 0
+    roleLevel === ROLE_LEVEL.ADMIN ? 0 : storeId || 0
   );
 
-  const [ReportData, setReportData] = useState<Report[]>([]);
+  const [reportPage, setReportPage] = useState<{
+    data: Report[];
+    page: number;
+    size: number;
+    totalElements: number;
+  }>({ data: [], page: 0, size: 15, totalElements: 0 });
   const [robots, setRobots] = useState<Robot[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, totalPages, setPage, setTotalPages, resetPage } = usePagination();
 
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
-      const start = dateRangeInput[0] ?? dayjs().subtract(7, "day");
-      const end = dateRangeInput[1] ?? dayjs();
+      try {
+        setLoadError(null);
+        const start = dateRangeInput[0] ?? dayjs().subtract(7, "day");
+        const end = dateRangeInput[1] ?? dayjs();
 
-      const params = {
-        page: page - 1,
-        size: 15,
-        storeId: roleLevel === 3 ? undefined : storeId || undefined,
-        filterStoreId: selectedStoreId === 0 ? undefined : selectedStoreId,
-        sn: selectedSn || undefined,
-        startDate: start.format("YYYY-MM-DD"),
-        endDate: end.format("YYYY-MM-DD"),
-        sortKey: sortKey || undefined,
-        sortOrder: sortKey ? sortOrder : undefined,
-      };
+        const params = {
+          page: page - 1,
+          size: 15,
+          storeId: roleLevel === ROLE_LEVEL.ADMIN
+            ? (selectedStoreId === 0 ? undefined : selectedStoreId)
+            : storeId || undefined,
+          sn: selectedSn || undefined,
+          startDate: start.format("YYYY-MM-DD"),
+          endDate: end.format("YYYY-MM-DD"),
+          sortKey: sortKey || undefined,
+          sortOrder: sortKey ? sortOrder : undefined,
+        };
 
-      const res = await getReports(params);
-      setReportData(res.content);
-      setTotalPages(res.totalPages ?? 0);
-      setTotalElements(res.totalElements ?? 0);
+        const res = await getReports(params);
+        setReportPage({
+          data: res.content,
+          page: res.number,
+          size: res.size,
+          totalElements: res.totalElements ?? 0,
+        });
+        setTotalPages(res.totalPages ?? 0);
+      } catch (err) {
+        console.error("리포트 목록 불러오기 실패", err);
+        setLoadError("데이터를 불러오는 중 오류가 발생했습니다.");
+      }
     };
 
     loadData();
@@ -88,7 +157,7 @@ export default function ReportPage() {
     const loadRobots = async () => {
       try {
         const targetStoreId =
-          roleLevel === 3 ? undefined : storeId || undefined;
+          roleLevel === ROLE_LEVEL.ADMIN ? undefined : storeId || undefined;
         const data = await getRobots(targetStoreId);
         setRobots(data);
       } catch (err) {
@@ -97,18 +166,6 @@ export default function ReportPage() {
     };
     loadRobots();
   }, [roleLevel, storeId]);
-
-  const formatDynamicTime = (cleanTimeSeconds: number) => {
-    const totalSeconds = Math.floor(cleanTimeSeconds);
-    if (totalSeconds === 0) return "-";
-    const seconds = totalSeconds % 60;
-    const totalMinutes = Math.floor(totalSeconds / 60);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return hours === 0
-      ? `${totalMinutes}분 ${seconds}초`
-      : `${hours}시간 ${minutes}분 ${seconds}초`;
-  };
 
   const handleSort = (key: SortKey) => {
     // 처음 클릭 → 오름차순
@@ -126,7 +183,7 @@ export default function ReportPage() {
       setSortOrder("desc"); // 기본값 유지
     }
 
-    setPage(1);
+    resetPage();
   };
 
   const renderSortIcon = (key: SortKey) => {
@@ -142,17 +199,17 @@ export default function ReportPage() {
   const handleSearch = () => {
     setSelectedSn(selectedSnInput);
     setSelectedStoreId(selectedStoreIdInput);
-    setPage(1);
+    resetPage();
   };
 
   const handleReset = () => {
     setDateRangeInput([null, null]);
     setSelectedSnInput("");
     setSelectedSn("");
-    const defaultStoreId = roleLevel === 3 ? 0 : storeId || 0;
+    const defaultStoreId = roleLevel === ROLE_LEVEL.ADMIN ? 0 : storeId || 0;
     setSelectedStoreIdInput(defaultStoreId);
     setSelectedStoreId(defaultStoreId);
-    setPage(1);
+    resetPage();
   };
 
   const handleRowClick = (report: Report) => {
@@ -171,64 +228,25 @@ export default function ReportPage() {
       : robots.filter((r) => r.storeId === selectedStoreIdInput);
 
   const getRowIndex = (index: number) => {
-    const baseIndex = (page - 1) * 15 + index;
+    const baseIndex = reportPage.page * reportPage.size + index;
 
     // 정렬 해제 or desc → 최신이 큰 번호
     if (!sortKey || sortOrder === "desc") {
-      return totalElements - baseIndex;
+      return reportPage.totalElements - baseIndex;
     }
 
     // asc
     return baseIndex + 1;
   };
 
-  const MobileReportCard = ({
-    report,
-    index,
-  }: {
-    report: Report;
-    index: number;
-  }) => {
-    return (
-      <div
-        onClick={() => handleRowClick(report)}
-        className="bg-white rounded-xl shadow-md p-4 space-y-2 cursor-pointer active:scale-[0.98] transition"
-      >
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">
-            No. {getRowIndex(index)}
-          </span>
-          <span className="text-sm font-semibold text-gray-700">
-            {getStoreName(report.storeId)}
-          </span>
-        </div>
-
-        <div className="text-sm">
-          <span className="font-medium">구역: </span> {report.mapName}
-        </div>
-
-        <div className="text-sm">
-          <span className="font-medium">시작: </span> {report.startTime}
-        </div>
-
-        <div className="text-sm">
-          <span className="font-medium">종료: </span> {report.endTime}
-        </div>
-
-        <div className="flex justify-between text-sm pt-2 border-t">
-          <div>
-            ⏱ {formatDynamicTime(report.cleanTime)}
-          </div>
-          <div>
-            📐 {report.cleanArea ?? "-"}㎡
-          </div>
-        </div>
-      </div>
-    );
-  };
-  
   return (
     <div className="w-full h-full max-w-[1600px] mx-auto pt-1 px-4 lg:px-6 space-y-6 bg-gray-100">
+
+      {loadError && (
+        <div className="text-red-600 bg-red-50 border border-red-200 rounded px-4 py-2 text-sm">
+          {loadError}
+        </div>
+      )}
 
       {/* ================= 모바일 전용 정렬 ================= */}
       <div className="lg:hidden flex gap-2">
@@ -238,13 +256,13 @@ export default function ReportPage() {
             const v = e.target.value as SortKey;
             setSortKey(v || null);
             setSortOrder("asc");
-            setPage(1);
+            resetPage();
           }}
           className="flex-1 px-3 py-2 border rounded"
         >
           <option value="">정렬 없음</option>
           <option value="sn">SN</option>
-          <option value="storeName">매장</option>
+          <option value="storeId">매장</option>
           <option value="mapName">구역</option>
           <option value="startTime">시작시간</option>
         </select>
@@ -277,7 +295,7 @@ export default function ReportPage() {
 
           <div className="flex items-center gap-2">
             <span>매장명</span>
-            {roleLevel === 3 ? (
+            {roleLevel === ROLE_LEVEL.ADMIN ? (
               <select
                 value={selectedStoreIdInput}
                 onChange={(e) => {
@@ -347,10 +365,10 @@ export default function ReportPage() {
                   SN {renderSortIcon("sn")}
                 </th>
                 <th
-                  onClick={() => handleSort("storeName")}
+                  onClick={() => handleSort("storeId")}
                   className="cursor-pointer px-4 py-2 text-center font-semibold"
                 >
-                  매장명 {renderSortIcon("storeName")}
+                  매장명 {renderSortIcon("storeId")}
                 </th>
                 <th
                   onClick={() => handleSort("mapName")}
@@ -378,7 +396,7 @@ export default function ReportPage() {
               </tr>
             </thead>
             <tbody>
-              {ReportData.map((r, idx) => (
+              {reportPage.data.map((r, idx) => (
                 <tr
                   key={r.reportId}
                   onClick={() => handleRowClick(r)}
@@ -393,11 +411,11 @@ export default function ReportPage() {
                   <td className="px-4 py-4 text-center align-middle">{r.startTime}</td>
                   <td className="px-4 py-4 text-center align-middle">{r.endTime}</td>
                   <td className="px-4 py-4 text-center align-middle">
-                    {formatDynamicTime(r.cleanTime)}
+                    {formatCleanDuration(r.cleanTime)}
                   </td>
                   <td className="px-4 py-4 text-center align-middle">{r.cleanArea ?? "-"}</td>
                   <td className="px-4 py-4 text-center align-middle">
-                    {Math.round(r.costBattery * 1.3 * 100) / 10000}
+                    {batteryToKwh(r.costBattery)}
                   </td>
                   <td className="px-4 py-4 text-center align-middle">{r.costWater}</td>
                 </tr>
@@ -409,14 +427,21 @@ export default function ReportPage() {
 
       {/* ================= 모바일 카드 리스트 ================= */}
       <div className="lg:hidden space-y-3">
-        {ReportData.map((r, i) => (
-          <MobileReportCard key={r.reportId} report={r} index={i} />
+        {reportPage.data.map((r, i) => (
+          <MobileReportCard
+            key={r.reportId}
+            report={r}
+            index={i}
+            onRowClick={handleRowClick}
+            getRowIndex={getRowIndex}
+            getStoreName={getStoreName}
+          />
         ))}
       </div>
 
 
       {/* 페이지네이션 */}
-      {ReportData.length > 0 && (
+      {reportPage.data.length > 0 && (
         <div className="mt-4 pb-6 ">
           <Pagination
             page={page}
@@ -435,13 +460,14 @@ export default function ReportPage() {
           setSelectedReport((prev) =>
             prev ? { ...prev, remark: newRemark } : prev
           );
-          setReportData((prev) =>
-            prev.map((r) =>
+          setReportPage((prev) => ({
+            ...prev,
+            data: prev.data.map((r) =>
               r.puduReportId === selectedReport?.puduReportId
                 ? { ...r, remark: newRemark }
                 : r
-            )
-          );
+            ),
+          }));
         }}
       />
     </div>

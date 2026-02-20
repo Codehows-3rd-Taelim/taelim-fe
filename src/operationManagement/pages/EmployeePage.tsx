@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { usePagination } from "../../hooks/usePagination";
 import type { User, Store } from "../../type";
 import { deleteEmployee, getUsers, updateEmployee } from "../api/EmployeeApi";
 import Pagination from "../../components/Pagination";
@@ -107,8 +108,8 @@ export default function EmployeePage(props: EmployeePageProps) {
   /* =====================
      상태
   ===================== */
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const { page: currentPage, totalPages, setPage: setCurrentPage, setTotalPages } = usePagination();
+  const totalElementsRef = useRef(0);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editableList, setEditableList] = useState<User[]>([]);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
@@ -158,8 +159,9 @@ export default function EmployeePage(props: EmployeePageProps) {
         storeId,
       });
       setList(res.content);
-      setTotalItems(res.totalElements);
+      totalElementsRef.current = res.totalElements;
       setCurrentPage(page);
+      setTotalPages(Math.ceil(res.totalElements / ITEMS_PER_PAGE));
     } catch (e) {
       console.error(e);
     }
@@ -272,7 +274,7 @@ export default function EmployeePage(props: EmployeePageProps) {
     try {
       await deleteEmployee(target.userId);
 
-      const remaining = totalItems - 1;
+      const remaining = totalElementsRef.current - 1;
       const lastPage = Math.max(1, Math.ceil(remaining / ITEMS_PER_PAGE));
 
       fetchEmployeesPage(currentPage > lastPage ? lastPage : currentPage);
@@ -772,7 +774,7 @@ export default function EmployeePage(props: EmployeePageProps) {
           <div className="mt-5 flex justify-center">
             <Pagination
               page={currentPage}
-              totalPages={Math.ceil(totalItems / ITEMS_PER_PAGE)}
+              totalPages={totalPages}
               onPageChange={fetchEmployeesPage}
               maxButtons={5}
             />

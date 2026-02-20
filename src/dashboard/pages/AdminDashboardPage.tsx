@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import axios from "axios";
 import DateRangePicker from "../../components/DateRangePicker";
 
 import dayjs, { Dayjs } from "dayjs";
@@ -6,11 +7,7 @@ import type { DateRange } from "@mui/x-date-pickers-pro/models";
 
 import AdminKpiSection from "../components/admin/AdminKpiSection";
 import AdminStoreTable from "../components/admin/AdminStoreTable";
-// import AdminIndustryTimeChart from "../components/admin/AdminIndustryTimeChart";
-// import AdminStoreCleanTimeChart from "../components/admin/AdminStoreCleanTimeChart";
 import AdminStoreCleanAreaChart from "../components/admin/AdminStoreCleanAreaChart";
-import AdminOperationRateScatterChart from "../components/admin/AdminOperationRateScatterChart";
-import AdminDashboardRanking from "../components/admin/AdminDashboardRanking";
 import AdminRobotTopChart from "../components/admin/AdminRobotTopChart";
 import AdminIndustryCompareChart from "../components/admin/AdminIndustryCompareChart";
 import AdminTaskStatusDonut from "../components/admin/AdminTaskStatusDonut";
@@ -24,10 +21,10 @@ import type {
   Industry,
   TaskStatusDonut,
 } from "../../type";
-import { getReportsforDashboard } from "../../report/api/ReportApi";
+import { getReportsForDashboard } from "../../report/api/ReportApi";
 import { getRobots } from "../../robot/api/RobotApi";
-import { getStores } from "../../operationManagement/api/StoreApi";
-import { getIndustry } from "../../operationManagement/api/StoreApi";
+import { getStores, getIndustry } from "../../operationManagement/api/StoreApi";
+import { MAX_STORE_FETCH } from "../../lib/constants";
 
 export default function AdminDashboardPage() {
   //  상태 정의
@@ -45,7 +42,14 @@ export default function AdminDashboardPage() {
   ]);
 
   //  API 데이터 로딩
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    let cancelled = false;
+
     const loadData = async () => {
       try {
         setLoading(true);
@@ -58,24 +62,30 @@ export default function AdminDashboardPage() {
         // API 병렬 호출
         const [storesRes, robotsRes, reportsRes, industriesRes] =
           await Promise.all([
-            getStores(1, 100),
-            getRobots(),
-            getReportsforDashboard({ startDate: start, endDate: end }),
+            getStores(1, MAX_STORE_FETCH, controller.signal),
+            getRobots(undefined, controller.signal),
+            getReportsForDashboard({ startDate: start, endDate: end }, controller.signal),
             getIndustry(),
           ]);
 
+        if (cancelled) return;
         setStores(storesRes.content);
         setRobots(robotsRes);
         setReports(reportsRes);
         setIndustries(industriesRes);
       } catch (err) {
+        if (cancelled || axios.isCancel(err)) return;
         console.error("관리자 대시보드 로딩 실패:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadData();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [range]);
 
   // 가공 데이터
@@ -123,21 +133,8 @@ export default function AdminDashboardPage() {
       {/* KPI */}
       <AdminKpiSection data={data} />
 
-      {/* 가동률 핵심 요약
-      <section className="space-y-6">
-        <AdminDashboardRanking
-          operationRateData={data.OperationRateScatterChart}
-        />
-        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
-          <h2 className="mb-4 text-xl font-semibold">매장별 가동률 분포</h2>
-          <AdminOperationRateScatterChart
-            data={data.OperationRateScatterChart}
-          />
-        </div>
-      </section> */}
-
       {/* 작업량 분석 (청소 면적 + 상태) */}
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:grid-cols-3">
         <div className="bg-white p-6 rounded-xl shadow-xl lg:col-span-2 min-h-[420px]">
           <div className="flex items-start justify-between mb-4">
             <h2 className="text-xl font-semibold">
@@ -151,7 +148,7 @@ export default function AdminDashboardPage() {
           <AdminStoreCleanAreaChart data={data.storeCleanArea} />
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow min-h-[420px]">
+        <div className="bg-white p-6 rounded-xl shadow-lg min-h-[420px]">
           <h2 className="mb-4 text-lg font-semibold">
             {selectedStoreId
               ? `${
@@ -194,7 +191,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* 상세 관리 영역 */}
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px] flex flex-col">
           <h2 className="mb-4 text-lg font-semibold">로봇 TOP 작업 시간</h2>
           <div className="flex items-center flex-1">
@@ -210,13 +207,6 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* 산업별 일별 가동 시간 */}
-      {/* <section className="space-y-6">
-        <div className="bg-white p-6 rounded-xl shadow-xl min-h-[420px]">
-          <h2 className="mb-4 text-xl font-semibold">산업별 일별 가동 시간</h2>
-          <AdminIndustryTimeChart data={data.industryOperationTime} />
-        </div>
-      </section> */}
     </div>
   );
 }
